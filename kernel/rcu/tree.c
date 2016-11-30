@@ -1167,7 +1167,7 @@ static int rcu_implicit_dynticks_qs(struct rcu_data *rdp)
 	unsigned long jtsq;
 	bool *rnhqp;
 	bool *ruqp;
-	struct rcu_node *rnp = rdp->mynode;
+	struct rcu_node *rnp;
 
 	/*
 	 * If the CPU passed through or entered a dynticks idle phase with
@@ -1191,6 +1191,7 @@ static int rcu_implicit_dynticks_qs(struct rcu_data *rdp)
 	 * case for nohz_full CPUs looping in the kernel.
 	 */
 	jtsq = jiffies_till_sched_qs;
+	rnp = rdp->mynode;
 	ruqp = per_cpu_ptr(&rcu_dynticks.rcu_urgent_qs, rdp->cpu);
 	if (time_after(jiffies, rdp->rsp->gp_start + jtsq) &&
 	    READ_ONCE(rdp->rcu_qs_ctr_snap) != per_cpu(rcu_dynticks.rcu_qs_ctr, rdp->cpu) &&
