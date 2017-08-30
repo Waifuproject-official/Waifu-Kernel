@@ -56,7 +56,6 @@
 #include <linux/vmalloc.h>
 #include <linux/sched/debug.h>
 #include <linux/sched/sysctl.h>
-
 #include "rcu.h"
 
 MODULE_LICENSE("GPL");
