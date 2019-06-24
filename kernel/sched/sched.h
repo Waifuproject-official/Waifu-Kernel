@@ -1464,6 +1464,7 @@ static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
 #endif
 }
 
+<<<<<<< HEAD
 /*
  * Tunables that become constants when CONFIG_SCHED_DEBUG is off:
  */
@@ -1473,6 +1474,9 @@ static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
 #else
 # define const_debug const
 #endif
+=======
+#define const_debug __read_mostly
+>>>>>>> 1a16b4e8a0ca (sched/fair: Promote sched_migration_cost_ns out of CONFIG_SCHED_DEBUG)
 
 #define SCHED_FEAT(name, enabled)	\
 	__SCHED_FEAT_##name ,
