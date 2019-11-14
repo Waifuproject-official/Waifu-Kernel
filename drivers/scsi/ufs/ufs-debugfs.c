@@ -1458,53 +1458,71 @@ DEFINE_SIMPLE_ATTRIBUTE(ufsdbg_dbg_print_en_ops,
 			ufsdbg_dbg_print_en_set,
 			"%llu\n");
 
-static int ufsdbg_reset_controller_show(struct seq_file *file, void *data)
-{
-	seq_puts(file, "echo 1 > /sys/kernel/debug/.../reset_controller\n");
-	seq_puts(file, "resets the UFS controller and restores its operational state\n\n");
-
-	return 0;
-}
-
-static int ufsdbg_reset_controller_open(struct inode *inode, struct file *file)
-{
-	return single_open(file, ufsdbg_reset_controller_show,
-						inode->i_private);
-}
-
-static ssize_t ufsdbg_reset_controller_write(struct file *filp,
+static ssize_t ufsdbg_req_stats_write(struct file *filp,
 		const char __user *ubuf, size_t cnt, loff_t *ppos)
 {
 	struct ufs_hba *hba = filp->f_mapping->host->i_private;
+	int val;
+	int ret;
 	unsigned long flags;
 
-	pm_runtime_get_sync(hba->dev);
-	ufshcd_hold(hba, false);
+	ret = kstrtoint_from_user(ubuf, cnt, 0, &val);
+	if (ret) {
+		dev_err(hba->dev, "%s: Invalid argument\n", __func__);
+		return ret;
+	}
 
 	spin_lock_irqsave(hba->host->host_lock, flags);
-	/*
-	 * simulating a dummy error in order to "convince"
-	 * eh_work to actually reset the controller
-	 */
-	hba->saved_err |= INT_FATAL_ERRORS;
-	hba->silence_err_logs = true;
-	schedule_work(&hba->eh_work);
+	ufshcd_init_req_stats(hba);
 	spin_unlock_irqrestore(hba->host->host_lock, flags);
-
-	flush_work(&hba->eh_work);
-
-	ufshcd_release(hba, false);
-	pm_runtime_put_sync(hba->dev);
 
 	return cnt;
 }
 
-static const struct file_operations ufsdbg_reset_controller = {
-	.open		= ufsdbg_reset_controller_open,
+static int ufsdbg_req_stats_show(struct seq_file *file, void *data)
+{
+	struct ufs_hba *hba = (struct ufs_hba *)file->private;
+	int i;
+	unsigned long flags;
+
+	/* Header */
+	seq_printf(file, "\t%-10s %-10s %-10s %-10s %-10s %-10s",
+		"All", "Write", "Read", "Read(urg)", "Write(urg)", "Flush");
+
+	spin_lock_irqsave(hba->host->host_lock, flags);
+
+	seq_printf(file, "\n%s:\t", "Min");
+	for (i = 0; i < TS_NUM_STATS; i++)
+		seq_printf(file, "%-10llu ", hba->ufs_stats.req_stats[i].min);
+	seq_printf(file, "\n%s:\t", "Max");
+	for (i = 0; i < TS_NUM_STATS; i++)
+		seq_printf(file, "%-10llu ", hba->ufs_stats.req_stats[i].max);
+	seq_printf(file, "\n%s:\t", "Avg.");
+	for (i = 0; i < TS_NUM_STATS; i++)
+		seq_printf(file, "%-10llu ",
+			div64_u64(hba->ufs_stats.req_stats[i].sum,
+				hba->ufs_stats.req_stats[i].count));
+	seq_printf(file, "\n%s:\t", "Count");
+	for (i = 0; i < TS_NUM_STATS; i++)
+		seq_printf(file, "%-10llu ", hba->ufs_stats.req_stats[i].count);
+	seq_puts(file, "\n");
+	spin_unlock_irqrestore(hba->host->host_lock, flags);
+
+	return 0;
+}
+
+static int ufsdbg_req_stats_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, ufsdbg_req_stats_show, inode->i_private);
+}
+
+static const struct file_operations ufsdbg_req_stats_desc = {
+	.open		= ufsdbg_req_stats_open,
 	.read		= seq_read,
-	.write		= ufsdbg_reset_controller_write,
+	.write		= ufsdbg_req_stats_write,
 	.release	= single_release,
 };
+
 
 static int ufsdbg_clear_err_state(void *data, u64 val)
 {
@@ -1675,14 +1693,14 @@ void ufsdbg_add_debugfs(struct ufs_hba *hba)
 		goto err;
 	}
 
-	hba->debugfs_files.reset_controller =
-		debugfs_create_file("reset_controller", S_IRUSR | S_IWUSR,
-			hba->debugfs_files.debugfs_root, hba,
-			&ufsdbg_reset_controller);
-	if (!hba->debugfs_files.reset_controller) {
+	hba->debugfs_files.req_stats =
+		debugfs_create_file("req_stats", S_IRUSR | S_IWUSR,
+			hba->debugfs_files.stats_folder, hba,
+			&ufsdbg_req_stats_desc);
+	if (!hba->debugfs_files.req_stats) {
 		dev_err(hba->dev,
-			"%s: failed create reset_controller debugfs entry",
-				__func__);
+			"%s:  failed create req_stats debugfs entry\n",
+			__func__);
 		goto err;
 	}
 
