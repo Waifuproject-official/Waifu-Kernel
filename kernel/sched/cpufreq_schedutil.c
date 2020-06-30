@@ -41,7 +41,6 @@ struct sugov_policy {
 	s64 freq_update_delay_ns;
 	unsigned int next_freq;
 	unsigned int cached_raw_freq;
-
 	unsigned int prev_cached_raw_freq;
 	unsigned long max;
 
@@ -173,8 +172,8 @@ static bool sugov_update_next_freq(struct sugov_policy *sg_policy, u64 time,
 		return false;
 
 	if (!ignore_rate_limit && sugov_up_down_rate_limit(sg_policy, time, next_freq)) {
-		/* Don't cache a raw freq that didn't become next_freq */
-		sg_policy->cached_raw_freq = 0;
+		/* Restore cached freq as next_freq is not changed */
+		sg_policy->cached_raw_freq = sg_policy->prev_cached_raw_freq;
 		return false;
 	}
 
@@ -399,7 +398,7 @@ static void sugov_update_single(struct update_util_data *hook, u64 time,
 			next_f = sg_policy->next_freq;
 
 			/* Restore cached freq as next_freq has changed */
-			sg_policy->cached_raw_freq = cached_freq;
+			sg_policy->cached_raw_freq = sg_policy->prev_cached_raw_freq;
 		}
 	}
 	/*
