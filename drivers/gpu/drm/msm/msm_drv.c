@@ -506,6 +506,16 @@ static void msm_drm_pm_unreq(struct work_struct *work)
 	atomic_set_release(&priv->pm_req_set, 0);
 }
 
+static void msm_drm_pm_unreq(struct work_struct *work)
+{
+	struct msm_drm_private *priv = container_of(to_delayed_work(work),
+						    typeof(*priv),
+						    pm_unreq_dwork);
+
+	pm_qos_update_request(&priv->pm_irq_req, PM_QOS_DEFAULT_VALUE);
+	atomic_set_release(&priv->pm_req_set, 0);
+}
+
 static int msm_drm_init(struct device *dev, struct drm_driver *drv)
 {
 	struct platform_device *pdev = to_platform_device(dev);

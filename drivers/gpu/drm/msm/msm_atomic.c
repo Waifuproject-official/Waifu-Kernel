@@ -799,6 +799,7 @@ int msm_atomic_commit(struct drm_device *dev,
 		pm_qos_update_request(&priv->pm_irq_req, 100);
 	mod_delayed_work(system_unbound_wq, &priv->pm_unreq_dwork, HZ / 10);
 
+#ifdef CONFIG_DRM_MSM_MDP5
 	/*
 	 * This is the point of no return - everything below never fails except
 	 * when the hw goes bonghits. Which means we can commit the new state on
@@ -808,7 +809,7 @@ int msm_atomic_commit(struct drm_device *dev,
 	 */
 	if (to_kms_state(state)->state)
 		priv->kms->funcs->swap_state(priv->kms, state);
-
+#endif
 	/*
 	 * Provide the driver a chance to prepare for output fences. This is
 	 * done after the point of no return, but before asynchronous commits
