@@ -74,3 +74,4 @@ ENDPROC(\name	)
 	testop	test_and_change_bit, eor, ldeoral
 	testop	test_and_clear_bit, bic, ldclral
 	testop	test_and_set_bit, orr, ldsetal
+
