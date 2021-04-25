@@ -78,7 +78,9 @@ void task_mem(struct seq_file *m, struct mm_struct *mm)
 		file << (PAGE_SHIFT-10),
 		shmem << (PAGE_SHIFT-10),
 		mm->data_vm << (PAGE_SHIFT-10),
-		mm->stack_vm << (PAGE_SHIFT-10), text, lib,
+		mm->stack_vm << (PAGE_SHIFT-10),
+		text >> 10,
+		lib >> 10,
 		mm_pgtables_bytes(mm) >> 10,
 		swap << (PAGE_SHIFT-10));
 	hugetlb_report_usage(m, mm);
