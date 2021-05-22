@@ -13,6 +13,7 @@
 #include <linux/kthread.h>
 #include <linux/delay.h>
 #include <linux/freezer.h>
+#include <linux/sched/signal.h>
 #include <uapi/linux/sched/types.h>
 
 #include "f2fs.h"
@@ -148,8 +149,7 @@ int f2fs_start_gc_thread(struct f2fs_sb_info *sbi)
 		sbi->gc_thread = NULL;
 	}
 	sched_setscheduler(sbi->gc_thread->f2fs_gc_task, SCHED_IDLE, &param);
-	set_task_ioprio(sbi->gc_thread->f2fs_gc_task,
-			IOPRIO_PRIO_VALUE(IOPRIO_CLASS_IDLE, 0));
+
 out:
 	return err;
 }
