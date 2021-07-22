@@ -1222,16 +1222,53 @@ static const struct file_operations ion_fops = {
 
 static int debug_shrink_set(void *data, u64 val)
 {
-	struct ion_heap *heap = data;
-	struct shrink_control sc;
-	int objs;
+	union {
+		struct ion_allocation_data allocation;
+		struct ion_prefetch_data prefetch;
+	} data;
+	int fd, *output;
 
-	sc.gfp_mask = GFP_HIGHUSER;
-	sc.nr_to_scan = val;
+	switch (cmd) {
+	case ION_IOC_ALLOC:
+		if (copy_from_user(&data, (void __user *)arg,
+				   sizeof(struct ion_allocation_data)))
+			return -EFAULT;
 
-	if (!val) {
-		objs = heap->shrinker.count_objects(&heap->shrinker, &sc);
-		sc.nr_to_scan = objs;
+		fd = ion_alloc_fd(&data.allocation);
+		if (fd < 0)
+			return fd;
+
+		output = &fd;
+		arg += offsetof(struct ion_allocation_data, fd);
+		break;
+	case ION_IOC_PREFETCH:
+		/* The data used in ion_prefetch_data begins at `regions` */
+		if (copy_from_user(&data.prefetch.regions,
+				   (void __user *)arg +
+				   offsetof(struct ion_prefetch_data, regions),
+				   sizeof(struct ion_prefetch_data) -
+				   offsetof(struct ion_prefetch_data, regions)))
+			return -EFAULT;
+
+		return ion_walk_heaps(data.prefetch.heap_id,
+				      ION_HEAP_TYPE_SYSTEM_SECURE,
+				      &data.prefetch,
+				      ion_system_secure_heap_prefetch);
+	case ION_IOC_DRAIN:
+		/* The data used in ion_prefetch_data begins at `regions` */
+		if (copy_from_user(&data.prefetch.regions,
+				   (void __user *)arg +
+				   offsetof(struct ion_prefetch_data, regions),
+				   sizeof(struct ion_prefetch_data) -
+				   offsetof(struct ion_prefetch_data, regions)))
+			return -EFAULT;
+
+		return ion_walk_heaps(data.prefetch.heap_id,
+				      ION_HEAP_TYPE_SYSTEM_SECURE,
+				      &data.prefetch,
+				      ion_system_secure_heap_drain);
+	default:
+		return -ENOTTY;
 	}
 
 	heap->shrinker.scan_objects(&heap->shrinker, &sc);
