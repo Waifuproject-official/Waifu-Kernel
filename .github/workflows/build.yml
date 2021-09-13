@@ -32,3 +32,8 @@ jobs:
         with:
           name: ${{ env.ZIPNAME }}
           path: ${{ env.ZIPNAME }}
+      - name: Upload build artifact 2
+        uses: actions/upload-artifact@main
+        with:
+          name: ${{ env.ZIPNAME }}
+          path: AnyKernel3/
