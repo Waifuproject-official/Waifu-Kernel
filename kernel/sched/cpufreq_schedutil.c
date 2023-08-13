@@ -166,12 +166,14 @@ static bool sugov_update_next_freq(struct sugov_policy *sg_policy, u64 time,
 	 * If a work is in progress then it means the last frequency wasn't set
 	 * yet, so we can still change our mind and set a different frequency.
 	 */
-	bool ignore_rate_limit = sg_policy->work_in_progress;
+	bool ignore_rate_limit = sg_policy->need_freq_update ||
+				 sg_policy->work_in_progress;
+	sg_policy->need_freq_update = false;
 
 	if (sg_policy->next_freq == next_freq)
 		return false;
 
-	if (sugov_up_down_rate_limit(sg_policy, time, next_freq)) {
+	if (!ignore_rate_limit && sugov_up_down_rate_limit(sg_policy, time, next_freq)) {
 		/* Restore cached freq as next_freq is not changed */
 		sg_policy->cached_raw_freq = sg_policy->prev_cached_raw_freq;
 		return false;
