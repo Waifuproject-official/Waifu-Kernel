@@ -70,7 +70,9 @@
 #include <linux/nmi.h>
 #include <linux/psi.h>
 #include <linux/devfreq_boost.h>
+
 #include <linux/khugepaged.h>
+#include <linux/cpu_input_boost.h>
 
 #include <asm/sections.h>
 #include <asm/tlbflush.h>
@@ -4111,6 +4113,11 @@ retry:
 	/* Ensure kswapd doesn't accidentally go to sleep as long as we loop */
 	if (gfp_mask & __GFP_KSWAPD_RECLAIM)
 		wake_all_kswapds(order, ac);
+
+	/* Boost when memory is low so allocation latency doesn't get too bad */
+	devfreq_boost_kick_max(DEVFREQ_MSM_LLCCBW, 100);
+	devfreq_boost_kick_max(DEVFREQ_MSM_CPUBW, 100);
+	cpu_input_boost_kick_max(100);
 
 	reserve_flags = __gfp_pfmemalloc_flags(gfp_mask);
 	if (reserve_flags)
