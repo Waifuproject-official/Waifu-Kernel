@@ -145,7 +145,7 @@ unsigned int sysctl_sched_child_runs_first __read_mostly = 1;
 unsigned int sysctl_sched_wakeup_granularity		= 200000UL;
 unsigned int normalized_sysctl_sched_wakeup_granularity	= 200000UL;
 
-unsigned int __read_mostly sysctl_sched_migration_cost	= 2000000UL;
+unsigned int __read_mostly sysctl_sched_migration_cost	= 0UL;
 
 DEFINE_PER_CPU_READ_MOSTLY(int, sched_load_boost);
 
