@@ -14,6 +14,8 @@ if test -z "$(git rev-parse --show-cdup 2>/dev/null)" &&
 	ZIPNAME="${ZIPNAME::-4}-$(echo $head | cut -c1-8).zip"
 fi
 
+export KBUILD_BUILD_USER=NyaruToru
+export KBUILD_BUILD_HOST=Neko-Internet
 export ARCH="arm64"
 export SUBARCH="arm64"
 export PATH="$TC_DIR/bin:$PATH"
@@ -24,6 +26,8 @@ if ! [ -d "$TC_DIR" ]; then
 	wget -nv -c https://github.com/greenforce-project/greenforce_clang/releases/download/26122023/greenforce-clang-12.0.1-26122023-1149.tar.zst -O - | tar --use-compress-program=unzstd -xf - -C "$TC_DIR/"
 	cd ../..
 fi
+
+cat /proc/cpuinfo | grep "model name" | uniq | awk '{print "CPU Type: "$0}'; grep -c processor /proc/cpuinfo | awk '{print "CPU Cores: "$0}'; free -m | grep Mem: | awk '{print "Ram: "$2" MB ("$(echo "$2 / 1024" | bc -l)" "GB)"}'; df -h / | grep -vE '^Filesystem|tmpfs|cdrom' | awk '{print "Storage: "$2" ("$3")}'
 
 echo -e "\nStarting compilation...\n"
 make $DEFCONFIG O=out

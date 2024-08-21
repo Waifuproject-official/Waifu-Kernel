@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: depot-ubuntu-24.04-64
+    runs-on: depot-ubuntu-22.04-64
 
     steps:
       - name: Checkout
@@ -30,8 +30,6 @@ jobs:
       
       - name: Run build script
         run: |
-          export KBUILD_BUILD_USER=NyaruToru
-          export KBUILD_BUILD_HOST=Neko-Internet
           source build.sh
           echo "ZIPNAME=${ZIPNAME}" >> $GITHUB_ENV
 
