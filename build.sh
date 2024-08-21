@@ -28,20 +28,7 @@ fi
 
 echo -e "\nStarting compilation...\n"
 make $DEFCONFIG O=out
-make -j$(nproc --all) O=out \
-    ARCH=arm64 \
-    SUBARCH=arm64 \
-    CC=clang \
-    AR=llvm-ar \
-    LD=ld.lld \
-    NM=llvm-nm \
-    OBJDUMP=llvm-objdump \
-    STRIP=llvm-strip \
-    OBJCOPY=llvm-objcopy \
-    OBJSIZE=llvm-size \
-    READELF=llvm-readelf \
-    CROSS_COMPILE=aarch64-linux-gnu- \
-    CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+make -j$(nproc --all) O=out LLVM=1
 
 
 kernel="out/arch/arm64/boot/Image.gz-dtb"
