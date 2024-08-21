@@ -381,9 +381,6 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
 	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
 #endif
 
-
-	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
-
 	override_cred = prepare_creds();
 	if (!override_cred)
 		return -ENOMEM;
