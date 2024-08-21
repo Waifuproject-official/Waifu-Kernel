@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: namespace-profile-toru
+    runs-on: depot-ubuntu-22.04-64
 
     steps:
       - name: Checkout
