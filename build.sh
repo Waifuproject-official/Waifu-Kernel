@@ -19,16 +19,28 @@ export SUBARCH="arm64"
 export PATH="$TC_DIR/bin:$PATH"
 
 if ! [ -d "$TC_DIR" ]; then
-	echo "Neutron Clang not found! Downloading to $TC_DIR..."
+	echo "Clang not found! Downloading to $TC_DIR..."
 	mkdir -p "$TC_DIR" && cd "$TC_DIR"
-	curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
-	bash ./antman -S --noprogress
+	wget -nv -c https://github.com/greenforce-project/greenforce_clang/releases/download/26122023/greenforce-clang-12.0.1-26122023-1149.tar.zst -O - | tar --use-compress-program=unzstd -xf - -C "$TC_DIR/"
 	cd ../..
 fi
 
 echo -e "\nStarting compilation...\n"
 make $DEFCONFIG O=out
-make -j$(nproc --all) O=out LLVM=1
+make -j$(nproc --all) O=out \
+    ARCH=arm64 \
+    SUBARCH=arm64 \
+    CC=clang \
+    AR=llvm-ar \
+    LD=ld.lld \
+    NM=llvm-nm \
+    OBJDUMP=llvm-objdump \
+    STRIP=llvm-strip \
+    OBJCOPY=llvm-objcopy \
+    OBJSIZE=llvm-size \
+    READELF=llvm-readelf \
+    CROSS_COMPILE=aarch64-linux-gnu- \
+    CROSS_COMPILE_ARM32=arm-linux-gnueabi-
 
 
 kernel="out/arch/arm64/boot/Image.gz-dtb"
@@ -38,13 +50,13 @@ if [ -f "$kernel" ]; then
 	echo -e "\nKernel compiled succesfully! Zipping up...\n"
 	if [ -d "$AK3_DIR" ]; then
 		cp -r $AK3_DIR AnyKernel3
-	elif ! git clone -q --depth=1 https://github.com/rd-stuffs/AnyKernel3 -b FSociety; then
+	elif ! git clone -q --depth=1 https://github.com/Waifuproject-official/AnyKernel3 -b Waifu; then
 		echo -e "\nAnyKernel3 repo not found locally and couldn't clone from GitHub! Aborting..."
 		exit 1
 	fi
 	cp $kernel $dtbo AnyKernel3
 	cd AnyKernel3
-	git checkout FSociety &> /dev/null
+	git checkout Waifu &> /dev/null
 	zip -r9 "../$ZIPNAME" * -x .git modules\* patch\* ramdisk\* README.md *placeholder
 	cd ..
 	rm -rf AnyKernel3
