@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: depot-ubuntu-22.04-64
+    runs-on: depot-ubuntu-24.04-64
 
     steps:
       - name: Checkout
@@ -28,10 +28,6 @@ jobs:
         with:
           timezoneLinux: "Asia/Bangkok"
       
-      - name: Install Package
-        run: |
-         sudo apt-get install -y libdebuginfod-dev bc python2-dev python2 curl zip wget
-
       - name: Run build script
         run: |
           export KBUILD_BUILD_USER=NyaruToru

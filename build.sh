@@ -19,9 +19,10 @@ export SUBARCH="arm64"
 export PATH="$TC_DIR/bin:$PATH"
 
 if ! [ -d "$TC_DIR" ]; then
-	echo "Clang not found! Downloading to $TC_DIR..."
+	echo "Neutron Clang not found! Downloading to $TC_DIR..."
 	mkdir -p "$TC_DIR" && cd "$TC_DIR"
-	wget -nv -c https://github.com/greenforce-project/greenforce_clang/releases/download/18082024/greenforce-clang-20.0.0git-18082024.tar.gz -O - | tar --use-compress-program=unzstd -xf - -C "$TC_DIR/"
+	curl -LO "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
+	bash ./antman -S
 	cd ../..
 fi
 
