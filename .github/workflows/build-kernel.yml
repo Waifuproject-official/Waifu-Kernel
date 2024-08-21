@@ -20,9 +20,11 @@ jobs:
           path: |
             ${{ github.workspace }}/tc/
           key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}
-            
-            
-
+           
+      - name: Install Package
+        run: |
+         sudo apt-get install -y libdebuginfod-dev bc python2-dev python2 zip
+         
       - name: Setup timezone
         uses: szenius/set-timezone@master
         with:
