@@ -27,7 +27,7 @@ if ! [ -d "$TC_DIR" ]; then
 	cd ../..
 fi
 
-cat /proc/cpuinfo | grep "model name" | uniq | awk '{print "CPU Type: "$0}'; grep -c processor /proc/cpuinfo | awk '{print "CPU Cores: "$0}'; free -m | grep Mem: | awk '{print "Ram: "$2" MB ("$(echo "$2 / 1024" | bc -l)" "GB)"}'; df -h / | grep -vE '^Filesystem|tmpfs|cdrom' | awk '{print "Storage: "$2" ("$3")}'
+echo "CPU Core: $(grep -c ^processor /proc/cpuinfo), CPU Model: $(grep "model name" /proc/cpuinfo | head -1 | awk -F: '{print $2}' | xargs), RAM: $(free -m | grep Mem | awk '{print $2}') MB, Storage: $(df -h / | grep / | awk '{print $2}') (Used: $(df -h / | grep / | awk '{print $3}'), Available: $(df -h / | grep / | awk '{print $4}'))"
 
 echo -e "\nStarting compilation...\n"
 make $DEFCONFIG O=out
