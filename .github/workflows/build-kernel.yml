@@ -1,4 +1,4 @@
-name: Build Kernel
+    name: Build Kernel
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: depot-ubuntu-22.04-64
+    runs-on: buildjet-32vcpu-ubuntu-2204
 
     steps:
       - name: Checkout
