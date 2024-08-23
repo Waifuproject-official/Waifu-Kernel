@@ -23,7 +23,7 @@ jobs:
            
       - name: Install Package
         run: |
-         sudo apt-get install -y libdebuginfod-dev bc python2-dev python2 zip
+         sudo apt-get install -y libdebuginfod-dev bc zip
          
       - name: Setup timezone
         uses: szenius/set-timezone@master
