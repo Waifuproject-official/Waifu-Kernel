@@ -1,8 +1,8 @@
-name: Build Kernel
+name: Build Tester
 
 on:
   push:
-    branches: [ "surya" ]
+    branches: [ "4.19" ]
     
   workflow_dispatch:
 
