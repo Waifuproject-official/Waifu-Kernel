@@ -18,11 +18,7 @@ ifeq ($(CONFIG_RELOCATABLE), y)
 # Pass --no-apply-dynamic-relocs to restore pre-binutils-2.27 behaviour
 # for relative relocs, since this leads to better Image compression
 # with the relocation offsets always being zero.
-<<<<<<< HEAD
 LDFLAGS_vmlinux		+= -shared -Bsymbolic -z notext \
-=======
-LDFLAGS_vmlinux		+= -shared -Bsymbolic -z notext -z norelro \
->>>>>>> v4.19.83
 			$(call ld-option, --no-apply-dynamic-relocs)
 endif
 
@@ -104,14 +100,10 @@ KBUILD_CFLAGS	+= -mgeneral-regs-only
 endif
 KBUILD_CFLAGS	+= $(lseinstr) $(brokengasinst) $(vdso32)
 KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables
-<<<<<<< HEAD
 KBUILD_CFLAGS	+= $(call cc-option, -mpc-relative-literal-loads)
 KBUILD_CFLAGS	+= -fno-pic
-KBUILD_AFLAGS	+= $(lseinstr) $(brokengasinst) $(vdso32)
-=======
 KBUILD_CFLAGS	+= $(call cc-disable-warning, psabi)
 KBUILD_AFLAGS	+= $(lseinstr) $(brokengasinst)
->>>>>>> v4.19.83
 
 KBUILD_CFLAGS	+= $(call cc-option,-mabi=lp64)
 KBUILD_AFLAGS	+= $(call cc-option,-mabi=lp64)
@@ -130,7 +122,6 @@ ifeq ($(CONFIG_CPU_BIG_ENDIAN), y)
 KBUILD_CPPFLAGS	+= -mbig-endian
 CHECKFLAGS	+= -D__AARCH64EB__
 AS		+= -EB
-<<<<<<< HEAD
 LD		+= -EB
 ifeq ($(cc-name),clang)
 ifeq ($(ld-name),gold)
@@ -139,17 +130,12 @@ else
 LDFLAGS		+= -maarch64elfb
 endif
 endif
-=======
-# Prefer the baremetal ELF build target, but not all toolchains include
-# it so fall back to the standard linux version if needed.
-KBUILD_LDFLAGS	+= -EB $(call ld-option, -maarch64elfb, -maarch64linuxb)
->>>>>>> v4.19.83
+
 UTS_MACHINE	:= aarch64_be
 else
 KBUILD_CPPFLAGS	+= -mlittle-endian
 CHECKFLAGS	+= -D__AARCH64EL__
 AS		+= -EL
-<<<<<<< HEAD
 LD		+= -EL
 ifeq ($(cc-name),clang)
 ifeq ($(ld-name),gold)
@@ -170,14 +156,6 @@ ifeq ($(CONFIG_LTO_CLANG), y)
 KBUILD_LDFLAGS_MODULE	+= -plugin-opt=-code-model=large
 endif
 endif
-=======
-# Same as above, prefer ELF but fall back to linux target if needed.
-KBUILD_LDFLAGS	+= -EL $(call ld-option, -maarch64elf, -maarch64linux)
-UTS_MACHINE	:= aarch64
-endif
-
-CHECKFLAGS	+= -D__aarch64__
->>>>>>> v4.19.83
 
 ifeq ($(CONFIG_ARM64_MODULE_PLTS),y)
 KBUILD_LDFLAGS_MODULE	+= -T $(srctree)/arch/arm64/kernel/module.lds
@@ -195,16 +173,12 @@ else
 TEXT_OFFSET := 0x00080000
 endif
 
-<<<<<<< HEAD
 ifeq ($(cc-name),clang)
 KBUILD_CFLAGS += $(call cc-disable-warning, asm-operand-widths)
 endif
 
 # KASAN_SHADOW_OFFSET = VA_START + (1 << (VA_BITS - 3)) - (1 << 61)
-=======
-# KASAN_SHADOW_OFFSET = VA_START + (1 << (VA_BITS - KASAN_SHADOW_SCALE_SHIFT))
-#				 - (1 << (64 - KASAN_SHADOW_SCALE_SHIFT))
->>>>>>> v4.19.83
+
 # in 32-bit arithmetic
 KASAN_SHADOW_SCALE_SHIFT := 3
 KASAN_SHADOW_OFFSET := $(shell printf "0x%08x00000000\n" $$(( \
