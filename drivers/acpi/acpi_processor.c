@@ -82,6 +82,7 @@ static int acpi_processor_errata_piix4(struct pci_dev *dev)
 		 * PIIX4 models.
 		 */
 		errata.piix4.throttle = 1;
+		/* fall through*/
 
 	case 2:		/* PIIX4E */
 	case 3:		/* PIIX4M */
@@ -281,9 +282,13 @@ static int acpi_processor_get_info(struct acpi_device *device)
 	}
 
 	if (acpi_duplicate_processor_id(pr->acpi_id)) {
-		dev_err(&device->dev,
-			"Failed to get unique processor _UID (0x%x)\n",
-			pr->acpi_id);
+		if (pr->acpi_id == 0xff)
+			dev_info_once(&device->dev,
+				"Entry not well-defined, consider updating BIOS\n");
+		else
+			dev_err(&device->dev,
+				"Failed to get unique processor _UID (0x%x)\n",
+				pr->acpi_id);
 		return -ENODEV;
 	}
 

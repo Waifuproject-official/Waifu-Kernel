@@ -11,7 +11,7 @@ if TTY
 
 config VT
 	bool "Virtual terminal" if EXPERT
-	depends on !S390 && !UML
+	depends on !UML
 	select INPUT
 	default y
 	---help---
@@ -153,19 +153,6 @@ config LEGACY_PTY_COUNT
 
 	  When not in use, each legacy PTY occupies 12 bytes on 32-bit
 	  architectures and 24 bytes on 64-bit architectures.
-
-config BFIN_JTAG_COMM
-	tristate "Blackfin JTAG Communication"
-	depends on BLACKFIN
-	help
-	  Add support for emulating a TTY device over the Blackfin JTAG.
-
-	  To compile this driver as a module, choose M here: the
-	  module will be called bfin_jtag_comm.
-
-config BFIN_JTAG_COMM_CONSOLE
-	bool "Console on Blackfin JTAG"
-	depends on BFIN_JTAG_COMM=y
 
 config SERIAL_NONSTANDARD
 	bool "Non-standard serial port support"
@@ -404,6 +391,7 @@ config GOLDFISH_TTY_EARLY_CONSOLE
 	bool
 	default y if GOLDFISH_TTY=y
 	select SERIAL_EARLYCON
+<<<<<<< HEAD
 
 config DA_TTY
 	bool "DA TTY"
@@ -417,6 +405,8 @@ config DA_CONSOLE
 	depends on DA_TTY
 	help
 	  This enables a console on a Dash channel.
+=======
+>>>>>>> v4.19.83
 
 config MIPS_EJTAG_FDC_TTY
 	bool "MIPS EJTAG Fast Debug Channel TTY"
@@ -471,6 +461,7 @@ config VCC
 	help
 	  Support for Sun logical domain consoles.
 
+<<<<<<< HEAD
 config OKL4_VTTY
 	bool "Virtual TTY on the OKL4 Microvisor"
 	depends on OKL4_GUEST
@@ -488,6 +479,8 @@ config OKL4_VTTY_CONSOLE
 	help
 	  Console support for OKL4 Microvisor virtual ttys.
 
+=======
+>>>>>>> v4.19.83
 config LDISC_AUTOLOAD
 	bool "Automatically load TTY Line Disciplines"
 	default y

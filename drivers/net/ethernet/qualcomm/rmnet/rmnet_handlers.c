@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /* Copyright (c) 2013-2019, The Linux Foundation. All rights reserved.
+=======
+/* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -16,10 +20,14 @@
 #include <linux/netdevice.h>
 #include <linux/netdev_features.h>
 #include <linux/if_arp.h>
+<<<<<<< HEAD
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 #include <net/sock.h>
 #include <linux/tracepoint.h>
+=======
+#include <net/sock.h>
+>>>>>>> v4.19.83
 #include "rmnet_private.h"
 #include "rmnet_config.h"
 #include "rmnet_vnd.h"
@@ -99,6 +107,7 @@ EXPORT_SYMBOL(rmnet_shs_skb_entry_wq);
 
 /* Generic handler */
 
+<<<<<<< HEAD
 void
 rmnet_deliver_skb(struct sk_buff *skb, struct rmnet_port *port)
 {
@@ -208,6 +217,20 @@ static void rmnet_deliver_skb_list(struct sk_buff_head *head,
 		rmnet_set_skb_proto(skb);
 		rmnet_deliver_skb(skb, port);
 	}
+=======
+static void
+rmnet_deliver_skb(struct sk_buff *skb)
+{
+	struct rmnet_priv *priv = netdev_priv(skb->dev);
+
+	skb_reset_transport_header(skb);
+	skb_reset_network_header(skb);
+	rmnet_vnd_rx_fixup(skb, skb->dev);
+
+	skb->pkt_type = PACKET_HOST;
+	skb_set_mac_header(skb, 0);
+	gro_cells_receive(&priv->gro_cells, skb);
+>>>>>>> v4.19.83
 }
 
 /* MAP handler */
@@ -218,6 +241,7 @@ __rmnet_map_ingress_handler(struct sk_buff *skb,
 {
 	struct rmnet_map_header *qmap;
 	struct rmnet_endpoint *ep;
+<<<<<<< HEAD
 	struct sk_buff_head list;
 	u16 len, pad;
 	u8 mux_id;
@@ -233,12 +257,19 @@ __rmnet_map_ingress_handler(struct sk_buff *skb,
 				return;
 		}
 
+=======
+	u16 len, pad;
+	u8 mux_id;
+
+	if (RMNET_MAP_GET_CD_BIT(skb)) {
+>>>>>>> v4.19.83
 		if (port->data_format & RMNET_FLAGS_INGRESS_MAP_COMMANDS)
 			return rmnet_map_command(skb, port);
 
 		goto free_skb;
 	}
 
+<<<<<<< HEAD
 	mux_id = qmap->mux_id;
 	pad = qmap->pad_len;
 	len = ntohs(qmap->pkt_len) - pad;
@@ -281,19 +312,51 @@ __rmnet_map_ingress_handler(struct sk_buff *skb,
 	rmnet_deliver_skb_list(&list, port);
 	return;
 
+=======
+	mux_id = RMNET_MAP_GET_MUX_ID(skb);
+	pad = RMNET_MAP_GET_PAD(skb);
+	len = RMNET_MAP_GET_LENGTH(skb) - pad;
+
+	if (mux_id >= RMNET_MAX_LOGICAL_EP)
+		goto free_skb;
+
+	ep = rmnet_get_endpoint(port, mux_id);
+	if (!ep)
+		goto free_skb;
+
+	skb->dev = ep->egress_dev;
+
+	/* Subtract MAP header */
+	skb_pull(skb, sizeof(struct rmnet_map_header));
+	rmnet_set_skb_proto(skb);
+
+	if (port->data_format & RMNET_FLAGS_INGRESS_MAP_CKSUMV4) {
+		if (!rmnet_map_checksum_downlink_packet(skb, len + pad))
+			skb->ip_summed = CHECKSUM_UNNECESSARY;
+	}
+
+	skb_trim(skb, len);
+	rmnet_deliver_skb(skb);
+	return;
+
+>>>>>>> v4.19.83
 free_skb:
 	kfree_skb(skb);
 }
 
+<<<<<<< HEAD
 void (*rmnet_perf_deag_entry)(struct sk_buff *skb,
 			      struct rmnet_port *port) __rcu __read_mostly;
 EXPORT_SYMBOL(rmnet_perf_deag_entry);
 
+=======
+>>>>>>> v4.19.83
 static void
 rmnet_map_ingress_handler(struct sk_buff *skb,
 			  struct rmnet_port *port)
 {
 	struct sk_buff *skbn;
+<<<<<<< HEAD
 	void (*rmnet_perf_core_deaggregate)(struct sk_buff *skb,
 					    struct rmnet_port *port);
 
@@ -348,6 +411,26 @@ rmnet_map_ingress_handler(struct sk_buff *skb,
 next_skb:
 		skb = skb_frag;
 	}
+=======
+
+	if (skb->dev->type == ARPHRD_ETHER) {
+		if (pskb_expand_head(skb, ETH_HLEN, 0, GFP_ATOMIC)) {
+			kfree_skb(skb);
+			return;
+		}
+
+		skb_push(skb, ETH_HLEN);
+	}
+
+	if (port->data_format & RMNET_FLAGS_INGRESS_DEAGGREGATION) {
+		while ((skbn = rmnet_map_deaggregate(skb, port)) != NULL)
+			__rmnet_map_ingress_handler(skbn, port);
+
+		consume_skb(skb);
+	} else {
+		__rmnet_map_ingress_handler(skb, port);
+	}
+>>>>>>> v4.19.83
 }
 
 static int rmnet_map_egress_handler(struct sk_buff *skb,
@@ -372,6 +455,7 @@ static int rmnet_map_egress_handler(struct sk_buff *skb,
 
 	required_headroom += additional_header_len;
 
+<<<<<<< HEAD
 	if (skb_headroom(skb) < required_headroom) {
 		if (pskb_expand_head(skb, required_headroom, 0, GFP_ATOMIC))
 			return -ENOMEM;
@@ -383,10 +467,27 @@ static int rmnet_map_egress_handler(struct sk_buff *skb,
 
 	map_header = rmnet_map_add_map_header(skb, additional_header_len, 0,
 					      port);
+=======
+	if (port->data_format & RMNET_FLAGS_EGRESS_MAP_CKSUMV4) {
+		additional_header_len = sizeof(struct rmnet_map_ul_csum_header);
+		required_headroom += additional_header_len;
+	}
+
+	if (skb_headroom(skb) < required_headroom) {
+		if (pskb_expand_head(skb, required_headroom, 0, GFP_ATOMIC))
+			return -ENOMEM;
+	}
+
+	if (port->data_format & RMNET_FLAGS_EGRESS_MAP_CKSUMV4)
+		rmnet_map_checksum_uplink_packet(skb, orig_dev);
+
+	map_header = rmnet_map_add_map_header(skb, additional_header_len, 0);
+>>>>>>> v4.19.83
 	if (!map_header)
 		return -ENOMEM;
 
 	map_header->mux_id = mux_id;
+<<<<<<< HEAD
 
 	if (port->data_format & RMNET_EGRESS_FORMAT_AGGREGATION) {
 		if (rmnet_map_tx_agg_skip(skb, required_headroom))
@@ -395,12 +496,20 @@ static int rmnet_map_egress_handler(struct sk_buff *skb,
 		rmnet_map_tx_aggregate(skb, port);
 		return -EINPROGRESS;
 	}
+=======
+>>>>>>> v4.19.83
 
 done:
 	skb->protocol = htons(ETH_P_MAP);
 	return 0;
 }
 
+<<<<<<< HEAD
+=======
+	return 0;
+}
+
+>>>>>>> v4.19.83
 static void
 rmnet_bridge_handler(struct sk_buff *skb, struct net_device *bridge_dev)
 {
@@ -424,6 +533,12 @@ rx_handler_result_t rmnet_rx_handler(struct sk_buff **pskb)
 
 	if (!skb)
 		goto done;
+<<<<<<< HEAD
+=======
+
+	if (skb->pkt_type == PACKET_LOOPBACK)
+		return RX_HANDLER_PASS;
+>>>>>>> v4.19.83
 
 	if (skb->pkt_type == PACKET_LOOPBACK)
 		return RX_HANDLER_PASS;
@@ -457,11 +572,15 @@ void rmnet_egress_handler(struct sk_buff *skb)
 	struct rmnet_port *port;
 	struct rmnet_priv *priv;
 	u8 mux_id;
+<<<<<<< HEAD
 	int err;
 	u32 skb_len;
 
 	trace_rmnet_low(RMNET_MODULE, RMNET_TX_UL_PKT, 0xDEF, 0xDEF, 0xDEF,
 			0xDEF, (void *)skb, NULL);
+=======
+
+>>>>>>> v4.19.83
 	sk_pacing_shift_update(skb->sk, 8);
 
 	orig_dev = skb->dev;
@@ -472,6 +591,7 @@ void rmnet_egress_handler(struct sk_buff *skb)
 	port = rmnet_get_port(skb->dev);
 	if (!port)
 		goto drop;
+<<<<<<< HEAD
 
 	skb_len = skb->len;
 	err = rmnet_map_egress_handler(skb, port, mux_id, orig_dev);
@@ -483,6 +603,13 @@ void rmnet_egress_handler(struct sk_buff *skb)
 	}
 
 	rmnet_vnd_tx_fixup(orig_dev, skb_len);
+=======
+
+	if (rmnet_map_egress_handler(skb, port, mux_id, orig_dev))
+		goto drop;
+
+	rmnet_vnd_tx_fixup(skb, orig_dev);
+>>>>>>> v4.19.83
 
 	dev_queue_xmit(skb);
 	return;

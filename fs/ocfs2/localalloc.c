@@ -391,7 +391,8 @@ void ocfs2_shutdown_local_alloc(struct ocfs2_super *osb)
 	struct ocfs2_dinode *alloc = NULL;
 
 	cancel_delayed_work(&osb->la_enable_wq);
-	flush_workqueue(osb->ocfs2_wq);
+	if (osb->ocfs2_wq)
+		flush_workqueue(osb->ocfs2_wq);
 
 	if (osb->local_alloc_state == OCFS2_LA_UNUSED)
 		goto out;
@@ -668,11 +669,10 @@ int ocfs2_reserve_local_alloc_bits(struct ocfs2_super *osb,
 #ifdef CONFIG_OCFS2_DEBUG_FS
 	if (le32_to_cpu(alloc->id1.bitmap1.i_used) !=
 	    ocfs2_local_alloc_count_bits(alloc)) {
-		ocfs2_error(osb->sb, "local alloc inode %llu says it has %u used bits, but a count shows %u\n",
-			    (unsigned long long)le64_to_cpu(alloc->i_blkno),
-			    le32_to_cpu(alloc->id1.bitmap1.i_used),
-			    ocfs2_local_alloc_count_bits(alloc));
-		status = -EIO;
+		status = ocfs2_error(osb->sb, "local alloc inode %llu says it has %u used bits, but a count shows %u\n",
+				(unsigned long long)le64_to_cpu(alloc->i_blkno),
+				le32_to_cpu(alloc->id1.bitmap1.i_used),
+				ocfs2_local_alloc_count_bits(alloc));
 		goto bail;
 	}
 #endif

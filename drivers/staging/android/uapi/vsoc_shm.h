@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Copyright (C) 2017 Google, Inc.
  *
@@ -10,6 +11,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+/*
+ * Copyright (C) 2017 Google, Inc.
+ *
+>>>>>>> v4.19.83
  */
 
 #ifndef _UAPI_LINUX_VSOC_SHM_H

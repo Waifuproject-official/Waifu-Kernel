@@ -30,7 +30,10 @@ xen_pv_trap divide_error
 xen_pv_trap debug
 xen_pv_trap xendebug
 xen_pv_trap int3
+<<<<<<< HEAD
 xen_pv_trap xenint3
+=======
+>>>>>>> v4.19.83
 xen_pv_trap xennmi
 xen_pv_trap overflow
 xen_pv_trap bounds

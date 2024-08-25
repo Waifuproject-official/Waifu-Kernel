@@ -393,6 +393,7 @@ bool mipi_dsi_packet_format_is_short(u8 type)
 	case MIPI_DSI_DCS_SHORT_WRITE:
 	case MIPI_DSI_DCS_SHORT_WRITE_PARAM:
 	case MIPI_DSI_DCS_READ:
+	case MIPI_DSI_DCS_COMPRESSION_MODE:
 	case MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE:
 	case MIPI_DSI_COMPRESSION_MODE:
 		return true;
@@ -412,6 +413,7 @@ EXPORT_SYMBOL(mipi_dsi_packet_format_is_short);
 bool mipi_dsi_packet_format_is_long(u8 type)
 {
 	switch (type) {
+	case MIPI_DSI_PPS_LONG_WRITE:
 	case MIPI_DSI_NULL_PACKET:
 	case MIPI_DSI_BLANKING_PACKET:
 	case MIPI_DSI_GENERIC_LONG_WRITE:
@@ -501,8 +503,9 @@ int mipi_dsi_shutdown_peripheral(struct mipi_dsi_device *dsi)
 		.tx_buf = (u8 [2]) { 0, 0 },
 		.tx_len = 2,
 	};
+	int ret = mipi_dsi_device_transfer(dsi, &msg);
 
-	return mipi_dsi_device_transfer(dsi, &msg);
+	return (ret < 0) ? ret : 0;
 }
 EXPORT_SYMBOL(mipi_dsi_shutdown_peripheral);
 
@@ -520,8 +523,9 @@ int mipi_dsi_turn_on_peripheral(struct mipi_dsi_device *dsi)
 		.tx_buf = (u8 [2]) { 0, 0 },
 		.tx_len = 2,
 	};
+	int ret = mipi_dsi_device_transfer(dsi, &msg);
 
-	return mipi_dsi_device_transfer(dsi, &msg);
+	return (ret < 0) ? ret : 0;
 }
 EXPORT_SYMBOL(mipi_dsi_turn_on_peripheral);
 
@@ -544,8 +548,9 @@ int mipi_dsi_set_maximum_return_packet_size(struct mipi_dsi_device *dsi,
 		.tx_len = sizeof(tx),
 		.tx_buf = tx,
 	};
+	int ret = mipi_dsi_device_transfer(dsi, &msg);
 
-	return mipi_dsi_device_transfer(dsi, &msg);
+	return (ret < 0) ? ret : 0;
 }
 EXPORT_SYMBOL(mipi_dsi_set_maximum_return_packet_size);
 

@@ -14,6 +14,7 @@
 #define pr_fmt(fmt) "AGP: " fmt
 
 #include <linux/kernel.h>
+#include <linux/kcore.h>
 #include <linux/types.h>
 #include <linux/init.h>
 #include <linux/memblock.h>
@@ -57,7 +58,11 @@ int fallback_aper_force __initdata;
 
 int fix_aperture __initdata = 1;
 
+<<<<<<< HEAD
 #ifdef CONFIG_PROC_VMCORE
+=======
+#if defined(CONFIG_PROC_VMCORE) || defined(CONFIG_PROC_KCORE)
+>>>>>>> v4.19.83
 /*
  * If the first kernel maps the aperture over e820 RAM, the kdump kernel will
  * use the same range because it will remain configured in the northbridge.
@@ -66,12 +71,17 @@ int fix_aperture __initdata = 1;
  */
 static unsigned long aperture_pfn_start, aperture_page_count;
 
+<<<<<<< HEAD
 static int gart_oldmem_pfn_is_ram(unsigned long pfn)
+=======
+static int gart_mem_pfn_is_ram(unsigned long pfn)
+>>>>>>> v4.19.83
 {
 	return likely((pfn < aperture_pfn_start) ||
 		      (pfn >= aperture_pfn_start + aperture_page_count));
 }
 
+<<<<<<< HEAD
 static void exclude_from_vmcore(u64 aper_base, u32 aper_order)
 {
 	aperture_pfn_start = aper_base >> PAGE_SHIFT;
@@ -80,6 +90,21 @@ static void exclude_from_vmcore(u64 aper_base, u32 aper_order)
 }
 #else
 static void exclude_from_vmcore(u64 aper_base, u32 aper_order)
+=======
+static void __init exclude_from_core(u64 aper_base, u32 aper_order)
+{
+	aperture_pfn_start = aper_base >> PAGE_SHIFT;
+	aperture_page_count = (32 * 1024 * 1024) << aper_order >> PAGE_SHIFT;
+#ifdef CONFIG_PROC_VMCORE
+	WARN_ON(register_oldmem_pfn_is_ram(&gart_mem_pfn_is_ram));
+#endif
+#ifdef CONFIG_PROC_KCORE
+	WARN_ON(register_mem_pfn_is_ram(&gart_mem_pfn_is_ram));
+#endif
+}
+#else
+static void exclude_from_core(u64 aper_base, u32 aper_order)
+>>>>>>> v4.19.83
 {
 }
 #endif
@@ -469,7 +494,11 @@ out:
 			 * may have allocated the range over its e820 RAM
 			 * and fixed up the northbridge
 			 */
+<<<<<<< HEAD
 			exclude_from_vmcore(last_aper_base, last_aper_order);
+=======
+			exclude_from_core(last_aper_base, last_aper_order);
+>>>>>>> v4.19.83
 
 			return 1;
 		}
@@ -515,7 +544,11 @@ out:
 	 * overlap with the first kernel's memory. We can't access the
 	 * range through vmcore even though it should be part of the dump.
 	 */
+<<<<<<< HEAD
 	exclude_from_vmcore(aper_alloc, aper_order);
+=======
+	exclude_from_core(aper_alloc, aper_order);
+>>>>>>> v4.19.83
 
 	/* Fix up the north bridges */
 	for (i = 0; i < amd_nb_bus_dev_ranges[i].dev_limit; i++) {

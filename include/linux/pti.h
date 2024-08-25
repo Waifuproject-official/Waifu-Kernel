@@ -6,6 +6,10 @@
 #include <asm/pti.h>
 #else
 static inline void pti_init(void) { }
+<<<<<<< HEAD
+=======
+static inline void pti_finalize(void) { }
+>>>>>>> v4.19.83
 #endif
 
 #endif

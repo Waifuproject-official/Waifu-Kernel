@@ -65,4 +65,9 @@ obj-$(CONFIG_USB_COMMON)	+= common/
 obj-$(CONFIG_USBIP_CORE)	+= usbip/
 
 obj-$(CONFIG_TYPEC)		+= typec/
+<<<<<<< HEAD
 obj-$(CONFIG_USB_PD)		+= pd/
+=======
+
+obj-$(CONFIG_USB_ROLE_SWITCH)	+= roles/
+>>>>>>> v4.19.83

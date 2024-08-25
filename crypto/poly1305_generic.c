@@ -47,7 +47,11 @@ int crypto_poly1305_init(struct shash_desc *desc)
 }
 EXPORT_SYMBOL_GPL(crypto_poly1305_init);
 
+<<<<<<< HEAD
 void poly1305_core_setkey(struct poly1305_key *key, const u8 *raw_key)
+=======
+static void poly1305_setrkey(struct poly1305_desc_ctx *dctx, const u8 *key)
+>>>>>>> v4.19.83
 {
 	/* r &= 0xffffffc0ffffffc0ffffffc0fffffff */
 	key->r[0] = (get_unaligned_le32(raw_key +  0) >> 0) & 0x3ffffff;
@@ -215,6 +219,10 @@ EXPORT_SYMBOL_GPL(crypto_poly1305_update);
 
 void poly1305_core_emit(const struct poly1305_state *state, void *dst)
 {
+<<<<<<< HEAD
+=======
+	struct poly1305_desc_ctx *dctx = shash_desc_ctx(desc);
+>>>>>>> v4.19.83
 	u32 h0, h1, h2, h3, h4;
 	u32 g0, g1, g2, g3, g4;
 	u32 mask;
@@ -280,6 +288,7 @@ int crypto_poly1305_final(struct shash_desc *desc, u8 *dst)
 	poly1305_core_emit(&dctx->h, digest);
 
 	/* mac = (h + s) % (2^128) */
+<<<<<<< HEAD
 	f = (f >> 32) + le32_to_cpu(digest[0]) + dctx->s[0];
 	put_unaligned_le32(f, dst + 0);
 	f = (f >> 32) + le32_to_cpu(digest[1]) + dctx->s[1];
@@ -288,6 +297,12 @@ int crypto_poly1305_final(struct shash_desc *desc, u8 *dst)
 	put_unaligned_le32(f, dst + 8);
 	f = (f >> 32) + le32_to_cpu(digest[3]) + dctx->s[3];
 	put_unaligned_le32(f, dst + 12);
+=======
+	f = (f >> 32) + h0 + dctx->s[0]; put_unaligned_le32(f, dst +  0);
+	f = (f >> 32) + h1 + dctx->s[1]; put_unaligned_le32(f, dst +  4);
+	f = (f >> 32) + h2 + dctx->s[2]; put_unaligned_le32(f, dst +  8);
+	f = (f >> 32) + h3 + dctx->s[3]; put_unaligned_le32(f, dst + 12);
+>>>>>>> v4.19.83
 
 	return 0;
 }
@@ -303,8 +318,6 @@ static struct shash_alg poly1305_alg = {
 		.cra_name		= "poly1305",
 		.cra_driver_name	= "poly1305-generic",
 		.cra_priority		= 100,
-		.cra_flags		= CRYPTO_ALG_TYPE_SHASH,
-		.cra_alignmask		= sizeof(u32) - 1,
 		.cra_blocksize		= POLY1305_BLOCK_SIZE,
 		.cra_module		= THIS_MODULE,
 	},

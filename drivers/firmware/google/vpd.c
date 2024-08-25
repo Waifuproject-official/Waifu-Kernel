@@ -100,8 +100,8 @@ static int vpd_section_check_key_name(const u8 *key, s32 key_len)
 	return VPD_OK;
 }
 
-static int vpd_section_attrib_add(const u8 *key, s32 key_len,
-				  const u8 *value, s32 value_len,
+static int vpd_section_attrib_add(const u8 *key, u32 key_len,
+				  const u8 *value, u32 value_len,
 				  void *arg)
 {
 	int ret;
@@ -289,9 +289,10 @@ static int vpd_sections_init(phys_addr_t physaddr)
 	return 0;
 }
 
-static int vpd_probe(struct platform_device *pdev)
+static int vpd_probe(struct coreboot_device *dev)
 {
 	int ret;
+<<<<<<< HEAD
 	struct lb_cbmem_ref entry;
 
 	ret = coreboot_table_find(CB_TAG_VPD, &entry, sizeof(entry));
@@ -343,19 +344,58 @@ static int __init vpd_platform_init(void)
 	if (IS_ERR(vpd_pdev)) {
 		platform_driver_unregister(&vpd_driver);
 		return PTR_ERR(vpd_pdev);
+=======
+
+	vpd_kobj = kobject_create_and_add("vpd", firmware_kobj);
+	if (!vpd_kobj)
+		return -ENOMEM;
+
+	ret = vpd_sections_init(dev->cbmem_ref.cbmem_addr);
+	if (ret) {
+		kobject_put(vpd_kobj);
+		return ret;
+>>>>>>> v4.19.83
 	}
 
 	return 0;
 }
 
-static void __exit vpd_platform_exit(void)
+static int vpd_remove(struct coreboot_device *dev)
 {
+<<<<<<< HEAD
 	platform_device_unregister(vpd_pdev);
 	platform_driver_unregister(&vpd_driver);
+=======
+	vpd_section_destroy(&ro_vpd);
+	vpd_section_destroy(&rw_vpd);
+
+	kobject_put(vpd_kobj);
+
+	return 0;
+>>>>>>> v4.19.83
 }
 
-module_init(vpd_platform_init);
-module_exit(vpd_platform_exit);
+static struct coreboot_driver vpd_driver = {
+	.probe = vpd_probe,
+	.remove = vpd_remove,
+	.drv = {
+		.name = "vpd",
+	},
+	.tag = CB_TAG_VPD,
+};
+
+static int __init coreboot_vpd_init(void)
+{
+	return coreboot_driver_register(&vpd_driver);
+}
+
+static void __exit coreboot_vpd_exit(void)
+{
+	coreboot_driver_unregister(&vpd_driver);
+}
+
+module_init(coreboot_vpd_init);
+module_exit(coreboot_vpd_exit);
 
 MODULE_AUTHOR("Google, Inc.");
 MODULE_LICENSE("GPL");

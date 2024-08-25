@@ -469,7 +469,7 @@ char *smk_parse_smack(const char *string, int len)
 	if (i == 0 || i >= SMK_LONGLABEL)
 		return ERR_PTR(-EINVAL);
 
-	smack = kzalloc(i + 1, GFP_KERNEL);
+	smack = kzalloc(i + 1, GFP_NOFS);
 	if (smack == NULL)
 		return ERR_PTR(-ENOMEM);
 
@@ -504,7 +504,7 @@ int smk_netlbl_mls(int level, char *catset, struct netlbl_lsm_secattr *sap,
 			if ((m & *cp) == 0)
 				continue;
 			rc = netlbl_catmap_setbit(&sap->attr.mls.cat,
-						  cat, GFP_KERNEL);
+						  cat, GFP_NOFS);
 			if (rc < 0) {
 				netlbl_catmap_free(sap->attr.mls.cat);
 				return rc;
@@ -540,7 +540,7 @@ struct smack_known *smk_import_entry(const char *string, int len)
 	if (skp != NULL)
 		goto freeout;
 
-	skp = kzalloc(sizeof(*skp), GFP_KERNEL);
+	skp = kzalloc(sizeof(*skp), GFP_NOFS);
 	if (skp == NULL) {
 		skp = ERR_PTR(-ENOMEM);
 		goto freeout;
@@ -623,26 +623,24 @@ struct smack_known *smack_from_secid(const u32 secid)
 LIST_HEAD(smack_onlycap_list);
 DEFINE_MUTEX(smack_onlycap_lock);
 
-/*
+/**
+ * smack_privileged_cred - are all privilege requirements met by cred
+ * @cap: The requested capability
+ * @cred: the credential to use
+ *
  * Is the task privileged and allowed to be privileged
  * by the onlycap rule.
  *
  * Returns true if the task is allowed to be privileged, false if it's not.
  */
-bool smack_privileged(int cap)
+bool smack_privileged_cred(int cap, const struct cred *cred)
 {
-	struct smack_known *skp = smk_of_current();
+	struct task_smack *tsp = cred->security;
+	struct smack_known *skp = tsp->smk_task;
 	struct smack_known_list_elem *sklep;
 	int rc;
 
-	/*
-	 * All kernel tasks are privileged
-	 */
-	if (unlikely(current->flags & PF_KTHREAD))
-		return true;
-
-	rc = cap_capable(current_cred(), &init_user_ns, cap,
-				SECURITY_CAP_AUDIT);
+	rc = cap_capable(cred, &init_user_ns, cap, SECURITY_CAP_AUDIT);
 	if (rc)
 		return false;
 
@@ -661,4 +659,24 @@ bool smack_privileged(int cap)
 	rcu_read_unlock();
 
 	return false;
+}
+
+/**
+ * smack_privileged - are all privilege requirements met
+ * @cap: The requested capability
+ *
+ * Is the task privileged and allowed to be privileged
+ * by the onlycap rule.
+ *
+ * Returns true if the task is allowed to be privileged, false if it's not.
+ */
+bool smack_privileged(int cap)
+{
+	/*
+	 * All kernel tasks are privileged
+	 */
+	if (unlikely(current->flags & PF_KTHREAD))
+		return true;
+
+	return smack_privileged_cred(cap, current_cred());
 }

@@ -15,7 +15,11 @@
 #include <linux/types.h>
 #include <linux/refcount.h>
 #include <linux/workqueue.h>
+<<<<<<< HEAD
 //#include "flask.h"
+=======
+#include "flask.h"
+>>>>>>> v4.19.83
 
 #define SECSID_NULL			0x00000000 /* unspecified SID */
 #define SECSID_WILD			0xffffffff /* wildcard SID */
@@ -81,7 +85,11 @@ enum {
 };
 #define POLICYDB_CAPABILITY_MAX (__POLICYDB_CAPABILITY_MAX - 1)
 
+<<<<<<< HEAD
 extern const char *selinux_policycap_names[__POLICYDB_CAPABILITY_MAX];
+=======
+extern char *selinux_policycap_names[__POLICYDB_CAPABILITY_MAX];
+>>>>>>> v4.19.83
 
 /*
  * type_datum properties
@@ -390,6 +398,9 @@ extern int selinux_nlmsg_lookup(u16 sclass, u16 nlmsg_type, u32 *perm);
 extern void avtab_cache_init(void);
 extern void ebitmap_cache_init(void);
 extern void hashtab_cache_init(void);
+<<<<<<< HEAD
 extern int security_sidtab_hash_stats(struct selinux_state *state, char *page);
+=======
+>>>>>>> v4.19.83
 
 #endif /* _SELINUX_SECURITY_H_ */

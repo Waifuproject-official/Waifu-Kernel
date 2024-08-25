@@ -33,7 +33,6 @@
 #include <linux/swap.h>
 #include <linux/stddef.h>
 #include <linux/vmalloc.h>
-#include <linux/memblock.h>
 #include <linux/slab.h>
 #include <linux/hugetlb.h>
 
@@ -47,21 +46,14 @@
 #include <asm/smp.h>
 #include <asm/machdep.h>
 #include <asm/tlb.h>
-#include <asm/trace.h>
 #include <asm/processor.h>
 #include <asm/cputable.h>
 #include <asm/sections.h>
 #include <asm/firmware.h>
 #include <asm/dma.h>
-#include <asm/powernv.h>
 
 #include "mmu_decl.h"
 
-#ifdef CONFIG_PPC_STD_MMU_64
-#if TASK_SIZE_USER64 > (1UL << (ESID_BITS + SID_SHIFT))
-#error TASK_SIZE_USER64 exceeds user VSID range
-#endif
-#endif
 
 #ifdef CONFIG_PPC_BOOK3S_64
 /*
@@ -80,8 +72,8 @@ unsigned long __pud_index_size;
 EXPORT_SYMBOL(__pud_index_size);
 unsigned long __pgd_index_size;
 EXPORT_SYMBOL(__pgd_index_size);
-unsigned long __pmd_cache_index;
-EXPORT_SYMBOL(__pmd_cache_index);
+unsigned long __pud_cache_index;
+EXPORT_SYMBOL(__pud_cache_index);
 unsigned long __pte_table_size;
 EXPORT_SYMBOL(__pte_table_size);
 unsigned long __pmd_table_size;
@@ -244,20 +236,8 @@ void __iomem * ioremap_prot(phys_addr_t addr, unsigned long size,
 	/*
 	 * Force kernel mapping.
 	 */
-#if defined(CONFIG_PPC_BOOK3S_64)
-	flags |= _PAGE_PRIVILEGED;
-#else
 	flags &= ~_PAGE_USER;
-#endif
-
-
-#ifdef _PAGE_BAP_SR
-	/* _PAGE_USER contains _PAGE_BAP_SR on BookE using the new PTE format
-	 * which means that we just cleared supervisor access... oops ;-) This
-	 * restores it
-	 */
-	flags |= _PAGE_BAP_SR;
-#endif
+	flags |= _PAGE_PRIVILEGED;
 
 	if (ppc_md.ioremap)
 		return ppc_md.ioremap(addr, size, flags, caller);
@@ -331,6 +311,7 @@ struct page *pmd_page(pmd_t pmd)
 	return virt_to_page(pmd_page_vaddr(pmd));
 }
 
+<<<<<<< HEAD
 #ifdef CONFIG_PPC_64K_PAGES
 static pte_t *get_from_cache(struct mm_struct *mm)
 {
@@ -496,6 +477,8 @@ void mmu_partition_table_set_entry(unsigned int lpid, unsigned long dw0,
 EXPORT_SYMBOL_GPL(mmu_partition_table_set_entry);
 #endif /* CONFIG_PPC_BOOK3S_64 */
 
+=======
+>>>>>>> v4.19.83
 #ifdef CONFIG_STRICT_KERNEL_RWX
 void mark_rodata_ro(void)
 {

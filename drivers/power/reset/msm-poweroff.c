@@ -55,8 +55,16 @@ static bool scm_pmic_arbiter_disable_supported;
 static bool scm_deassert_ps_hold_supported;
 /* Download mode master kill-switch */
 static void __iomem *msm_ps_hold;
+<<<<<<< HEAD
 static phys_addr_t tcsr_boot_misc_detect;
 static void scm_disable_sdi(void);
+=======
+static int deassert_pshold(struct notifier_block *nb, unsigned long action,
+			   void *data)
+{
+	writel(0, msm_ps_hold);
+	mdelay(10000);
+>>>>>>> v4.19.83
 
 /*
  * Runtime could be only changed value once.
@@ -110,8 +118,14 @@ static int panic_prep_restart(struct notifier_block *this,
 	return NOTIFY_DONE;
 }
 
+<<<<<<< HEAD
 static struct notifier_block panic_blk = {
 	.notifier_call	= panic_prep_restart,
+=======
+static struct notifier_block restart_nb = {
+	.notifier_call = deassert_pshold,
+	.priority = 128,
+>>>>>>> v4.19.83
 };
 
 int scm_set_dload_mode(int arg1, int arg2)
@@ -414,6 +428,7 @@ static void do_msm_restart(enum reboot_mode reboot_mode, const char *cmd)
 
 static void do_msm_poweroff(void)
 {
+<<<<<<< HEAD
 	pr_notice("Powering off the SoC\n");
 
 	set_dload_mode(0);
@@ -425,6 +440,9 @@ static void do_msm_poweroff(void)
 
 	msleep(10000);
 	pr_err("Powering off has failed\n");
+=======
+	deassert_pshold(&restart_nb, 0, NULL);
+>>>>>>> v4.19.83
 }
 
 #ifdef CONFIG_QCOM_DLOAD_MODE

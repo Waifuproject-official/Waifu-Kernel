@@ -782,9 +782,12 @@ int f2fs_fill_dentries(struct dir_context *ctx, struct f2fs_dentry_ptr *d,
 	struct f2fs_dir_entry *de = NULL;
 	struct fscrypt_str de_name = FSTR_INIT(NULL, 0);
 	struct f2fs_sb_info *sbi = F2FS_I_SB(d->inode);
+<<<<<<< HEAD
 	struct blk_plug plug;
 	bool readdir_ra = sbi->readdir_ra == 1;
 	int err = 0;
+=======
+>>>>>>> v4.19.83
 
 	bit_pos = ((unsigned long)ctx->pos % d->max);
 
@@ -846,6 +849,13 @@ int f2fs_fill_dentries(struct dir_context *ctx, struct f2fs_dentry_ptr *d,
 		if (readdir_ra)
 			f2fs_ra_node_page(sbi, le32_to_cpu(de->ino));
 
+<<<<<<< HEAD
+=======
+		if (sbi->readdir_ra == 1)
+			f2fs_ra_node_page(sbi, le32_to_cpu(de->ino));
+
+		bit_pos += GET_DENTRY_SLOTS(le16_to_cpu(de->name_len));
+>>>>>>> v4.19.83
 		ctx->pos = start_pos + bit_pos;
 	}
 out:
@@ -896,7 +906,11 @@ static int f2fs_readdir(struct file *file, struct dir_context *ctx)
 			page_cache_sync_readahead(inode->i_mapping, ra, file, n,
 				min(npages - n, (pgoff_t)MAX_DIR_RA_PAGES));
 
+<<<<<<< HEAD
 		dentry_page = f2fs_find_data_page(inode, n);
+=======
+		dentry_page = f2fs_get_lock_data_page(inode, n, false);
+>>>>>>> v4.19.83
 		if (IS_ERR(dentry_page)) {
 			err = PTR_ERR(dentry_page);
 			if (err == -ENOENT) {
@@ -914,11 +928,19 @@ static int f2fs_readdir(struct file *file, struct dir_context *ctx)
 		err = f2fs_fill_dentries(ctx, &d,
 				n * NR_DENTRY_IN_BLOCK, &fstr);
 		if (err) {
+<<<<<<< HEAD
 			f2fs_put_page(dentry_page, 0);
 			break;
 		}
 
 		f2fs_put_page(dentry_page, 0);
+=======
+			f2fs_put_page(dentry_page, 1);
+			break;
+		}
+
+		f2fs_put_page(dentry_page, 1);
+>>>>>>> v4.19.83
 	}
 out_free:
 	fscrypt_fname_free_buffer(&fstr);

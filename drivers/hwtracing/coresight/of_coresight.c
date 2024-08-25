@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* Copyright (c) 2012, 2017-2019 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -8,6 +9,11 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+=======
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  */
 
 #include <linux/types.h>
@@ -78,7 +84,8 @@ static int of_coresight_alloc_memory(struct device *dev,
 			struct coresight_platform_data *pdata)
 {
 	/* List of output port on this component */
-	pdata->outports = devm_kzalloc(dev, pdata->nr_outport *
+	pdata->outports = devm_kcalloc(dev,
+				       pdata->nr_outport,
 				       sizeof(*pdata->outports),
 				       GFP_KERNEL);
 	if (!pdata->outports)
@@ -91,14 +98,16 @@ static int of_coresight_alloc_memory(struct device *dev,
 		return -ENOMEM;
 
 	/* Children connected to this component via @outports */
-	pdata->child_names = devm_kzalloc(dev, pdata->nr_outport *
+	pdata->child_names = devm_kcalloc(dev,
+					  pdata->nr_outport,
 					  sizeof(*pdata->child_names),
 					  GFP_KERNEL);
 	if (!pdata->child_names)
 		return -ENOMEM;
 
 	/* Port number on the child this component is connected to */
-	pdata->child_ports = devm_kzalloc(dev, pdata->nr_outport *
+	pdata->child_ports = devm_kcalloc(dev,
+					  pdata->nr_outport,
 					  sizeof(*pdata->child_ports),
 					  GFP_KERNEL);
 	if (!pdata->child_ports)
@@ -113,6 +122,7 @@ int of_coresight_get_cpu(const struct device_node *node)
 	struct device_node *dn;
 
 	dn = of_parse_phandle(node, "cpu", 0);
+<<<<<<< HEAD
 	/* Affinity defaults to invalid */
 	if (!dn)
 		return -ENODEV;
@@ -120,6 +130,16 @@ int of_coresight_get_cpu(const struct device_node *node)
 	of_node_put(dn);
 
 	return cpu;
+=======
+	/* Affinity defaults to CPU0 */
+	if (!dn)
+		return 0;
+	cpu = of_cpu_node_to_id(dn);
+	of_node_put(dn);
+
+	/* Affinity to CPU0 if no cpu nodes are found */
+	return (cpu < 0) ? 0 : cpu;
+>>>>>>> v4.19.83
 }
 EXPORT_SYMBOL_GPL(of_coresight_get_cpu);
 

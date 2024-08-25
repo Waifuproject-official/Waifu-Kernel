@@ -8,6 +8,10 @@
 
 /* The maximal number of PEBS events: */
 #define MAX_PEBS_EVENTS		8
+<<<<<<< HEAD
+=======
+#define MAX_FIXED_PEBS_EVENTS	3
+>>>>>>> v4.19.83
 
 /*
  * A debug store configuration.
@@ -23,7 +27,11 @@ struct debug_store {
 	u64	pebs_index;
 	u64	pebs_absolute_maximum;
 	u64	pebs_interrupt_threshold;
+<<<<<<< HEAD
 	u64	pebs_event_reset[MAX_PEBS_EVENTS];
+=======
+	u64	pebs_event_reset[MAX_PEBS_EVENTS + MAX_FIXED_PEBS_EVENTS];
+>>>>>>> v4.19.83
 } __aligned(PAGE_SIZE);
 
 DECLARE_PER_CPU_PAGE_ALIGNED(struct debug_store, cpu_debug_store);

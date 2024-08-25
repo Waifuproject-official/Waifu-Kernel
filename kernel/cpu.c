@@ -86,19 +86,19 @@ static struct lockdep_map cpuhp_state_down_map =
 	STATIC_LOCKDEP_MAP_INIT("cpuhp_state-down", &cpuhp_state_down_map);
 
 
-static void inline cpuhp_lock_acquire(bool bringup)
+static inline void cpuhp_lock_acquire(bool bringup)
 {
 	lock_map_acquire(bringup ? &cpuhp_state_up_map : &cpuhp_state_down_map);
 }
 
-static void inline cpuhp_lock_release(bool bringup)
+static inline void cpuhp_lock_release(bool bringup)
 {
 	lock_map_release(bringup ? &cpuhp_state_up_map : &cpuhp_state_down_map);
 }
 #else
 
-static void inline cpuhp_lock_acquire(bool bringup) { }
-static void inline cpuhp_lock_release(bool bringup) { }
+static inline void cpuhp_lock_acquire(bool bringup) { }
+static inline void cpuhp_lock_release(bool bringup) { }
 
 #endif
 
@@ -107,8 +107,6 @@ static void inline cpuhp_lock_release(bool bringup) { }
  * @name:	Name of the step
  * @startup:	Startup function of the step
  * @teardown:	Teardown function of the step
- * @skip_onerr:	Do not invoke the functions on error rollback
- *		Will go away once the notifiers	are gone
  * @cant_stop:	Bringup/teardown can't be stopped at this step
  */
 struct cpuhp_step {
@@ -124,30 +122,16 @@ struct cpuhp_step {
 					 struct hlist_node *node);
 	} teardown;
 	struct hlist_head	list;
-	bool			skip_onerr;
 	bool			cant_stop;
 	bool			multi_instance;
 };
 
 static DEFINE_MUTEX(cpuhp_state_mutex);
-static struct cpuhp_step cpuhp_bp_states[];
-static struct cpuhp_step cpuhp_ap_states[];
-
-static bool cpuhp_is_ap_state(enum cpuhp_state state)
-{
-	/*
-	 * The extra check for CPUHP_TEARDOWN_CPU is only for documentation
-	 * purposes as that state is handled explicitly in cpu_down.
-	 */
-	return state > CPUHP_BRINGUP_CPU && state != CPUHP_TEARDOWN_CPU;
-}
+static struct cpuhp_step cpuhp_hp_states[];
 
 static struct cpuhp_step *cpuhp_get_step(enum cpuhp_state state)
 {
-	struct cpuhp_step *sp;
-
-	sp = cpuhp_is_ap_state(state) ? cpuhp_ap_states : cpuhp_bp_states;
-	return sp + state;
+	return cpuhp_hp_states + state;
 }
 
 /**
@@ -245,6 +229,15 @@ err:
 }
 
 #ifdef CONFIG_SMP
+static bool cpuhp_is_ap_state(enum cpuhp_state state)
+{
+	/*
+	 * The extra check for CPUHP_TEARDOWN_CPU is only for documentation
+	 * purposes as that state is handled explicitly in cpu_down.
+	 */
+	return state > CPUHP_BRINGUP_CPU && state != CPUHP_TEARDOWN_CPU;
+}
+
 static inline void wait_for_ap_thread(struct cpuhp_cpu_state *st, bool bringup)
 {
 	struct completion *done = bringup ? &st->done_up : &st->done_down;
@@ -299,6 +292,12 @@ void cpus_read_lock(void)
 	percpu_down_read(&cpu_hotplug_lock);
 }
 EXPORT_SYMBOL_GPL(cpus_read_lock);
+
+int cpus_read_trylock(void)
+{
+	return percpu_down_read_trylock(&cpu_hotplug_lock);
+}
+EXPORT_SYMBOL_GPL(cpus_read_trylock);
 
 void cpus_read_unlock(void)
 {
@@ -543,12 +542,22 @@ static int bringup_cpu(unsigned int cpu)
 
 static void undo_cpu_up(unsigned int cpu, struct cpuhp_cpu_state *st)
 {
-	for (st->state--; st->state > st->target; st->state--) {
-		struct cpuhp_step *step = cpuhp_get_step(st->state);
+	for (st->state--; st->state > st->target; st->state--)
+		cpuhp_invoke_callback(cpu, st->state, false, NULL, NULL);
+}
 
-		if (!step->skip_onerr)
-			cpuhp_invoke_callback(cpu, st->state, false, NULL, NULL);
-	}
+static inline bool can_rollback_cpu(struct cpuhp_cpu_state *st)
+{
+	if (IS_ENABLED(CONFIG_HOTPLUG_CPU))
+		return true;
+	/*
+	 * When CPU hotplug is disabled, then taking the CPU down is not
+	 * possible because takedown_cpu() and the architecture and
+	 * subsystem specific mechanisms are not available. So the CPU
+	 * which would be completely unplugged again needs to stay around
+	 * in the current state.
+	 */
+	return st->state <= CPUHP_BRINGUP_CPU;
 }
 
 static inline bool can_rollback_cpu(struct cpuhp_cpu_state *st)
@@ -653,12 +662,6 @@ static void cpuhp_thread_fun(unsigned int cpu)
 
 	WARN_ON_ONCE(!cpuhp_is_ap_state(state));
 
-	if (st->rollback) {
-		struct cpuhp_step *step = cpuhp_get_step(state);
-		if (step->skip_onerr)
-			goto next;
-	}
-
 	if (cpuhp_is_atomic_state(state)) {
 		local_irq_disable();
 		st->result = cpuhp_invoke_callback(cpu, state, bringup, st->node, &st->last);
@@ -682,7 +685,6 @@ static void cpuhp_thread_fun(unsigned int cpu)
 		st->should_run = false;
 	}
 
-next:
 	cpuhp_lock_release(bringup);
 
 	if (!st->should_run)
@@ -880,8 +882,8 @@ static int takedown_cpu(unsigned int cpu)
 	BUG_ON(cpu_online(cpu));
 
 	/*
-	 * The CPUHP_AP_SCHED_MIGRATE_DYING callback will have removed all
-	 * runnable tasks from the cpu, there's only the idle task left now
+	 * The teardown callback for CPUHP_AP_SCHED_STARTING will have removed
+	 * all runnable tasks from the CPU, there's only the idle task left now
 	 * that the migration thread is done doing the stop_machine thing.
 	 *
 	 * Wait for the stop thread to go away.
@@ -925,12 +927,8 @@ void cpuhp_report_idle_dead(void)
 
 static void undo_cpu_down(unsigned int cpu, struct cpuhp_cpu_state *st)
 {
-	for (st->state++; st->state < st->target; st->state++) {
-		struct cpuhp_step *step = cpuhp_get_step(st->state);
-
-		if (!step->skip_onerr)
-			cpuhp_invoke_callback(cpu, st->state, true, NULL, NULL);
-	}
+	for (st->state++; st->state < st->target; st->state++)
+		cpuhp_invoke_callback(cpu, st->state, true, NULL, NULL);
 }
 
 static int cpuhp_down_callbacks(unsigned int cpu, struct cpuhp_cpu_state *st,
@@ -1421,7 +1419,7 @@ int __boot_cpu_id;
 #endif /* CONFIG_SMP */
 
 /* Boot processor state steps */
-static struct cpuhp_step cpuhp_bp_states[] = {
+static struct cpuhp_step cpuhp_hp_states[] = {
 	[CPUHP_OFFLINE] = {
 		.name			= "offline",
 		.startup.single		= NULL,
@@ -1475,7 +1473,11 @@ static struct cpuhp_step cpuhp_bp_states[] = {
 	 * otherwise a RCU stall occurs.
 	 */
 	[CPUHP_TIMERS_PREPARE] = {
+<<<<<<< HEAD
 		.name			= "timers:dead",
+=======
+		.name			= "timers:prepare",
+>>>>>>> v4.19.83
 		.startup.single		= timers_prepare_cpu,
 		.teardown.single	= timers_dead_cpu,
 	},
@@ -1486,6 +1488,7 @@ static struct cpuhp_step cpuhp_bp_states[] = {
 		.teardown.single	= NULL,
 		.cant_stop		= true,
 	},
+<<<<<<< HEAD
 	/*
 	 * Handled on controll processor until the plugged processor manages
 	 * this itself.
@@ -1504,6 +1507,8 @@ static struct cpuhp_step cpuhp_bp_states[] = {
 /* Application processor state steps */
 static struct cpuhp_step cpuhp_ap_states[] = {
 #ifdef CONFIG_SMP
+=======
+>>>>>>> v4.19.83
 	/* Final state before CPU kills itself */
 	[CPUHP_AP_IDLE_DEAD] = {
 		.name			= "idle:dead",
@@ -1527,23 +1532,42 @@ static struct cpuhp_step cpuhp_ap_states[] = {
 		.startup.single		= NULL,
 		.teardown.single	= rcutree_dying_cpu,
 	},
+<<<<<<< HEAD
 	[CPUHP_AP_KMAP_DYING] = {
 		.name			= "KMAP:dying",
 		.startup.single		= NULL,
 		.teardown.single	= kmap_remove_unused_cpu,
 	},
+=======
+>>>>>>> v4.19.83
 	[CPUHP_AP_SMPCFD_DYING] = {
 		.name			= "smpcfd:dying",
 		.startup.single		= NULL,
 		.teardown.single	= smpcfd_dying_cpu,
 	},
+<<<<<<< HEAD
 #ifndef CONFIG_CLOCK_CPU_OSM
+=======
+>>>>>>> v4.19.83
 	/* Entry state on starting. Interrupts enabled from here on. Transient
 	 * state for synchronsization */
 	[CPUHP_AP_ONLINE] = {
 		.name			= "ap:online",
 	},
+<<<<<<< HEAD
 #endif
+=======
+	/*
+	 * Handled on controll processor until the plugged processor manages
+	 * this itself.
+	 */
+	[CPUHP_TEARDOWN_CPU] = {
+		.name			= "cpu:teardown",
+		.startup.single		= NULL,
+		.teardown.single	= takedown_cpu,
+		.cant_stop		= true,
+	},
+>>>>>>> v4.19.83
 	/* Handle smpboot threads park/unpark */
 	[CPUHP_AP_SMPBOOT_THREADS] = {
 		.name			= "smpboot/threads:online",
@@ -1559,6 +1583,11 @@ static struct cpuhp_step cpuhp_ap_states[] = {
 		.name			= "perf:online",
 		.startup.single		= perf_event_restart_events,
 		.teardown.single	= perf_event_exit_cpu,
+	},
+	[CPUHP_AP_WATCHDOG_ONLINE] = {
+		.name			= "lockup_detector:online",
+		.startup.single		= lockup_detector_online_cpu,
+		.teardown.single	= lockup_detector_offline_cpu,
 	},
 	[CPUHP_AP_WORKQUEUE_ONLINE] = {
 		.name			= "workqueue:online",
@@ -1612,11 +1641,11 @@ static int cpuhp_reserve_state(enum cpuhp_state state)
 
 	switch (state) {
 	case CPUHP_AP_ONLINE_DYN:
-		step = cpuhp_ap_states + CPUHP_AP_ONLINE_DYN;
+		step = cpuhp_hp_states + CPUHP_AP_ONLINE_DYN;
 		end = CPUHP_AP_ONLINE_DYN_END;
 		break;
 	case CPUHP_BP_PREPARE_DYN:
-		step = cpuhp_bp_states + CPUHP_BP_PREPARE_DYN;
+		step = cpuhp_hp_states + CPUHP_BP_PREPARE_DYN;
 		end = CPUHP_BP_PREPARE_DYN_END;
 		break;
 	default:
@@ -2045,6 +2074,9 @@ static ssize_t write_cpuhp_fail(struct device *dev,
 	if (ret)
 		return ret;
 
+	if (fail < CPUHP_OFFLINE || fail > CPUHP_ONLINE)
+		return -EINVAL;
+
 	/*
 	 * Cannot fail STARTING/DYING callbacks.
 	 */
@@ -2155,7 +2187,11 @@ static void cpuhp_online_cpu_device(unsigned int cpu)
 	kobject_uevent(&dev->kobj, KOBJ_ONLINE);
 }
 
+<<<<<<< HEAD
 static int cpuhp_smt_disable(enum cpuhp_smt_control ctrlval)
+=======
+int cpuhp_smt_disable(enum cpuhp_smt_control ctrlval)
+>>>>>>> v4.19.83
 {
 	int cpu, ret = 0;
 
@@ -2189,7 +2225,11 @@ static int cpuhp_smt_disable(enum cpuhp_smt_control ctrlval)
 	return ret;
 }
 
+<<<<<<< HEAD
 static int cpuhp_smt_enable(void)
+=======
+int cpuhp_smt_enable(void)
+>>>>>>> v4.19.83
 {
 	int cpu, ret = 0;
 
@@ -2423,6 +2463,7 @@ void __init boot_cpu_hotplug_init(void)
 	this_cpu_write(cpuhp_state.state, CPUHP_ONLINE);
 }
 
+<<<<<<< HEAD
 static ATOMIC_NOTIFIER_HEAD(idle_notifier);
 
 void idle_notifier_register(struct notifier_block *n)
@@ -2442,3 +2483,22 @@ void idle_notifier_call_chain(unsigned long val)
 	atomic_notifier_call_chain(&idle_notifier, val, NULL);
 }
 EXPORT_SYMBOL_GPL(idle_notifier_call_chain);
+=======
+enum cpu_mitigations cpu_mitigations __ro_after_init = CPU_MITIGATIONS_AUTO;
+
+static int __init mitigations_parse_cmdline(char *arg)
+{
+	if (!strcmp(arg, "off"))
+		cpu_mitigations = CPU_MITIGATIONS_OFF;
+	else if (!strcmp(arg, "auto"))
+		cpu_mitigations = CPU_MITIGATIONS_AUTO;
+	else if (!strcmp(arg, "auto,nosmt"))
+		cpu_mitigations = CPU_MITIGATIONS_AUTO_NOSMT;
+	else
+		pr_crit("Unsupported mitigations=%s, system may still be vulnerable\n",
+			arg);
+
+	return 0;
+}
+early_param("mitigations", mitigations_parse_cmdline);
+>>>>>>> v4.19.83

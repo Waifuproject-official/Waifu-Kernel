@@ -8,11 +8,13 @@
 
 #include "omap36xx.dtsi"
 #include "logicpd-som-lv.dtsi"
+#include "logicpd-som-lv-baseboard.dtsi"
 #include "omap-gpmc-smsc9221.dtsi"
 
 / {
 	model = "LogicPD Zoom DM3730 SOM-LV Development Kit";
 	compatible = "logicpd,dm3730-som-lv-devkit", "ti,omap3630", "ti,omap3";
+<<<<<<< HEAD
 
 	gpio_keys {
 		compatible = "gpio-keys";
@@ -261,4 +263,6 @@
 	phy-names = "usb2-phy";
 	mode = <3>;
 	power = <50>;
+=======
+>>>>>>> v4.19.83
 };

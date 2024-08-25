@@ -20,9 +20,15 @@ void calc_runnable_avg_yN_inv(const int halflife)
 	int i;
 	unsigned int x;
 
+<<<<<<< HEAD
         /* To silence -Wunused-but-set-variable warnings. */
 	printf("static const u32 runnable_avg_yN_inv[] __maybe_unused = {");
 	for (i = 0; i < halflife; i++) {
+=======
+	/* To silence -Wunused-but-set-variable warnings. */
+	printf("static const u32 runnable_avg_yN_inv[] __maybe_unused = {");
+	for (i = 0; i < HALFLIFE; i++) {
+>>>>>>> v4.19.83
 		x = ((1UL<<32)-1)*pow(y, i);
 
 		if (i % 4 == 0) printf("\n\t");

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Copyright (c) 2013, 2017-2018, The Linux Foundation. All rights reserved.
  *
@@ -10,12 +11,18 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+/* Copyright (c) 2013, 2018, The Linux Foundation. All rights reserved. */
+>>>>>>> v4.19.83
 
 #ifndef __QCOM_CLK_RCG_H__
 #define __QCOM_CLK_RCG_H__
 
 #include <linux/clk-provider.h>
 #include "clk-regmap.h"
+
+#define F(f, s, h, m, n) { (f), (s), (2 * (h) - 1), (m), (n) }
 
 struct freq_tbl {
 	unsigned long freq;
@@ -25,16 +32,6 @@ struct freq_tbl {
 	u16 n;
 	unsigned long src_freq;
 #define FIXED_FREQ_SRC   0
-};
-
-/**
- * struct parent_map - map table for PLL source select configuration values
- * @src: source PLL
- * @cfg: configuration value
- */
-struct parent_map {
-	u8 src;
-	u8 cfg;
 };
 
 /**
@@ -156,10 +153,14 @@ extern const struct clk_ops clk_dyn_rcg_ops;
  * @cmd_rcgr: corresponds to *_CMD_RCGR
  * @mnd_width: number of bits in m/n/d values
  * @hid_width: number of bits in half integer divider
+ * @safe_src_index: safe src index value
  * @parent_map: map from software's parent index to hardware's src_sel field
  * @freq_tbl: frequency table
+<<<<<<< HEAD
  * @current_freq: last cached frequency when using branches with shared RCGs
  * @enable_safe_config: When set, the RCG is parked at CXO when it's disabled
+=======
+>>>>>>> v4.19.83
  * @clkr: regmap clock handle
  * @cfg_off: defines the cfg register offseted from the CMD_RCGR
  * @flags: additional flag parameters for the RCG
@@ -168,10 +169,14 @@ struct clk_rcg2 {
 	u32			cmd_rcgr;
 	u8			mnd_width;
 	u8			hid_width;
+	u8			safe_src_index;
 	const struct parent_map	*parent_map;
 	const struct freq_tbl	*freq_tbl;
+<<<<<<< HEAD
 	unsigned long		current_freq;
 	bool			enable_safe_config;
+=======
+>>>>>>> v4.19.83
 	struct clk_regmap	clkr;
 	u8			cfg_off;
 	u8			flags;
@@ -184,13 +189,16 @@ struct clk_rcg2 {
 
 extern const struct clk_ops clk_rcg2_ops;
 extern const struct clk_ops clk_rcg2_floor_ops;
-extern const struct clk_ops clk_rcg2_shared_ops;
 extern const struct clk_ops clk_edp_pixel_ops;
 extern const struct clk_ops clk_byte_ops;
 extern const struct clk_ops clk_byte2_ops;
 extern const struct clk_ops clk_pixel_ops;
 extern const struct clk_ops clk_gfx3d_ops;
+<<<<<<< HEAD
 extern const struct clk_ops clk_dp_ops;
+=======
+extern const struct clk_ops clk_rcg2_shared_ops;
+>>>>>>> v4.19.83
 
 extern int clk_rcg2_get_dfs_clock_rate(struct clk_rcg2 *clk,
 				struct device *dev, u8 rcg_flags);

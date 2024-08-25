@@ -36,6 +36,7 @@ static void chacha20_doneon(u32 *state, u8 *dst, const u8 *src,
 {
 	u8 buf[CHACHA_BLOCK_SIZE];
 
+<<<<<<< HEAD
 	while (bytes >= CHACHA_BLOCK_SIZE * 4) {
 		chacha20_4block_xor_neon(state, dst, src);
 		bytes -= CHACHA_BLOCK_SIZE * 4;
@@ -44,6 +45,23 @@ static void chacha20_doneon(u32 *state, u8 *dst, const u8 *src,
 		state[12] += 4;
 	}
 	while (bytes >= CHACHA_BLOCK_SIZE) {
+=======
+	while (bytes >= CHACHA20_BLOCK_SIZE * 4) {
+		kernel_neon_begin();
+		chacha20_4block_xor_neon(state, dst, src);
+		kernel_neon_end();
+		bytes -= CHACHA20_BLOCK_SIZE * 4;
+		src += CHACHA20_BLOCK_SIZE * 4;
+		dst += CHACHA20_BLOCK_SIZE * 4;
+		state[12] += 4;
+	}
+
+	if (!bytes)
+		return;
+
+	kernel_neon_begin();
+	while (bytes >= CHACHA20_BLOCK_SIZE) {
+>>>>>>> v4.19.83
 		chacha20_block_xor_neon(state, dst, src);
 		bytes -= CHACHA_BLOCK_SIZE;
 		src += CHACHA_BLOCK_SIZE;
@@ -55,6 +73,7 @@ static void chacha20_doneon(u32 *state, u8 *dst, const u8 *src,
 		chacha20_block_xor_neon(state, buf, buf);
 		memcpy(dst, buf, bytes);
 	}
+	kernel_neon_end();
 }
 
 static int chacha20_neon(struct skcipher_request *req)
@@ -68,11 +87,10 @@ static int chacha20_neon(struct skcipher_request *req)
 	if (!may_use_simd() || req->cryptlen <= CHACHA_BLOCK_SIZE)
 		return crypto_chacha_crypt(req);
 
-	err = skcipher_walk_virt(&walk, req, true);
+	err = skcipher_walk_virt(&walk, req, false);
 
 	crypto_chacha_init(state, ctx, walk.iv);
 
-	kernel_neon_begin();
 	while (walk.nbytes > 0) {
 		unsigned int nbytes = walk.nbytes;
 
@@ -83,7 +101,6 @@ static int chacha20_neon(struct skcipher_request *req)
 				nbytes);
 		err = skcipher_walk_done(&walk, walk.nbytes - nbytes);
 	}
-	kernel_neon_end();
 
 	return err;
 }

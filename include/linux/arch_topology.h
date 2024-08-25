@@ -29,6 +29,7 @@ unsigned long topology_get_cpu_scale(struct sched_domain *sd, int cpu)
 
 void topology_set_cpu_scale(unsigned int cpu, unsigned long capacity);
 
+<<<<<<< HEAD
 DECLARE_PER_CPU(unsigned long, efficiency);
 static inline
 unsigned long topology_get_cpu_efficiency(int cpu)
@@ -40,10 +41,17 @@ DECLARE_PER_CPU(unsigned long, freq_scale);
 
 static inline
 unsigned long topology_get_freq_scale(struct sched_domain *sd, int cpu)
+=======
+DECLARE_PER_CPU(unsigned long, freq_scale);
+
+static inline
+unsigned long topology_get_freq_scale(int cpu)
+>>>>>>> v4.19.83
 {
 	return per_cpu(freq_scale, cpu);
 }
 
+<<<<<<< HEAD
 DECLARE_PER_CPU(unsigned long, max_freq_scale);
 
 static inline
@@ -52,4 +60,6 @@ unsigned long topology_get_max_freq_scale(struct sched_domain *sd, int cpu)
 	return per_cpu(max_freq_scale, cpu);
 }
 
+=======
+>>>>>>> v4.19.83
 #endif /* _LINUX_ARCH_TOPOLOGY_H_ */

@@ -170,7 +170,7 @@ struct prctl_mm_map {
  * asking selinux for a specific new context (e.g. with runcon) will result
  * in execve returning -EPERM.
  *
- * See Documentation/prctl/no_new_privs.txt for more details.
+ * See Documentation/userspace-api/no_new_privs.rst for more details.
  */
 #define PR_SET_NO_NEW_PRIVS	38
 #define PR_GET_NO_NEW_PRIVS	39
@@ -198,6 +198,18 @@ struct prctl_mm_map {
 # define PR_CAP_AMBIENT_LOWER		3
 # define PR_CAP_AMBIENT_CLEAR_ALL	4
 
+<<<<<<< HEAD
+=======
+/* arm64 Scalable Vector Extension controls */
+/* Flag values must be kept in sync with ptrace NT_ARM_SVE interface */
+#define PR_SVE_SET_VL			50	/* set task vector length */
+# define PR_SVE_SET_VL_ONEXEC		(1 << 18) /* defer effect until exec */
+#define PR_SVE_GET_VL			51	/* get task vector length */
+/* Bits common to PR_SVE_SET_VL and PR_SVE_GET_VL */
+# define PR_SVE_VL_LEN_MASK		0xffff
+# define PR_SVE_VL_INHERIT		(1 << 17) /* inherit across exec */
+
+>>>>>>> v4.19.83
 /* Per task speculation control */
 #define PR_GET_SPECULATION_CTRL		52
 #define PR_SET_SPECULATION_CTRL		53
@@ -211,7 +223,10 @@ struct prctl_mm_map {
 # define PR_SPEC_DISABLE		(1UL << 2)
 # define PR_SPEC_FORCE_DISABLE		(1UL << 3)
 
+<<<<<<< HEAD
 #define PR_SET_VMA		0x53564d41
 # define PR_SET_VMA_ANON_NAME		0
 
+=======
+>>>>>>> v4.19.83
 #endif /* _LINUX_PRCTL_H */

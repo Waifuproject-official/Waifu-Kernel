@@ -12,7 +12,7 @@
 #ifndef DM_VERITY_H
 #define DM_VERITY_H
 
-#include "dm-bufio.h"
+#include <linux/dm-bufio.h>
 #include <linux/device-mapper.h>
 #include <crypto/hash.h>
 
@@ -89,11 +89,6 @@ struct dm_verity_io {
 	 * To access them use: verity_io_hash_req(), verity_io_real_digest()
 	 * and verity_io_want_digest().
 	 */
-};
-
-struct verity_result {
-	struct completion completion;
-	int err;
 };
 
 static inline struct ahash_request *verity_io_hash_req(struct dm_verity *v,

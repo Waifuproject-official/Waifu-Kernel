@@ -29,6 +29,7 @@
 #include <linux/oom.h>
 #include <linux/sched/debug.h>
 #include <linux/smpboot.h>
+#include <linux/sched/isolation.h>
 #include <uapi/linux/sched/types.h>
 #include "../time/tick-internal.h"
 
@@ -1925,8 +1926,8 @@ static void __wake_nocb_leader(struct rcu_data *rdp, bool force,
 		WRITE_ONCE(rdp_leader->nocb_leader_sleep, false);
 		del_timer(&rdp->nocb_timer);
 		raw_spin_unlock_irqrestore(&rdp->nocb_lock, flags);
-		smp_mb(); /* ->nocb_leader_sleep before swake_up(). */
-		swake_up(&rdp_leader->nocb_wq);
+		smp_mb(); /* ->nocb_leader_sleep before swake_up_one(). */
+		swake_up_one(&rdp_leader->nocb_wq);
 	} else {
 		raw_spin_unlock_irqrestore(&rdp->nocb_lock, flags);
 	}
@@ -2158,7 +2159,11 @@ static void rcu_nocb_wait_gp(struct rcu_data *rdp)
 	 */
 	trace_rcu_this_gp(rnp, rdp, c, TPS("StartWait"));
 	for (;;) {
+<<<<<<< HEAD
 		swait_event_interruptible(
+=======
+		swait_event_interruptible_exclusive(
+>>>>>>> v4.19.83
 			rnp->nocb_gp_wq[rcu_seq_ctr(c) & 0x1],
 			(d = rcu_seq_done(&rnp->gp_seq, c)));
 		if (likely(d))
@@ -2187,7 +2192,7 @@ wait_again:
 	/* Wait for callbacks to appear. */
 	if (!rcu_nocb_poll) {
 		trace_rcu_nocb_wake(my_rdp->rsp->name, my_rdp->cpu, TPS("Sleep"));
-		swait_event_interruptible(my_rdp->nocb_wq,
+		swait_event_interruptible_exclusive(my_rdp->nocb_wq,
 				!READ_ONCE(my_rdp->nocb_leader_sleep));
 		raw_spin_lock_irqsave(&my_rdp->nocb_lock, flags);
 		my_rdp->nocb_leader_sleep = true;
@@ -2252,7 +2257,7 @@ wait_again:
 		raw_spin_unlock_irqrestore(&rdp->nocb_lock, flags);
 		if (rdp != my_rdp && tail == &rdp->nocb_follower_head) {
 			/* List was empty, so wake up the follower.  */
-			swake_up(&rdp->nocb_wq);
+			swake_up_one(&rdp->nocb_wq);
 		}
 	}
 
@@ -2269,7 +2274,7 @@ static void nocb_follower_wait(struct rcu_data *rdp)
 {
 	for (;;) {
 		trace_rcu_nocb_wake(rdp->rsp->name, rdp->cpu, TPS("FollowerSleep"));
-		swait_event_interruptible(rdp->nocb_wq,
+		swait_event_interruptible_exclusive(rdp->nocb_wq,
 					 READ_ONCE(rdp->nocb_follower_head));
 		if (smp_load_acquire(&rdp->nocb_follower_head)) {
 			/* ^^^ Ensure CB invocation follows _head test. */
@@ -2671,7 +2676,7 @@ static void rcu_bind_gp_kthread(void)
 {
 	if (!tick_nohz_full_enabled())
 		return;
-	housekeeping_affine(current);
+	housekeeping_affine(current, HK_FLAG_RCU);
 }
 
 /* Record the current task on dyntick-idle entry. */

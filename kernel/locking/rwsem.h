@@ -20,6 +20,7 @@
 #define RWSEM_ANONYMOUSLY_OWNED	(1UL << 0)
 #define RWSEM_READER_OWNED	((struct task_struct *)RWSEM_ANONYMOUSLY_OWNED)
 
+<<<<<<< HEAD
 enum rwsem_waiter_type {
 	RWSEM_WAITING_FOR_WRITE,
 	RWSEM_WAITING_FOR_READ
@@ -30,6 +31,13 @@ struct rwsem_waiter {
 	struct task_struct *task;
 	enum rwsem_waiter_type type;
 };
+=======
+#ifdef CONFIG_DEBUG_RWSEMS
+# define DEBUG_RWSEMS_WARN_ON(c)	DEBUG_LOCKS_WARN_ON(c)
+#else
+# define DEBUG_RWSEMS_WARN_ON(c)
+#endif
+>>>>>>> v4.19.83
 
 #ifdef CONFIG_RWSEM_SPIN_ON_OWNER
 /*
@@ -56,7 +64,7 @@ static inline void rwsem_set_reader_owned(struct rw_semaphore *sem)
 	 * do a write to the rwsem cacheline when it is really necessary
 	 * to minimize cacheline contention.
 	 */
-	if (sem->owner != RWSEM_READER_OWNED)
+	if (READ_ONCE(sem->owner) != RWSEM_READER_OWNED)
 		WRITE_ONCE(sem->owner, RWSEM_READER_OWNED);
 }
 

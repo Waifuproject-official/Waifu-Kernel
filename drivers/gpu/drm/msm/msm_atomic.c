@@ -20,8 +20,8 @@
 #include <linux/notifier.h>
 
 #include "msm_drv.h"
-#include "msm_kms.h"
 #include "msm_gem.h"
+<<<<<<< HEAD
 #include "msm_fence.h"
 #include "sde_trace.h"
 
@@ -133,6 +133,9 @@ static void commit_destroy(struct msm_commit *c)
 	if (c->nonblock)
 		kfree(c);
 }
+=======
+#include "msm_kms.h"
+>>>>>>> v4.19.83
 
 static inline bool _msm_seamless_for_crtc(struct drm_atomic_state *state,
 			struct drm_crtc_state *crtc_state, bool enable)
@@ -223,6 +226,7 @@ static void msm_atomic_wait_for_commit_done(
 	}
 }
 
+<<<<<<< HEAD
 static void
 msm_disable_outputs(struct drm_device *dev, struct drm_atomic_state *old_state)
 {
@@ -591,13 +595,34 @@ static void complete_commit_cleanup(struct work_struct *work)
  * nothing can fail short of armageddon.
  */
 static void complete_commit(struct msm_commit *c)
+=======
+int msm_atomic_prepare_fb(struct drm_plane *plane,
+			  struct drm_plane_state *new_state)
 {
-	struct drm_atomic_state *state = c->state;
+	struct msm_drm_private *priv = plane->dev->dev_private;
+	struct msm_kms *kms = priv->kms;
+	struct drm_gem_object *obj;
+	struct msm_gem_object *msm_obj;
+	struct dma_fence *fence;
+
+	if (!new_state->fb)
+		return 0;
+
+	obj = msm_framebuffer_bo(new_state->fb, 0);
+	msm_obj = to_msm_bo(obj);
+	fence = reservation_object_get_excl_rcu(msm_obj->resv);
+
+	drm_atomic_set_fence_for_plane(new_state, fence);
+
+	return msm_framebuffer_prepare(new_state->fb, kms->aspace);
+}
+
+void msm_atomic_commit_tail(struct drm_atomic_state *state)
+>>>>>>> v4.19.83
+{
 	struct drm_device *dev = state->dev;
 	struct msm_drm_private *priv = dev->dev_private;
 	struct msm_kms *kms = priv->kms;
-
-	drm_atomic_helper_wait_for_fences(dev, state, false);
 
 	kms->funcs->prepare_commit(kms, state);
 
@@ -607,25 +632,16 @@ static void complete_commit(struct msm_commit *c)
 
 	msm_atomic_helper_commit_modeset_enables(dev, state);
 
-	/* NOTE: _wait_for_vblanks() only waits for vblank on
-	 * enabled CRTCs.  So we end up faulting when disabling
-	 * due to (potentially) unref'ing the outgoing fb's
-	 * before the vblank when the disable has latched.
-	 *
-	 * But if it did wait on disabled (or newly disabled)
-	 * CRTCs, that would be racy (ie. we could have missed
-	 * the irq.  We need some way to poll for pipe shut
-	 * down.  Or just live with occasionally hitting the
-	 * timeout in the CRTC disable path (which really should
-	 * not be critical path)
-	 */
+	if (kms->funcs->commit) {
+		DRM_DEBUG_ATOMIC("triggering commit\n");
+		kms->funcs->commit(kms, state);
+	}
 
 	msm_atomic_wait_for_commit_done(dev, state);
 
-	drm_atomic_helper_cleanup_planes(dev, state);
-
 	kms->funcs->complete_commit(kms, state);
 
+<<<<<<< HEAD
 	end_atomic(priv, c->crtc_mask, c->plane_mask);
 }
 
@@ -873,4 +889,9 @@ void msm_atomic_state_free(struct drm_atomic_state *state)
 	kfree(to_kms_state(state)->state);
 	drm_atomic_state_default_release(state);
 	kfree(state);
+=======
+	drm_atomic_helper_commit_hw_done(state);
+
+	drm_atomic_helper_cleanup_planes(dev, state);
+>>>>>>> v4.19.83
 }

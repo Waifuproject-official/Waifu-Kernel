@@ -3278,6 +3278,65 @@ AU0828_DEVICE(0x2040, 0x7270, "Hauppauge", "HVR-950Q"),
 	}
 },
 
+<<<<<<< HEAD
+=======
+/* disabled due to regression for other devices;
+ * see https://bugzilla.kernel.org/show_bug.cgi?id=199905
+ */
+#if 0
+{
+	/*
+	 * Nura's first gen headphones use Cambridge Silicon Radio's vendor
+	 * ID, but it looks like the product ID actually is only for Nura.
+	 * The capture interface does not work at all (even on Windows),
+	 * and only the 48 kHz sample rate works for the playback interface.
+	 */
+	USB_DEVICE(0x0a12, 0x1243),
+	.driver_info = (unsigned long) &(const struct snd_usb_audio_quirk) {
+		.ifnum = QUIRK_ANY_INTERFACE,
+		.type = QUIRK_COMPOSITE,
+		.data = (const struct snd_usb_audio_quirk[]) {
+			{
+				.ifnum = 0,
+				.type = QUIRK_AUDIO_STANDARD_MIXER,
+			},
+			/* Capture */
+			{
+				.ifnum = 1,
+				.type = QUIRK_IGNORE_INTERFACE,
+			},
+			/* Playback */
+			{
+				.ifnum = 2,
+				.type = QUIRK_AUDIO_FIXED_ENDPOINT,
+				.data = &(const struct audioformat) {
+					.formats = SNDRV_PCM_FMTBIT_S16_LE,
+					.channels = 2,
+					.iface = 2,
+					.altsetting = 1,
+					.altset_idx = 1,
+					.attributes = UAC_EP_CS_ATTR_FILL_MAX |
+						UAC_EP_CS_ATTR_SAMPLE_RATE,
+					.endpoint = 0x03,
+					.ep_attr = USB_ENDPOINT_XFER_ISOC,
+					.rates = SNDRV_PCM_RATE_48000,
+					.rate_min = 48000,
+					.rate_max = 48000,
+					.nr_rates = 1,
+					.rate_table = (unsigned int[]) {
+						48000
+					}
+				}
+			},
+			{
+				.ifnum = -1
+			},
+		}
+	}
+},
+#endif /* disabled */
+
+>>>>>>> v4.19.83
 {
 	/*
 	 * Bower's & Wilkins PX headphones only support the 48 kHz sample rate
@@ -3327,5 +3386,28 @@ AU0828_DEVICE(0x2040, 0x7270, "Hauppauge", "HVR-950Q"),
 		}
 	}
 },
+<<<<<<< HEAD
+=======
+/* Dell WD15 Dock */
+{
+	USB_DEVICE(0x0bda, 0x4014),
+	.driver_info = (unsigned long) & (const struct snd_usb_audio_quirk) {
+		.vendor_name = "Dell",
+		.product_name = "WD15 Dock",
+		.profile_name = "Dell-WD15-Dock",
+		.ifnum = QUIRK_NO_INTERFACE
+	}
+},
+/* Dell WD19 Dock */
+{
+	USB_DEVICE(0x0bda, 0x402e),
+	.driver_info = (unsigned long) & (const struct snd_usb_audio_quirk) {
+		.vendor_name = "Dell",
+		.product_name = "WD19 Dock",
+		.profile_name = "Dell-WD15-Dock",
+		.ifnum = QUIRK_NO_INTERFACE
+	}
+},
+>>>>>>> v4.19.83
 
 #undef USB_DEVICE_VENDOR_SPEC

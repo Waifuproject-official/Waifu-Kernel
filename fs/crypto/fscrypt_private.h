@@ -12,14 +12,22 @@
 #ifndef _FSCRYPT_PRIVATE_H
 #define _FSCRYPT_PRIVATE_H
 
+<<<<<<< HEAD
 #ifndef __FS_HAS_ENCRYPTION
 #define __FS_HAS_ENCRYPTION 1
 #endif
+=======
+#define __FS_HAS_ENCRYPTION 1
+>>>>>>> v4.19.83
 #include <linux/fscrypt.h>
 #include <crypto/hash.h>
 #include <linux/pfk.h>
 
 /* Encryption parameters */
+<<<<<<< HEAD
+=======
+#define FS_IV_SIZE			16
+>>>>>>> v4.19.83
 #define FS_KEY_DERIVATION_NONCE_SIZE	16
 
 /**
@@ -112,6 +120,7 @@ static inline bool fscrypt_valid_enc_modes(u32 contents_mode,
 	    filenames_mode == FS_ENCRYPTION_MODE_AES_256_CTS)
 		return true;
 
+<<<<<<< HEAD
 	if (contents_mode == FS_ENCRYPTION_MODE_PRIVATE &&
 	    filenames_mode == FS_ENCRYPTION_MODE_AES_256_CTS)
 		return true;
@@ -127,6 +136,10 @@ static inline bool is_private_data_mode(const struct fscrypt_context *ctx)
 {
 	return ctx->contents_encryption_mode == FS_ENCRYPTION_MODE_PRIVATE;
 }
+=======
+	return false;
+}
+>>>>>>> v4.19.83
 
 /* crypto.c */
 extern struct kmem_cache *fscrypt_info_cachep;
@@ -149,6 +162,7 @@ fscrypt_msg(struct super_block *sb, const char *level, const char *fmt, ...);
 #define fscrypt_err(sb, fmt, ...)		\
 	fscrypt_msg(sb, KERN_ERR, fmt, ##__VA_ARGS__)
 
+<<<<<<< HEAD
 #define FSCRYPT_MAX_IV_SIZE	32
 
 union fscrypt_iv {
@@ -165,6 +179,8 @@ union fscrypt_iv {
 void fscrypt_generate_iv(union fscrypt_iv *iv, u64 lblk_num,
 			 const struct fscrypt_info *ci);
 
+=======
+>>>>>>> v4.19.83
 /* fname.c */
 extern int fname_encrypt(struct inode *inode, const struct qstr *iname,
 			 u8 *out, unsigned int olen);

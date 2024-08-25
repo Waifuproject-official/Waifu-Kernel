@@ -90,10 +90,17 @@ static ssize_t features_show(struct f2fs_attr *a,
 	if (!sb->s_bdev->bd_part)
 		return snprintf(buf, PAGE_SIZE, "0\n");
 
+<<<<<<< HEAD
 	if (f2fs_sb_has_encrypt(sbi))
 		len += snprintf(buf, PAGE_SIZE - len, "%s",
 						"encryption");
 	if (f2fs_sb_has_blkzoned(sbi))
+=======
+	if (f2fs_sb_has_encrypt(sb))
+		len += snprintf(buf, PAGE_SIZE - len, "%s",
+						"encryption");
+	if (f2fs_sb_has_blkzoned(sb))
+>>>>>>> v4.19.83
 		len += snprintf(buf + len, PAGE_SIZE - len, "%s%s",
 				len ? ", " : "", "blkzoned");
 	if (f2fs_sb_has_extra_attr(sbi))
@@ -105,6 +112,7 @@ static ssize_t features_show(struct f2fs_attr *a,
 	if (f2fs_sb_has_inode_chksum(sbi))
 		len += snprintf(buf + len, PAGE_SIZE - len, "%s%s",
 				len ? ", " : "", "inode_checksum");
+<<<<<<< HEAD
 	if (f2fs_sb_has_flexible_inline_xattr(sbi))
 		len += snprintf(buf + len, PAGE_SIZE - len, "%s%s",
 				len ? ", " : "", "flexible_inline_xattr");
@@ -120,6 +128,20 @@ static ssize_t features_show(struct f2fs_attr *a,
 	if (f2fs_sb_has_sb_chksum(sbi))
 		len += snprintf(buf + len, PAGE_SIZE - len, "%s%s",
 				len ? ", " : "", "sb_checksum");
+=======
+	if (f2fs_sb_has_flexible_inline_xattr(sb))
+		len += snprintf(buf + len, PAGE_SIZE - len, "%s%s",
+				len ? ", " : "", "flexible_inline_xattr");
+	if (f2fs_sb_has_quota_ino(sb))
+		len += snprintf(buf + len, PAGE_SIZE - len, "%s%s",
+				len ? ", " : "", "quota_ino");
+	if (f2fs_sb_has_inode_crtime(sb))
+		len += snprintf(buf + len, PAGE_SIZE - len, "%s%s",
+				len ? ", " : "", "inode_crtime");
+	if (f2fs_sb_has_lost_found(sb))
+		len += snprintf(buf + len, PAGE_SIZE - len, "%s%s",
+				len ? ", " : "", "lost_found");
+>>>>>>> v4.19.83
 	len += snprintf(buf + len, PAGE_SIZE - len, "\n");
 	return len;
 }
@@ -248,6 +270,7 @@ out:
 		return count;
 	}
 
+<<<<<<< HEAD
 	if (!strcmp(a->attr.name, "migration_granularity")) {
 		if (t == 0 || t > sbi->segs_per_sec)
 			return -EINVAL;
@@ -280,6 +303,35 @@ out:
 		return count;
 	}
 
+=======
+	if (!strcmp(a->attr.name, "trim_sections"))
+		return -EINVAL;
+
+	if (!strcmp(a->attr.name, "gc_urgent")) {
+		if (t >= 1) {
+			sbi->gc_mode = GC_URGENT;
+			if (sbi->gc_thread) {
+				sbi->gc_thread->gc_wake = 1;
+				wake_up_interruptible_all(
+					&sbi->gc_thread->gc_wait_queue_head);
+				wake_up_discard_thread(sbi, true);
+			}
+		} else {
+			sbi->gc_mode = GC_NORMAL;
+		}
+		return count;
+	}
+	if (!strcmp(a->attr.name, "gc_idle")) {
+		if (t == GC_IDLE_CB)
+			sbi->gc_mode = GC_IDLE_CB;
+		else if (t == GC_IDLE_GREEDY)
+			sbi->gc_mode = GC_IDLE_GREEDY;
+		else
+			sbi->gc_mode = GC_NORMAL;
+		return count;
+	}
+
+>>>>>>> v4.19.83
 
 	if (!strcmp(a->attr.name, "iostat_enable")) {
 		sbi->iostat_enable = !!t;
@@ -350,7 +402,10 @@ enum feat_id {
 	FEAT_QUOTA_INO,
 	FEAT_INODE_CRTIME,
 	FEAT_LOST_FOUND,
+<<<<<<< HEAD
 	FEAT_SB_CHECKSUM,
+=======
+>>>>>>> v4.19.83
 };
 
 static ssize_t f2fs_feature_show(struct f2fs_attr *a,
@@ -367,7 +422,10 @@ static ssize_t f2fs_feature_show(struct f2fs_attr *a,
 	case FEAT_QUOTA_INO:
 	case FEAT_INODE_CRTIME:
 	case FEAT_LOST_FOUND:
+<<<<<<< HEAD
 	case FEAT_SB_CHECKSUM:
+=======
+>>>>>>> v4.19.83
 		return snprintf(buf, PAGE_SIZE, "supported\n");
 	}
 	return 0;
@@ -455,7 +513,10 @@ F2FS_FEATURE_RO_ATTR(flexible_inline_xattr, FEAT_FLEXIBLE_INLINE_XATTR);
 F2FS_FEATURE_RO_ATTR(quota_ino, FEAT_QUOTA_INO);
 F2FS_FEATURE_RO_ATTR(inode_crtime, FEAT_INODE_CRTIME);
 F2FS_FEATURE_RO_ATTR(lost_found, FEAT_LOST_FOUND);
+<<<<<<< HEAD
 F2FS_FEATURE_RO_ATTR(sb_checksum, FEAT_SB_CHECKSUM);
+=======
+>>>>>>> v4.19.83
 
 #define ATTR_LIST(name) (&f2fs_attr_##name.attr)
 static struct attribute *f2fs_attrs[] = {
@@ -517,7 +578,10 @@ static struct attribute *f2fs_feat_attrs[] = {
 	ATTR_LIST(quota_ino),
 	ATTR_LIST(inode_crtime),
 	ATTR_LIST(lost_found),
+<<<<<<< HEAD
 	ATTR_LIST(sb_checksum),
+=======
+>>>>>>> v4.19.83
 	NULL,
 };
 
@@ -652,6 +716,7 @@ static int __maybe_unused victim_bits_seq_show(struct seq_file *seq,
 	struct f2fs_sb_info *sbi = F2FS_SB(sb);
 	struct dirty_seglist_info *dirty_i = DIRTY_I(sbi);
 	int i;
+<<<<<<< HEAD
 
 	seq_puts(seq, "format: victim_secmap bitmaps\n");
 
@@ -684,6 +749,22 @@ F2FS_PROC_FILE_DEF(segment_info);
 F2FS_PROC_FILE_DEF(segment_bits);
 F2FS_PROC_FILE_DEF(iostat_info);
 F2FS_PROC_FILE_DEF(victim_bits);
+=======
+
+	seq_puts(seq, "format: victim_secmap bitmaps\n");
+
+	for (i = 0; i < MAIN_SECS(sbi); i++) {
+		if ((i % 10) == 0)
+			seq_printf(seq, "%-10d", i);
+		seq_printf(seq, "%d", test_bit(i, dirty_i->victim_secmap) ? 1 : 0);
+		if ((i % 10) == 9 || i == (MAIN_SECS(sbi) - 1))
+			seq_putc(seq, '\n');
+		else
+			seq_putc(seq, ' ');
+	}
+	return 0;
+}
+>>>>>>> v4.19.83
 
 int __init f2fs_init_sysfs(void)
 {
@@ -728,6 +809,7 @@ int f2fs_register_sysfs(struct f2fs_sb_info *sbi)
 		sbi->s_proc = proc_mkdir(sb->s_id, f2fs_proc_root);
 
 	if (sbi->s_proc) {
+<<<<<<< HEAD
 		proc_create_data("segment_info", S_IRUGO, sbi->s_proc,
 				 &f2fs_seq_segment_info_fops, sb);
 		proc_create_data("segment_bits", S_IRUGO, sbi->s_proc,
@@ -736,6 +818,16 @@ int f2fs_register_sysfs(struct f2fs_sb_info *sbi)
 				&f2fs_seq_iostat_info_fops, sb);
 		proc_create_data("victim_bits", S_IRUGO, sbi->s_proc,
 				&f2fs_seq_victim_bits_fops, sb);
+=======
+		proc_create_single_data("segment_info", S_IRUGO, sbi->s_proc,
+				segment_info_seq_show, sb);
+		proc_create_single_data("segment_bits", S_IRUGO, sbi->s_proc,
+				segment_bits_seq_show, sb);
+		proc_create_single_data("iostat_info", S_IRUGO, sbi->s_proc,
+				iostat_info_seq_show, sb);
+		proc_create_single_data("victim_bits", S_IRUGO, sbi->s_proc,
+				victim_bits_seq_show, sb);
+>>>>>>> v4.19.83
 	}
 	return 0;
 }

@@ -94,7 +94,10 @@ ip6frag_expire_frag_queue(struct net *net, struct frag_queue *fq)
 		goto out;
 
 	head->dev = dev;
+<<<<<<< HEAD
 	skb_get(head);
+=======
+>>>>>>> v4.19.83
 	spin_unlock(&fq->q.lock);
 
 	icmpv6_send(head, ICMPV6_TIME_EXCEED, ICMPV6_EXC_FRAGTIME, 0);

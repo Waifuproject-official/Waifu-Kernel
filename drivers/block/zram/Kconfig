@@ -14,6 +14,7 @@ config ZRAM
 	  disks and maybe many more.
 
 	  See Documentation/blockdev/zram.txt for more information.
+<<<<<<< HEAD
 
 config ZRAM_DEDUP
 	bool "Deduplication support for ZRAM data"
@@ -28,6 +29,8 @@ config ZRAM_DEDUP
 	  computation time trade-off. Please check the benefit before
 	  enabling this option. Experiment shows the positive effect when
 	  the zram is used as blockdev and is used to store build output.
+=======
+>>>>>>> v4.19.83
 
 config ZRAM_WRITEBACK
        bool "Write back incompressible or idle page to backing device"
@@ -39,9 +42,12 @@ config ZRAM_WRITEBACK
 	 For this feature, admin should set up backing device via
 	 /sys/block/zramX/backing_dev.
 
+<<<<<<< HEAD
 	 With /sys/block/zramX/{idle,writeback}, application could ask
 	 idle page's writeback to the backing device to save in memory.
 
+=======
+>>>>>>> v4.19.83
 	 See Documentation/blockdev/zram.txt for more information.
 
 config ZRAM_MEMORY_TRACKING
@@ -53,6 +59,7 @@ config ZRAM_MEMORY_TRACKING
 	  /sys/kernel/debug/zram/zramX/block_state.
 
 	  See Documentation/blockdev/zram.txt for more information.
+<<<<<<< HEAD
 
 config ZRAM_FROM_8GB_RAM
 	int "zram for 8GB RAM set of kernels"
@@ -64,3 +71,5 @@ config ZRAM_FROM_6GB_RAM
 	range 1 64
 	default 6
 
+=======
+>>>>>>> v4.19.83

@@ -28,6 +28,10 @@ enum x86_hypervisor_type {
 	X86_HYPER_XEN_PV,
 	X86_HYPER_XEN_HVM,
 	X86_HYPER_KVM,
+<<<<<<< HEAD
+=======
+	X86_HYPER_JAILHOUSE,
+>>>>>>> v4.19.83
 };
 
 #ifdef CONFIG_HYPERVISOR_GUEST

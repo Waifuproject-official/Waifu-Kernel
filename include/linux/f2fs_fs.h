@@ -109,16 +109,23 @@ struct f2fs_super_block {
 	struct f2fs_device devs[MAX_DEVICES];	/* device list */
 	__le32 qf_ino[F2FS_MAX_QUOTAS];	/* quota inode numbers */
 	__u8 hot_ext_count;		/* # of hot file extension */
+<<<<<<< HEAD
 	__u8 reserved[310];		/* valid reserved region */
 	__le32 crc;			/* checksum of superblock */
+=======
+	__u8 reserved[314];		/* valid reserved region */
+>>>>>>> v4.19.83
 } __packed;
 
 /*
  * For checkpoint
  */
+<<<<<<< HEAD
 #define CP_DISABLED_QUICK_FLAG		0x00002000
 #define CP_DISABLED_FLAG		0x00001000
 #define CP_QUOTA_NEED_FSCK_FLAG		0x00000800
+=======
+>>>>>>> v4.19.83
 #define CP_LARGE_NAT_BITMAP_FLAG	0x00000400
 #define CP_NOCRC_RECOVERY_FLAG	0x00000200
 #define CP_TRIMMED_FLAG		0x00000100

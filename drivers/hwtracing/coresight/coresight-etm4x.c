@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* Copyright (c) 2014, 2017-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -8,6 +9,11 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+=======
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (c) 2014, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  */
 
 #include <linux/kernel.h>
@@ -62,8 +68,14 @@ static void etm4_os_unlock(struct etmv4_drvdata *drvdata)
 
 static bool etm4_arch_supported(u8 arch)
 {
+<<<<<<< HEAD
 	switch (arch) {
 	case ETM_ARCH_MAJOR_V4:
+=======
+	/* Mask out the minor version number */
+	switch (arch & 0xf0) {
+	case ETM_ARCH_V4:
+>>>>>>> v4.19.83
 		break;
 	default:
 		return false;
@@ -183,6 +195,12 @@ static void etm4_enable_hw(void *info)
 	if (coresight_timeout(drvdata->base, TRCSTATR, TRCSTATR_IDLE_BIT, 0))
 		dev_err(drvdata->dev,
 			"timeout while waiting for Idle Trace Status\n");
+	/*
+	 * As recommended by section 4.3.7 ("Synchronization when using the
+	 * memory-mapped interface") of ARM IHI 0064D
+	 */
+	dsb(sy);
+	isb();
 
 	CS_LOCK(drvdata->base);
 
@@ -335,8 +353,12 @@ static void etm4_disable_hw(void *info)
 	/* EN, bit[0] Trace unit enable bit */
 	control &= ~0x1;
 
-	/* make sure everything completes before disabling */
-	mb();
+	/*
+	 * Make sure everything completes before disabling, as recommended
+	 * by section 7.3.77 ("TRCVICTLR, ViewInst Main Control Register,
+	 * SSTATUS") of ARM IHI 0064D
+	 */
+	dsb(sy);
 	isb();
 	writel_relaxed(control, drvdata->base + TRCPRGCTLR);
 
@@ -1043,6 +1065,7 @@ static int etm4_probe(struct amba_device *adev, const struct amba_id *id)
 	}
 
 	pm_runtime_put(&adev->dev);
+<<<<<<< HEAD
 	etmdrvdata[drvdata->cpu] = drvdata;
 	dev_info(dev, "CPU%d: ETM v%d.%d initialized\n",
 		 drvdata->cpu, drvdata->arch >> 4, drvdata->arch & 0xf);
@@ -1052,6 +1075,10 @@ static int etm4_probe(struct amba_device *adev, const struct amba_id *id)
 
 	dev_info(dev, "CPU%d: %s initialized\n",
 			drvdata->cpu, (char *)id->data);
+=======
+	dev_info(dev, "CPU%d: ETM v%d.%d initialized\n",
+		 drvdata->cpu, drvdata->arch >> 4, drvdata->arch & 0xf);
+>>>>>>> v4.19.83
 
 	if (boot_enable) {
 		coresight_enable(drvdata->csdev);

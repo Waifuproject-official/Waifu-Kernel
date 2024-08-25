@@ -1091,6 +1091,7 @@ int qcom_vadc_decimation_from_dt(u32 value)
 }
 EXPORT_SYMBOL(qcom_vadc_decimation_from_dt);
 
+<<<<<<< HEAD
 int qcom_adc5_decimation_from_dt(u32 value, const unsigned int *decimation)
 {
 	uint32_t i;
@@ -1103,5 +1104,7 @@ int qcom_adc5_decimation_from_dt(u32 value, const unsigned int *decimation)
 	return -EINVAL;
 }
 EXPORT_SYMBOL(qcom_adc5_decimation_from_dt);
+=======
+>>>>>>> v4.19.83
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("Qualcomm ADC common functionality");

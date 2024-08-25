@@ -53,7 +53,7 @@ static inline int current_is_kswapd(void)
 
 /*
  * Unaddressable device memory support. See include/linux/hmm.h and
- * Documentation/vm/hmm.txt. Short description is we need struct pages for
+ * Documentation/vm/hmm.rst. Short description is we need struct pages for
  * device memory that is unaddressable (inaccessible) by CPU, so that we can
  * migrate part of a process memory to device memory.
  *
@@ -273,8 +273,11 @@ struct swap_info_struct {
 					 */
 	struct work_struct discard_work; /* discard worker */
 	struct swap_cluster_list discard_clusters; /* discard clusters list */
+<<<<<<< HEAD
 	unsigned int write_pending;
 	unsigned int max_writes;
+=======
+>>>>>>> v4.19.83
 	struct plist_node avail_lists[0]; /*
 					   * entries in swap_avail_heads, one
 					   * entry per node.
@@ -310,7 +313,18 @@ struct vma_swap_readahead {
 void *workingset_eviction(struct address_space *mapping, struct page *page);
 void workingset_refault(struct page *page, void *shadow);
 void workingset_activation(struct page *page);
-void workingset_update_node(struct radix_tree_node *node, void *private);
+
+/* Do not use directly, use workingset_lookup_update */
+void workingset_update_node(struct radix_tree_node *node);
+
+/* Returns workingset_update_node() if the mapping has shadow entries. */
+#define workingset_lookup_update(mapping)				\
+({									\
+	radix_tree_update_node_t __helper = workingset_update_node;	\
+	if (dax_mapping(mapping) || shmem_mapping(mapping))		\
+		__helper = NULL;					\
+	__helper;							\
+})
 
 /* linux/mm/page_alloc.c */
 extern unsigned long totalram_pages;
@@ -333,12 +347,12 @@ extern void mark_page_accessed(struct page *);
 extern void lru_add_drain(void);
 extern void lru_add_drain_cpu(int cpu);
 extern void lru_add_drain_all(void);
-extern void lru_add_drain_all_cpuslocked(void);
 extern void rotate_reclaimable_page(struct page *page);
 extern void deactivate_file_page(struct page *page);
 extern void mark_page_lazyfree(struct page *page);
 extern void swap_setup(void);
 
+<<<<<<< HEAD
 extern void add_page_to_unevictable_list(struct page *page);
 
 extern void __lru_cache_add_active_or_unevictable(struct page *page,
@@ -349,10 +363,13 @@ static inline void lru_cache_add_active_or_unevictable(struct page *page,
 {
 	return __lru_cache_add_active_or_unevictable(page, vma->vm_flags);
 }
+=======
+extern void lru_cache_add_active_or_unevictable(struct page *page,
+						struct vm_area_struct *vma);
+>>>>>>> v4.19.83
 
 /* linux/mm/vmscan.c */
 extern unsigned long zone_reclaimable_pages(struct zone *zone);
-extern unsigned long pgdat_reclaimable_pages(struct pglist_data *pgdat);
 extern unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 					gfp_t gfp_mask, nodemask_t *mask);
 extern int __isolate_lru_page(struct page *page, isolate_mode_t mode);
@@ -460,7 +477,7 @@ extern void si_swapinfo(struct sysinfo *);
 extern swp_entry_t get_swap_page(struct page *page);
 extern void put_swap_page(struct page *page, swp_entry_t entry);
 extern swp_entry_t get_swap_page_of_type(int);
-extern int get_swap_pages(int n, bool cluster, swp_entry_t swp_entries[]);
+extern int get_swap_pages(int n, swp_entry_t swp_entries[], int entry_size);
 extern int add_swap_count_continuation(swp_entry_t, gfp_t);
 extern void swap_shmem_alloc(swp_entry_t);
 extern int swap_duplicate(swp_entry_t);
@@ -509,7 +526,7 @@ static inline struct swap_info_struct *swp_swap_info(swp_entry_t entry)
 #define free_page_and_swap_cache(page) \
 	put_page(page)
 #define free_pages_and_swap_cache(pages, nr) \
-	release_pages((pages), (nr), false);
+	release_pages((pages), (nr));
 
 static inline void show_swap_cache_info(void)
 {
@@ -642,11 +659,20 @@ static inline int mem_cgroup_swappiness(struct mem_cgroup *memcg)
 
 	return memcg->swappiness;
 }
-
 #else
 static inline int mem_cgroup_swappiness(struct mem_cgroup *mem)
 {
 	return vm_swappiness;
+}
+#endif
+
+#if defined(CONFIG_SWAP) && defined(CONFIG_MEMCG) && defined(CONFIG_BLK_CGROUP)
+extern void mem_cgroup_throttle_swaprate(struct mem_cgroup *memcg, int node,
+					 gfp_t gfp_mask);
+#else
+static inline void mem_cgroup_throttle_swaprate(struct mem_cgroup *memcg,
+						int node, gfp_t gfp_mask)
+{
 }
 #endif
 

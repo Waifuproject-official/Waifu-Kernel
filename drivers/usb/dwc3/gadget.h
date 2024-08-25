@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * gadget.h - DesignWare USB3 DRD Gadget Header
  *
@@ -5,15 +6,6 @@
  *
  * Authors: Felipe Balbi <balbi@ti.com>,
  *	    Sebastian Andrzej Siewior <bigeasy@linutronix.de>
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2  of
- * the License as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
  */
 
 #ifndef __DRIVERS_USB_DWC3_GADGET_H
@@ -89,11 +81,23 @@ static inline void dwc3_gadget_move_started_request(struct dwc3_request *req)
 	list_move_tail(&req->list, &dep->started_list);
 }
 
+<<<<<<< HEAD
 static inline void dwc3_gadget_move_pending_list_front(struct dwc3_request *req)
+=======
+/**
+ * dwc3_gadget_move_cancelled_request - move @req to the cancelled_list
+ * @req: the request to be moved
+ *
+ * Caller should take care of locking. This function will move @req from its
+ * current list to the endpoint's cancelled_list.
+ */
+static inline void dwc3_gadget_move_cancelled_request(struct dwc3_request *req)
+>>>>>>> v4.19.83
 {
 	struct dwc3_ep		*dep = req->dep;
 
 	req->started = false;
+<<<<<<< HEAD
 	list_move(&req->list, &dep->pending_list);
 }
 
@@ -103,6 +107,9 @@ static inline enum dwc3_link_state dwc3_get_link_state(struct dwc3 *dwc)
 
 	reg = dwc3_readl(dwc->regs, DWC3_DSTS);
 	return DWC3_DSTS_USBLNKST(reg);
+=======
+	list_move_tail(&req->list, &dep->cancelled_list);
+>>>>>>> v4.19.83
 }
 
 void dwc3_gadget_giveback(struct dwc3_ep *dep, struct dwc3_request *req,
@@ -137,13 +144,12 @@ static inline dma_addr_t dwc3_trb_dma_offset(struct dwc3_ep *dep,
  * Caller should take care of locking. Returns the transfer resource
  * index for a given endpoint.
  */
-static inline u32 dwc3_gadget_ep_get_transfer_index(struct dwc3_ep *dep)
+static inline void dwc3_gadget_ep_get_transfer_index(struct dwc3_ep *dep)
 {
 	u32			res_id;
 
 	res_id = dwc3_readl(dep->regs, DWC3_DEPCMD);
-
-	return DWC3_DEPCMD_GET_RSC_IDX(res_id);
+	dep->resource_index = DWC3_DEPCMD_GET_RSC_IDX(res_id);
 }
 
 #endif /* __DRIVERS_USB_DWC3_GADGET_H */

@@ -28,10 +28,13 @@ enum wil_platform_event {
 	WIL_PLATFORM_EVT_POST_SUSPEND = 4,
 };
 
+<<<<<<< HEAD
 enum wil_platform_notif {
 	WIL_PLATFORM_NOTIF_PCI_LINKDOWN = 0,
 };
 
+=======
+>>>>>>> v4.19.83
 enum wil_platform_features {
 	WIL_PLATFORM_FEATURE_FW_EXT_CLK_CONTROL = 0,
 	WIL_PLATFORM_FEATURE_TRIPLE_MSI = 1,
@@ -57,7 +60,10 @@ struct wil_platform_ops {
 	int (*notify)(void *handle, enum wil_platform_event evt);
 	int (*get_capa)(void *handle);
 	void (*set_features)(void *handle, int features);
+<<<<<<< HEAD
 	int (*pci_linkdown_recovery)(void *handle);
+=======
+>>>>>>> v4.19.83
 };
 
 /**

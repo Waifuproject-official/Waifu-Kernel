@@ -53,7 +53,7 @@ MODULE_AUTHOR("Bruno Ducrot");
 MODULE_DESCRIPTION("ACPI Video Driver");
 MODULE_LICENSE("GPL");
 
-static bool brightness_switch_enabled = 1;
+static bool brightness_switch_enabled = true;
 module_param(brightness_switch_enabled, bool, 0644);
 
 /*
@@ -72,6 +72,12 @@ static int report_key_events = -1;
 module_param(report_key_events, int, 0644);
 MODULE_PARM_DESC(report_key_events,
 	"0: none, 1: output changes, 2: brightness changes, 3: all");
+
+static int hw_changes_brightness = -1;
+module_param(hw_changes_brightness, int, 0644);
+MODULE_PARM_DESC(hw_changes_brightness,
+	"Set this to 1 on buggy hw which changes the brightness itself when "
+	"a hotkey is pressed: -1: auto, 0: normal 1: hw-changes-brightness");
 
 /*
  * Whether the struct acpi_video_device_attrib::device_id_scheme bit should be
@@ -418,6 +424,14 @@ static int video_set_report_key_events(const struct dmi_system_id *id)
 	return 0;
 }
 
+static int video_hw_changes_brightness(
+	const struct dmi_system_id *d)
+{
+	if (hw_changes_brightness == -1)
+		hw_changes_brightness = 1;
+	return 0;
+}
+
 static const struct dmi_system_id video_dmi_table[] = {
 	/*
 	 * Broken _BQC workaround http://bugzilla.kernel.org/show_bug.cgi?id=13121
@@ -540,6 +554,21 @@ static const struct dmi_system_id video_dmi_table[] = {
 	 .matches = {
 		DMI_MATCH(DMI_SYS_VENDOR, "Dell Inc."),
 		DMI_MATCH(DMI_PRODUCT_NAME, "Vostro V131"),
+		},
+	},
+	/*
+	 * Some machines change the brightness themselves when a brightness
+	 * hotkey gets pressed, despite us telling them not to. In this case
+	 * acpi_video_device_notify() should only call backlight_force_update(
+	 * BACKLIGHT_UPDATE_HOTKEY) and not do anything else.
+	 */
+	{
+	 /* https://bugzilla.kernel.org/show_bug.cgi?id=204077 */
+	 .callback = video_hw_changes_brightness,
+	 .ident = "Packard Bell EasyNote MZ35",
+	 .matches = {
+		DMI_MATCH(DMI_SYS_VENDOR, "Packard Bell"),
+		DMI_MATCH(DMI_PRODUCT_NAME, "EasyNote MZ35"),
 		},
 	},
 	{}
@@ -832,8 +861,9 @@ int acpi_video_get_levels(struct acpi_device *device,
 	 * in order to account for buggy BIOS which don't export the first two
 	 * special levels (see below)
 	 */
-	br->levels = kmalloc((obj->package.count + ACPI_VIDEO_FIRST_LEVEL) *
-	                     sizeof(*br->levels), GFP_KERNEL);
+	br->levels = kmalloc_array(obj->package.count + ACPI_VIDEO_FIRST_LEVEL,
+				   sizeof(*br->levels),
+				   GFP_KERNEL);
 	if (!br->levels) {
 		result = -ENOMEM;
 		goto out_free;
@@ -1623,6 +1653,14 @@ static void acpi_video_device_notify(acpi_handle handle, u32 event, void *data)
 	device = video_device->dev;
 	bus = video_device->video;
 	input = bus->input;
+
+	if (hw_changes_brightness > 0) {
+		if (video_device->backlight)
+			backlight_force_update(video_device->backlight,
+					       BACKLIGHT_UPDATE_HOTKEY);
+		acpi_notifier_call_chain(device, event, 0);
+		return;
+	}
 
 	switch (event) {
 	case ACPI_VIDEO_NOTIFY_CYCLE_BRIGHTNESS:	/* Cycle brightness */

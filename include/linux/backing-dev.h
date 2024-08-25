@@ -28,6 +28,7 @@ void bdi_put(struct backing_dev_info *bdi);
 
 __printf(2, 3)
 int bdi_register(struct backing_dev_info *bdi, const char *fmt, ...);
+__printf(2, 0)
 int bdi_register_va(struct backing_dev_info *bdi, const char *fmt,
 		    va_list args);
 int bdi_register_owner(struct backing_dev_info *bdi, struct device *owner);
@@ -39,8 +40,6 @@ static inline struct backing_dev_info *bdi_alloc(gfp_t gfp_mask)
 	return bdi_alloc_node(gfp_mask, NUMA_NO_NODE);
 }
 
-void wb_start_writeback(struct bdi_writeback *wb, long nr_pages,
-			bool range_cyclic, enum wb_reason reason);
 void wb_start_background_writeback(struct bdi_writeback *wb);
 void wb_workfn(struct work_struct *work);
 void wb_wakeup_delayed(struct bdi_writeback *wb);
@@ -95,7 +94,7 @@ extern void wb_writeout_inc(struct bdi_writeback *wb);
 /*
  * maximal error of a stat counter.
  */
-static inline unsigned long wb_stat_error(struct bdi_writeback *wb)
+static inline unsigned long wb_stat_error(void)
 {
 #ifdef CONFIG_SMP
 	return nr_cpu_ids * WB_STAT_BATCH;
@@ -177,9 +176,12 @@ static inline int wb_congested(struct bdi_writeback *wb, int cong_bits)
 }
 
 long congestion_wait(int sync, long timeout);
-long wait_iff_congested(struct pglist_data *pgdat, int sync, long timeout);
-int pdflush_proc_obsolete(struct ctl_table *table, int write,
-		void __user *buffer, size_t *lenp, loff_t *ppos);
+long wait_iff_congested(int sync, long timeout);
+
+static inline bool bdi_cap_synchronous_io(struct backing_dev_info *bdi)
+{
+	return bdi->capabilities & BDI_CAP_SYNCHRONOUS_IO;
+}
 
 static inline bool bdi_cap_synchronous_io(struct backing_dev_info *bdi)
 {
@@ -333,15 +335,15 @@ static inline bool inode_to_wb_is_valid(struct inode *inode)
  * @inode: inode of interest
  *
  * Returns the wb @inode is currently associated with.  The caller must be
- * holding either @inode->i_lock, @inode->i_mapping->tree_lock, or the
+ * holding either @inode->i_lock, the i_pages lock, or the
  * associated wb's list_lock.
  */
-static inline struct bdi_writeback *inode_to_wb(struct inode *inode)
+static inline struct bdi_writeback *inode_to_wb(const struct inode *inode)
 {
 #ifdef CONFIG_LOCKDEP
 	WARN_ON_ONCE(debug_locks &&
 		     (!lockdep_is_held(&inode->i_lock) &&
-		      !lockdep_is_held(&inode->i_mapping->tree_lock) &&
+		      !lockdep_is_held(&inode->i_mapping->i_pages.xa_lock) &&
 		      !lockdep_is_held(&inode->i_wb->list_lock)));
 #endif
 	return inode->i_wb;
@@ -353,7 +355,7 @@ static inline struct bdi_writeback *inode_to_wb(struct inode *inode)
  * @cookie: output param, to be passed to the end function
  *
  * The caller wants to access the wb associated with @inode but isn't
- * holding inode->i_lock, mapping->tree_lock or wb->list_lock.  This
+ * holding inode->i_lock, the i_pages lock or wb->list_lock.  This
  * function determines the wb associated with @inode and ensures that the
  * association doesn't change until the transaction is finished with
  * unlocked_inode_to_wb_end().
@@ -374,11 +376,15 @@ unlocked_inode_to_wb_begin(struct inode *inode, struct wb_lock_cookie *cookie)
 	cookie->locked = smp_load_acquire(&inode->i_state) & I_WB_SWITCH;
 
 	if (unlikely(cookie->locked))
+<<<<<<< HEAD
 		spin_lock_irqsave(&inode->i_mapping->tree_lock, cookie->flags);
+=======
+		xa_lock_irqsave(&inode->i_mapping->i_pages, cookie->flags);
+>>>>>>> v4.19.83
 
 	/*
-	 * Protected by either !I_WB_SWITCH + rcu_read_lock() or tree_lock.
-	 * inode_to_wb() will bark.  Deref directly.
+	 * Protected by either !I_WB_SWITCH + rcu_read_lock() or the i_pages
+	 * lock.  inode_to_wb() will bark.  Deref directly.
 	 */
 	return inode->i_wb;
 }
@@ -392,7 +398,11 @@ static inline void unlocked_inode_to_wb_end(struct inode *inode,
 					    struct wb_lock_cookie *cookie)
 {
 	if (unlikely(cookie->locked))
+<<<<<<< HEAD
 		spin_unlock_irqrestore(&inode->i_mapping->tree_lock, cookie->flags);
+=======
+		xa_unlock_irqrestore(&inode->i_mapping->i_pages, cookie->flags);
+>>>>>>> v4.19.83
 
 	rcu_read_unlock();
 }
@@ -407,13 +417,13 @@ static inline bool inode_cgwb_enabled(struct inode *inode)
 static inline struct bdi_writeback_congested *
 wb_congested_get_create(struct backing_dev_info *bdi, int blkcg_id, gfp_t gfp)
 {
-	atomic_inc(&bdi->wb_congested->refcnt);
+	refcount_inc(&bdi->wb_congested->refcnt);
 	return bdi->wb_congested;
 }
 
 static inline void wb_congested_put(struct bdi_writeback_congested *congested)
 {
-	if (atomic_dec_and_test(&congested->refcnt))
+	if (refcount_dec_and_test(&congested->refcnt))
 		kfree(congested);
 }
 

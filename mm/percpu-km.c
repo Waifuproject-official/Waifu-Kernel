@@ -57,7 +57,11 @@ static struct pcpu_chunk *pcpu_create_chunk(gfp_t gfp)
 	if (!chunk)
 		return NULL;
 
+<<<<<<< HEAD
 	pages = alloc_pages(gfp | GFP_KERNEL, order_base_2(nr_pages));
+=======
+	pages = alloc_pages(gfp, order_base_2(nr_pages));
+>>>>>>> v4.19.83
 	if (!pages) {
 		pcpu_free_chunk(chunk);
 		return NULL;

@@ -74,7 +74,12 @@ struct ipv6_devconf {
 	__u32		enhanced_dad;
 	__u32		addr_gen_mode;
 	__s32		disable_policy;
+<<<<<<< HEAD
 	__s32		accept_ra_prefix_route;
+=======
+	__s32           ndisc_tclass;
+
+>>>>>>> v4.19.83
 	struct ctl_table_header *sysctl_header;
 };
 

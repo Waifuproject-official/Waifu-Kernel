@@ -49,9 +49,18 @@ static struct inode *f2fs_new_inode(struct inode *dir, umode_t mode)
 
 	inode->i_ino = ino;
 	inode->i_blocks = 0;
+<<<<<<< HEAD
 	inode->i_mtime = inode->i_atime = inode->i_ctime =
 			F2FS_I(inode)->i_crtime = current_time(inode);
 	inode->i_generation = prandom_u32();
+
+	if (S_ISDIR(inode->i_mode))
+		F2FS_I(inode)->i_current_depth = 1;
+=======
+	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
+	F2FS_I(inode)->i_crtime = inode->i_mtime;
+	inode->i_generation = sbi->s_next_generation++;
+>>>>>>> v4.19.83
 
 	if (S_ISDIR(inode->i_mode))
 		F2FS_I(inode)->i_current_depth = 1;
@@ -62,7 +71,11 @@ static struct inode *f2fs_new_inode(struct inode *dir, umode_t mode)
 		goto fail;
 	}
 
+<<<<<<< HEAD
 	if (f2fs_sb_has_project_quota(sbi) &&
+=======
+	if (f2fs_sb_has_project_quota(sbi->sb) &&
+>>>>>>> v4.19.83
 		(F2FS_I(dir)->i_flags & F2FS_PROJINHERIT_FL))
 		F2FS_I(inode)->i_projid = F2FS_I(dir)->i_projid;
 	else
@@ -73,6 +86,13 @@ static struct inode *f2fs_new_inode(struct inode *dir, umode_t mode)
 	if (err)
 		goto fail_drop;
 
+<<<<<<< HEAD
+=======
+	err = dquot_alloc_inode(inode);
+	if (err)
+		goto fail_drop;
+
+>>>>>>> v4.19.83
 	set_inode_flag(inode, FI_NEW_INODE);
 
 	/* If the directory encrypted, then we should encrypt the inode. */
@@ -80,7 +100,11 @@ static struct inode *f2fs_new_inode(struct inode *dir, umode_t mode)
 				f2fs_may_encrypt(inode))
 		f2fs_set_encrypted_inode(inode);
 
+<<<<<<< HEAD
 	if (f2fs_sb_has_extra_attr(sbi)) {
+=======
+	if (f2fs_sb_has_extra_attr(sbi->sb)) {
+>>>>>>> v4.19.83
 		set_inode_flag(inode, FI_EXTRA_ATTR);
 		F2FS_I(inode)->i_extra_isize = F2FS_TOTAL_EXTRA_ATTR_SIZE;
 	}
@@ -93,7 +117,11 @@ static struct inode *f2fs_new_inode(struct inode *dir, umode_t mode)
 	if (f2fs_may_inline_dentry(inode))
 		set_inode_flag(inode, FI_INLINE_DENTRY);
 
+<<<<<<< HEAD
 	if (f2fs_sb_has_flexible_inline_xattr(sbi)) {
+=======
+	if (f2fs_sb_has_flexible_inline_xattr(sbi->sb)) {
+>>>>>>> v4.19.83
 		f2fs_bug_on(sbi, !f2fs_has_extra_attr(inode));
 		if (f2fs_has_inline_xattr(inode))
 			xattr_size = F2FS_OPTION(sbi).inline_xattr_size;
@@ -181,6 +209,7 @@ static inline void set_file_temperature(struct f2fs_sb_info *sbi, struct inode *
 	hot_count = sbi->raw_super->hot_ext_count;
 
 	for (i = 0; i < cold_count + hot_count; i++) {
+<<<<<<< HEAD
 		if (is_extension_exist(name, extlist[i]))
 			break;
 	}
@@ -194,6 +223,18 @@ static inline void set_file_temperature(struct f2fs_sb_info *sbi, struct inode *
 		file_set_cold(inode);
 	else
 		file_set_hot(inode);
+=======
+		if (!is_extension_exist(name, extlist[i]))
+			continue;
+		if (i < cold_count)
+			file_set_cold(inode);
+		else
+			file_set_hot(inode);
+		break;
+	}
+
+	up_read(&sbi->sb_lock);
+>>>>>>> v4.19.83
 }
 
 int f2fs_update_extension_list(struct f2fs_sb_info *sbi, const char *name,
@@ -272,9 +313,12 @@ static int f2fs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 
 	if (unlikely(f2fs_cp_error(sbi)))
 		return -EIO;
+<<<<<<< HEAD
 	err = f2fs_is_checkpoint_ready(sbi);
 	if (err)
 		return err;
+=======
+>>>>>>> v4.19.83
 
 	err = dquot_initialize(dir);
 	if (err)
@@ -321,9 +365,12 @@ static int f2fs_link(struct dentry *old_dentry, struct inode *dir,
 
 	if (unlikely(f2fs_cp_error(sbi)))
 		return -EIO;
+<<<<<<< HEAD
 	err = f2fs_is_checkpoint_ready(sbi);
 	if (err)
 		return err;
+=======
+>>>>>>> v4.19.83
 
 	err = fscrypt_prepare_link(old_dentry, dir, dentry);
 	if (err)
@@ -570,9 +617,12 @@ static int f2fs_symlink(struct inode *dir, struct dentry *dentry,
 
 	if (unlikely(f2fs_cp_error(sbi)))
 		return -EIO;
+<<<<<<< HEAD
 	err = f2fs_is_checkpoint_ready(sbi);
 	if (err)
 		return err;
+=======
+>>>>>>> v4.19.83
 
 	err = fscrypt_prepare_symlink(dir, symname, len, dir->i_sb->s_blocksize,
 				      &disk_link);
@@ -636,7 +686,11 @@ out_f2fs_handle_failed_inode:
 	f2fs_handle_failed_inode(inode);
 out_free_encrypted_link:
 	if (disk_link.name != (unsigned char *)symname)
+<<<<<<< HEAD
 		kvfree(disk_link.name);
+=======
+		kfree(disk_link.name);
+>>>>>>> v4.19.83
 	return err;
 }
 
@@ -702,9 +756,12 @@ static int f2fs_mknod(struct inode *dir, struct dentry *dentry,
 
 	if (unlikely(f2fs_cp_error(sbi)))
 		return -EIO;
+<<<<<<< HEAD
 	err = f2fs_is_checkpoint_ready(sbi);
 	if (err)
 		return err;
+=======
+>>>>>>> v4.19.83
 
 	err = dquot_initialize(dir);
 	if (err)
@@ -839,9 +896,12 @@ static int f2fs_rename(struct inode *old_dir, struct dentry *old_dentry,
 
 	if (unlikely(f2fs_cp_error(sbi)))
 		return -EIO;
+<<<<<<< HEAD
 	err = f2fs_is_checkpoint_ready(sbi);
 	if (err)
 		return err;
+=======
+>>>>>>> v4.19.83
 
 	if (is_inode_flag_set(new_dir, FI_PROJ_INHERIT) &&
 			(!projid_eq(F2FS_I(new_dir)->i_projid,
@@ -862,7 +922,10 @@ static int f2fs_rename(struct inode *old_dir, struct dentry *old_dentry,
 			goto out;
 	}
 
+<<<<<<< HEAD
 	err = -ENOENT;
+=======
+>>>>>>> v4.19.83
 	old_entry = f2fs_find_entry(old_dir, &old_dentry->d_name, &old_page);
 	if (!old_entry) {
 		if (IS_ERR(old_page))
@@ -1034,9 +1097,12 @@ static int f2fs_cross_rename(struct inode *old_dir, struct dentry *old_dentry,
 
 	if (unlikely(f2fs_cp_error(sbi)))
 		return -EIO;
+<<<<<<< HEAD
 	err = f2fs_is_checkpoint_ready(sbi);
 	if (err)
 		return err;
+=======
+>>>>>>> v4.19.83
 
 	if ((is_inode_flag_set(new_dir, FI_PROJ_INHERIT) &&
 			!projid_eq(F2FS_I(new_dir)->i_projid,

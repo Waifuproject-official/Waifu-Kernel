@@ -675,7 +675,6 @@ static inline void verify_block_addr(struct f2fs_io_info *fio, block_t blk_addr)
 static inline int check_block_count(struct f2fs_sb_info *sbi,
 		int segno, struct f2fs_sit_entry *raw_sit)
 {
-#ifdef CONFIG_F2FS_CHECK_FS
 	bool is_valid  = test_bit_le(0, raw_sit->valid_map) ? true : false;
 	int valid_blocks = 0;
 	int cur_pos = 0, next_pos;
@@ -700,9 +699,15 @@ static inline int check_block_count(struct f2fs_sb_info *sbi,
 				"Mismatch valid blocks %d vs. %d",
 					GET_SIT_VBLOCKS(raw_sit), valid_blocks);
 		set_sbi_flag(sbi, SBI_NEED_FSCK);
+<<<<<<< HEAD
 		return -EINVAL;
 	}
 #endif
+=======
+		return -EFSCORRUPTED;
+	}
+
+>>>>>>> v4.19.83
 	/* check segment usage, and check boundary of a given segment number */
 	if (unlikely(GET_SIT_VBLOCKS(raw_sit) > sbi->blocks_per_seg
 					|| segno > TOTAL_SEGS(sbi) - 1)) {
@@ -710,7 +715,11 @@ static inline int check_block_count(struct f2fs_sb_info *sbi,
 				"Wrong valid blocks %d or segno %u",
 					GET_SIT_VBLOCKS(raw_sit), segno);
 		set_sbi_flag(sbi, SBI_NEED_FSCK);
+<<<<<<< HEAD
 		return -EINVAL;
+=======
+		return -EFSCORRUPTED;
+>>>>>>> v4.19.83
 	}
 	return 0;
 }

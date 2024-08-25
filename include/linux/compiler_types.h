@@ -54,6 +54,7 @@ extern void __chk_io_ptr(const volatile void __iomem *);
 
 #ifdef __KERNEL__
 
+<<<<<<< HEAD
 #ifdef __GNUC__
 #include <linux/compiler-gcc.h>
 #endif
@@ -76,6 +77,18 @@ extern void __chk_io_ptr(const volatile void __iomem *);
  */
 #ifdef __clang__
 #include <linux/compiler-clang.h>
+=======
+/* Compiler specific macros. */
+#ifdef __clang__
+#include <linux/compiler-clang.h>
+#elif defined(__INTEL_COMPILER)
+#include <linux/compiler-intel.h>
+#elif defined(__GNUC__)
+/* The above compilers also define __GNUC__, so order is important here. */
+#include <linux/compiler-gcc.h>
+#else
+#error "Unknown compiler"
+>>>>>>> v4.19.83
 #endif
 
 /*
@@ -91,7 +104,11 @@ extern void __chk_io_ptr(const volatile void __iomem *);
 #endif
 
 /*
+<<<<<<< HEAD
  * Generic compiler-dependent macros required for kernel
+=======
+ * Generic compiler-independent macros required for kernel
+>>>>>>> v4.19.83
  * build go below this comment. Actual compiler/compiler version
  * specific implementations come from the above header files
  */
@@ -118,10 +135,18 @@ struct ftrace_likely_data {
 	unsigned long			constant;
 };
 
+<<<<<<< HEAD
+=======
+/* Don't. Just don't. */
+#define __deprecated
+#define __deprecated_for_modules
+
+>>>>>>> v4.19.83
 #endif /* __KERNEL__ */
 
 #endif /* __ASSEMBLY__ */
 
+<<<<<<< HEAD
 #ifdef __KERNEL__
 /*
  * Allow us to mark functions as 'deprecated' and have gcc emit a nice
@@ -222,6 +247,13 @@ struct ftrace_likely_data {
 # define __attribute_const__	/* unimplemented */
 #endif
 
+=======
+/*
+ * The below symbols may be defined for one or more, but not ALL, of the above
+ * compilers. We don't consider that to be an error, so set them to nothing.
+ * For example, some of them are for compiler specific plugins.
+ */
+>>>>>>> v4.19.83
 #ifndef __designated_init
 # define __designated_init
 #endif
@@ -243,6 +275,7 @@ struct ftrace_likely_data {
 # define randomized_struct_fields_end
 #endif
 
+<<<<<<< HEAD
 /*
  * Tell gcc if a function is cold. The compiler will assume any path
  * directly leading to the call is unlikely.
@@ -257,10 +290,13 @@ struct ftrace_likely_data {
 # define __section(S) __attribute__ ((__section__(#S)))
 #endif
 
+=======
+>>>>>>> v4.19.83
 #ifndef __visible
 #define __visible
 #endif
 
+<<<<<<< HEAD
 #ifndef __nostackprotector
 # define __nostackprotector
 #endif
@@ -273,6 +309,8 @@ struct ftrace_likely_data {
 #define __nocfi
 #endif
 
+=======
+>>>>>>> v4.19.83
 /*
  * Assume alignment of return value.
  */
@@ -280,6 +318,7 @@ struct ftrace_likely_data {
 #define __assume_aligned(a, ...)
 #endif
 
+<<<<<<< HEAD
 
 /* Are two types/vars the same type (ignoring qualifiers)? */
 #ifndef __same_type
@@ -291,4 +330,145 @@ struct ftrace_likely_data {
 # define __native_word(t) (sizeof(t) == sizeof(char) || sizeof(t) == sizeof(short) || sizeof(t) == sizeof(int) || sizeof(t) == sizeof(long))
 #endif
 
+=======
+#ifndef asm_volatile_goto
+#define asm_volatile_goto(x...) asm goto(x)
+#endif
+
+/* Are two types/vars the same type (ignoring qualifiers)? */
+#define __same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
+
+/* Is this type a native word size -- useful for atomic operations */
+#define __native_word(t) \
+	(sizeof(t) == sizeof(char) || sizeof(t) == sizeof(short) || \
+	 sizeof(t) == sizeof(int) || sizeof(t) == sizeof(long))
+
+#ifndef __attribute_const__
+#define __attribute_const__	__attribute__((__const__))
+#endif
+
+#ifndef __noclone
+#define __noclone
+#endif
+
+/* Helpers for emitting diagnostics in pragmas. */
+#ifndef __diag
+#define __diag(string)
+#endif
+
+#ifndef __diag_GCC
+#define __diag_GCC(version, severity, string)
+#endif
+
+#ifndef __copy
+# define __copy(symbol)
+#endif
+
+#define __diag_push()	__diag(push)
+#define __diag_pop()	__diag(pop)
+
+#define __diag_ignore(compiler, version, option, comment) \
+	__diag_ ## compiler(version, ignore, option)
+#define __diag_warn(compiler, version, option, comment) \
+	__diag_ ## compiler(version, warn, option)
+#define __diag_error(compiler, version, option, comment) \
+	__diag_ ## compiler(version, error, option)
+
+/*
+ * From the GCC manual:
+ *
+ * Many functions have no effects except the return value and their
+ * return value depends only on the parameters and/or global
+ * variables.  Such a function can be subject to common subexpression
+ * elimination and loop optimization just as an arithmetic operator
+ * would be.
+ * [...]
+ */
+#define __pure			__attribute__((pure))
+#define __aligned(x)		__attribute__((aligned(x)))
+#define __aligned_largest	__attribute__((aligned))
+#define __printf(a, b)		__attribute__((format(printf, a, b)))
+#define __scanf(a, b)		__attribute__((format(scanf, a, b)))
+#define __maybe_unused		__attribute__((unused))
+#define __always_unused		__attribute__((unused))
+#define __mode(x)		__attribute__((mode(x)))
+#define __malloc		__attribute__((__malloc__))
+#define __used			__attribute__((__used__))
+#define __noreturn		__attribute__((noreturn))
+#define __packed		__attribute__((packed))
+#define __weak			__attribute__((weak))
+#define __alias(symbol)		__attribute__((alias(#symbol)))
+#define __cold			__attribute__((cold))
+#define __section(S)		__attribute__((__section__(#S)))
+
+
+#ifdef CONFIG_ENABLE_MUST_CHECK
+#define __must_check		__attribute__((warn_unused_result))
+#else
+#define __must_check
+#endif
+
+#if defined(CC_USING_HOTPATCH) && !defined(__CHECKER__)
+#define notrace			__attribute__((hotpatch(0, 0)))
+#else
+#define notrace			__attribute__((no_instrument_function))
+#endif
+
+/*
+ * it doesn't make sense on ARM (currently the only user of __naked)
+ * to trace naked functions because then mcount is called without
+ * stack and frame pointer being set up and there is no chance to
+ * restore the lr register to the value before mcount was called.
+ */
+#define __naked			__attribute__((naked)) notrace
+
+#define __compiler_offsetof(a, b)	__builtin_offsetof(a, b)
+
+/*
+ * Feature detection for gnu_inline (gnu89 extern inline semantics). Either
+ * __GNUC_STDC_INLINE__ is defined (not using gnu89 extern inline semantics,
+ * and we opt in to the gnu89 semantics), or __GNUC_STDC_INLINE__ is not
+ * defined so the gnu89 semantics are the default.
+ */
+#ifdef __GNUC_STDC_INLINE__
+# define __gnu_inline	__attribute__((gnu_inline))
+#else
+# define __gnu_inline
+#endif
+
+/*
+ * Force always-inline if the user requests it so via the .config.
+ * GCC does not warn about unused static inline functions for
+ * -Wunused-function.  This turns out to avoid the need for complex #ifdef
+ * directives.  Suppress the warning in clang as well by using "unused"
+ * function attribute, which is redundant but not harmful for gcc.
+ * Prefer gnu_inline, so that extern inline functions do not emit an
+ * externally visible function. This makes extern inline behave as per gnu89
+ * semantics rather than c99. This prevents multiple symbol definition errors
+ * of extern inline functions at link time.
+ * A lot of inline functions can cause havoc with function tracing.
+ */
+#if !defined(CONFIG_ARCH_SUPPORTS_OPTIMIZED_INLINING) || \
+	!defined(CONFIG_OPTIMIZE_INLINING)
+#define inline \
+	inline __attribute__((always_inline, unused)) notrace __gnu_inline
+#else
+#define inline inline	__attribute__((unused)) notrace __gnu_inline
+#endif
+
+#define __inline__ inline
+#define __inline inline
+#define noinline	__attribute__((noinline))
+
+#ifndef __always_inline
+#define __always_inline inline __attribute__((always_inline))
+#endif
+
+/*
+ * Rather then using noinline to prevent stack consumption, use
+ * noinline_for_stack instead.  For documentation reasons.
+ */
+#define noinline_for_stack noinline
+
+>>>>>>> v4.19.83
 #endif /* __LINUX_COMPILER_TYPES_H */

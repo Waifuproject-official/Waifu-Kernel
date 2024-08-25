@@ -16,6 +16,7 @@
 #ifndef __ASM_SPINLOCK_H
 #define __ASM_SPINLOCK_H
 
+<<<<<<< HEAD
 #include <asm/lse.h>
 #include <asm/spinlock_types.h>
 #include <asm/processor.h>
@@ -147,6 +148,10 @@ static inline int arch_spin_is_contended(arch_spinlock_t *lock)
 #define arch_spin_relax(lock)	cpu_relax()
 #define arch_read_relax(lock)	cpu_relax()
 #define arch_write_relax(lock)	cpu_relax()
+=======
+#include <asm/qrwlock.h>
+#include <asm/qspinlock.h>
+>>>>>>> v4.19.83
 
 /* See include/linux/spinlock.h */
 #define smp_mb__after_spinlock()	smp_mb()

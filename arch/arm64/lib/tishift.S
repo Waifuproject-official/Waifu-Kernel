@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Copyright (C) 2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  *
@@ -12,6 +13,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+=======
+/* SPDX-License-Identifier: (GPL-2.0 OR BSD-3-Clause)
+ *
+ * Copyright (C) 2017-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+>>>>>>> v4.19.83
  */
 
 #include <linux/linkage.h>

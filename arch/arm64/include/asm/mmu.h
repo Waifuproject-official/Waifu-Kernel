@@ -17,9 +17,18 @@
 #define __ASM_MMU_H
 
 #define MMCF_AARCH32	0x1	/* mm context flag for AArch32 executables */
+<<<<<<< HEAD
 #define USER_ASID_FLAG	(UL(1) << 48)
 #define TTBR_ASID_MASK	(UL(0xffff) << 48)
 
+=======
+#define USER_ASID_BIT	48
+#define USER_ASID_FLAG	(UL(1) << USER_ASID_BIT)
+#define TTBR_ASID_MASK	(UL(0xffff) << 48)
+
+#define BP_HARDEN_EL2_SLOTS 4
+
+>>>>>>> v4.19.83
 #ifndef __ASSEMBLY__
 
 typedef struct {
@@ -48,9 +57,19 @@ struct bp_hardening_data {
 	bp_hardening_cb_t	fn;
 };
 
+<<<<<<< HEAD
 #ifdef CONFIG_HARDEN_BRANCH_PREDICTOR
 extern char __bp_harden_hyp_vecs_start[], __bp_harden_hyp_vecs_end[];
 
+=======
+#if (defined(CONFIG_HARDEN_BRANCH_PREDICTOR) ||	\
+     defined(CONFIG_HARDEN_EL2_VECTORS))
+extern char __bp_harden_hyp_vecs_start[], __bp_harden_hyp_vecs_end[];
+extern atomic_t arm64_el2_vector_last_slot;
+#endif  /* CONFIG_HARDEN_BRANCH_PREDICTOR || CONFIG_HARDEN_EL2_VECTORS */
+
+#ifdef CONFIG_HARDEN_BRANCH_PREDICTOR
+>>>>>>> v4.19.83
 DECLARE_PER_CPU_READ_MOSTLY(struct bp_hardening_data, bp_hardening_data);
 
 static inline struct bp_hardening_data *arm64_get_bp_hardening_data(void)
@@ -87,6 +106,7 @@ extern void create_pgd_mapping(struct mm_struct *mm, phys_addr_t phys,
 			       pgprot_t prot, bool page_mappings_only);
 extern void *fixmap_remap_fdt(phys_addr_t dt_phys);
 extern void mark_linear_text_alias_ro(void);
+<<<<<<< HEAD
 #ifdef CONFIG_MEMORY_HOTPLUG
 extern void hotplug_paging(phys_addr_t start, phys_addr_t size);
 #ifdef CONFIG_MEMORY_HOTREMOVE
@@ -94,6 +114,8 @@ extern void remove_pagetable(unsigned long start,
 	unsigned long end, bool direct);
 #endif
 #endif
+=======
+>>>>>>> v4.19.83
 
 #endif	/* !__ASSEMBLY__ */
 #endif

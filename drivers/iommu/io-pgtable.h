@@ -168,11 +168,16 @@ struct io_pgtable_cfg {
 struct io_pgtable_ops {
 	int (*map)(struct io_pgtable_ops *ops, unsigned long iova,
 		   phys_addr_t paddr, size_t size, int prot);
+<<<<<<< HEAD
 	int (*map_sg)(struct io_pgtable_ops *ops, unsigned long iova,
 		      struct scatterlist *sg, unsigned int nents,
 		      int prot, size_t *size);
 	size_t (*unmap)(struct io_pgtable_ops *ops, unsigned long iova,
 		     size_t size);
+=======
+	size_t (*unmap)(struct io_pgtable_ops *ops, unsigned long iova,
+			size_t size);
+>>>>>>> v4.19.83
 	phys_addr_t (*iova_to_phys)(struct io_pgtable_ops *ops,
 				    unsigned long iova);
 	bool (*is_iova_coherent)(struct io_pgtable_ops *ops,

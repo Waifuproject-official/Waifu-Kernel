@@ -74,7 +74,11 @@ static int __written_first_block(struct f2fs_sb_info *sbi,
 	if (!__is_valid_data_blkaddr(addr))
 		return 1;
 	if (!f2fs_is_valid_blkaddr(sbi, addr, DATA_GENERIC))
+<<<<<<< HEAD
 		return -EFAULT;
+=======
+		return -EFSCORRUPTED;
+>>>>>>> v4.19.83
 	return 0;
 }
 
@@ -177,8 +181,8 @@ bool f2fs_inode_chksum_verify(struct f2fs_sb_info *sbi, struct page *page)
 
 	if (provided != calculated)
 		f2fs_msg(sbi->sb, KERN_WARNING,
-			"checksum invalid, ino = %x, %x vs. %x",
-			ino_of_node(page), provided, calculated);
+			"checksum invalid, nid = %lu, ino_of_node = %x, %x vs. %x",
+			page->index, ino_of_node(page), provided, calculated);
 
 	return provided == calculated;
 }
@@ -219,7 +223,11 @@ static bool sanity_check_inode(struct inode *inode, struct page *node_page)
 		return false;
 	}
 
+<<<<<<< HEAD
 	if (f2fs_sb_has_flexible_inline_xattr(sbi)
+=======
+	if (f2fs_sb_has_flexible_inline_xattr(sbi->sb)
+>>>>>>> v4.19.83
 			&& !f2fs_has_extra_attr(inode)) {
 		set_sbi_flag(sbi, SBI_NEED_FSCK);
 		f2fs_msg(sbi->sb, KERN_WARNING,
@@ -229,7 +237,11 @@ static bool sanity_check_inode(struct inode *inode, struct page *node_page)
 	}
 
 	if (f2fs_has_extra_attr(inode) &&
+<<<<<<< HEAD
 			!f2fs_sb_has_extra_attr(sbi)) {
+=======
+			!f2fs_sb_has_extra_attr(sbi->sb)) {
+>>>>>>> v4.19.83
 		set_sbi_flag(sbi, SBI_NEED_FSCK);
 		f2fs_msg(sbi->sb, KERN_WARNING,
 			"%s: inode (ino=%lx) is with extra_attr, "
@@ -249,6 +261,7 @@ static bool sanity_check_inode(struct inode *inode, struct page *node_page)
 		return false;
 	}
 
+<<<<<<< HEAD
 	if (f2fs_has_extra_attr(inode) &&
 		f2fs_sb_has_flexible_inline_xattr(sbi) &&
 		f2fs_has_inline_xattr(inode) &&
@@ -263,6 +276,8 @@ static bool sanity_check_inode(struct inode *inode, struct page *node_page)
 		return false;
 	}
 
+=======
+>>>>>>> v4.19.83
 	if (F2FS_I(inode)->extent_tree) {
 		struct extent_info *ei = &F2FS_I(inode)->extent_tree->largest;
 
@@ -355,7 +370,11 @@ static int do_read_inode(struct inode *inode)
 	fi->i_extra_isize = f2fs_has_extra_attr(inode) ?
 					le16_to_cpu(ri->i_extra_isize) : 0;
 
+<<<<<<< HEAD
 	if (f2fs_sb_has_flexible_inline_xattr(sbi)) {
+=======
+	if (f2fs_sb_has_flexible_inline_xattr(sbi->sb)) {
+>>>>>>> v4.19.83
 		fi->i_inline_xattr_size = le16_to_cpu(ri->i_inline_xattr_size);
 	} else if (f2fs_has_inline_xattr(inode) ||
 				f2fs_has_inline_dentry(inode)) {
@@ -373,7 +392,11 @@ static int do_read_inode(struct inode *inode)
 
 	if (!sanity_check_inode(inode, node_page)) {
 		f2fs_put_page(node_page, 1);
+<<<<<<< HEAD
 		return -EINVAL;
+=======
+		return -EFSCORRUPTED;
+>>>>>>> v4.19.83
 	}
 
 	/* check data exist */
@@ -412,7 +435,11 @@ static int do_read_inode(struct inode *inode)
 		i_projid = F2FS_DEF_PROJID;
 	fi->i_projid = make_kprojid(&init_user_ns, i_projid);
 
+<<<<<<< HEAD
 	if (f2fs_has_extra_attr(inode) && f2fs_sb_has_inode_crtime(sbi) &&
+=======
+	if (f2fs_has_extra_attr(inode) && f2fs_sb_has_inode_crtime(sbi->sb) &&
+>>>>>>> v4.19.83
 			F2FS_FITS_IN_INODE(ri, fi->i_extra_isize, i_crtime)) {
 		fi->i_crtime.tv_sec = le64_to_cpu(ri->i_crtime);
 		fi->i_crtime.tv_nsec = le32_to_cpu(ri->i_crtime_nsec);
@@ -488,6 +515,7 @@ make_now:
 	return inode;
 
 bad_inode:
+	f2fs_inode_synced(inode);
 	iget_failed(inode);
 	trace_f2fs_iget_exit(inode, ret);
 	return ERR_PTR(ret);
@@ -512,7 +540,11 @@ void f2fs_update_inode(struct inode *inode, struct page *node_page)
 	struct f2fs_inode *ri;
 	struct extent_tree *et = F2FS_I(inode)->extent_tree;
 
+<<<<<<< HEAD
 	f2fs_wait_on_page_writeback(node_page, NODE, true, true);
+=======
+	f2fs_wait_on_page_writeback(node_page, NODE, true);
+>>>>>>> v4.19.83
 	set_page_dirty(node_page);
 
 	f2fs_inode_synced(inode);
@@ -557,11 +589,19 @@ void f2fs_update_inode(struct inode *inode, struct page *node_page)
 	if (f2fs_has_extra_attr(inode)) {
 		ri->i_extra_isize = cpu_to_le16(F2FS_I(inode)->i_extra_isize);
 
+<<<<<<< HEAD
 		if (f2fs_sb_has_flexible_inline_xattr(F2FS_I_SB(inode)))
 			ri->i_inline_xattr_size =
 				cpu_to_le16(F2FS_I(inode)->i_inline_xattr_size);
 
 		if (f2fs_sb_has_project_quota(F2FS_I_SB(inode)) &&
+=======
+		if (f2fs_sb_has_flexible_inline_xattr(F2FS_I_SB(inode)->sb))
+			ri->i_inline_xattr_size =
+				cpu_to_le16(F2FS_I(inode)->i_inline_xattr_size);
+
+		if (f2fs_sb_has_project_quota(F2FS_I_SB(inode)->sb) &&
+>>>>>>> v4.19.83
 			F2FS_FITS_IN_INODE(ri, F2FS_I(inode)->i_extra_isize,
 								i_projid)) {
 			projid_t i_projid;
@@ -571,7 +611,11 @@ void f2fs_update_inode(struct inode *inode, struct page *node_page)
 			ri->i_projid = cpu_to_le32(i_projid);
 		}
 
+<<<<<<< HEAD
 		if (f2fs_sb_has_inode_crtime(F2FS_I_SB(inode)) &&
+=======
+		if (f2fs_sb_has_inode_crtime(F2FS_I_SB(inode)->sb) &&
+>>>>>>> v4.19.83
 			F2FS_FITS_IN_INODE(ri, F2FS_I(inode)->i_extra_isize,
 								i_crtime)) {
 			ri->i_crtime =
@@ -705,10 +749,16 @@ retry:
 		goto retry;
 	}
 
+<<<<<<< HEAD
 	if (err) {
 		f2fs_update_inode_page(inode);
 		set_sbi_flag(sbi, SBI_QUOTA_NEED_REPAIR);
 	}
+=======
+	if (err)
+		f2fs_update_inode_page(inode);
+	dquot_free_inode(inode);
+>>>>>>> v4.19.83
 	sb_end_intwrite(inode->i_sb);
 no_delete:
 	dquot_drop(inode);
@@ -717,6 +767,7 @@ no_delete:
 	stat_dec_inline_dir(inode);
 	stat_dec_inline_inode(inode);
 
+<<<<<<< HEAD
 	if (unlikely(is_inode_flag_set(inode, FI_DIRTY_INODE))) {
 		f2fs_inode_synced(inode);
 		f2fs_msg(sbi->sb, KERN_WARNING,
@@ -726,6 +777,12 @@ no_delete:
 		    !is_sbi_flag_set(sbi, SBI_CP_DISABLED))
 			f2fs_bug_on(sbi, 1);
 	}
+=======
+	if (likely(!is_set_ckpt_flags(sbi, CP_ERROR_FLAG)))
+		f2fs_bug_on(sbi, is_inode_flag_set(inode, FI_DIRTY_INODE));
+	else
+		f2fs_inode_synced(inode);
+>>>>>>> v4.19.83
 
 	/* ino == 0, if f2fs_new_inode() was failed t*/
 	if (inode->i_ino)
@@ -803,6 +860,10 @@ void f2fs_handle_failed_inode(struct inode *inode)
 	} else {
 		set_inode_flag(inode, FI_FREE_NID);
 	}
+<<<<<<< HEAD
+=======
+
+>>>>>>> v4.19.83
 out:
 	f2fs_unlock_op(sbi);
 

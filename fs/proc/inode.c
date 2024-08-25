@@ -104,6 +104,14 @@ void __init proc_init_kmemcache(void)
 	pde_opener_cache =
 		kmem_cache_create("pde_opener", sizeof(struct pde_opener), 0,
 				  SLAB_ACCOUNT|SLAB_PANIC, NULL);
+<<<<<<< HEAD
+=======
+	proc_dir_entry_cache = kmem_cache_create_usercopy(
+		"proc_dir_entry", SIZEOF_PDE, 0, SLAB_PANIC,
+		offsetof(struct proc_dir_entry, inline_name),
+		SIZEOF_PDE_INLINE_NAME, NULL);
+	BUILD_BUG_ON(sizeof(struct proc_dir_entry) >= SIZEOF_PDE);
+>>>>>>> v4.19.83
 }
 
 static int proc_show_options(struct seq_file *seq, struct dentry *root)
@@ -133,12 +141,12 @@ enum {BIAS = -1U<<31};
 
 static inline int use_pde(struct proc_dir_entry *pde)
 {
-	return atomic_inc_unless_negative(&pde->in_use);
+	return likely(atomic_inc_unless_negative(&pde->in_use));
 }
 
 static void unuse_pde(struct proc_dir_entry *pde)
 {
-	if (atomic_dec_return(&pde->in_use) == BIAS)
+	if (unlikely(atomic_dec_return(&pde->in_use) == BIAS))
 		complete(pde->pde_unload_completion);
 }
 
@@ -243,11 +251,11 @@ static ssize_t proc_reg_write(struct file *file, const char __user *buf, size_t 
 	return rv;
 }
 
-static unsigned int proc_reg_poll(struct file *file, struct poll_table_struct *pts)
+static __poll_t proc_reg_poll(struct file *file, struct poll_table_struct *pts)
 {
 	struct proc_dir_entry *pde = PDE(file_inode(file));
-	unsigned int rv = DEFAULT_POLLMASK;
-	unsigned int (*poll)(struct file *, struct poll_table_struct *);
+	__poll_t rv = DEFAULT_POLLMASK;
+	__poll_t (*poll)(struct file *, struct poll_table_struct *);
 	if (use_pde(pde)) {
 		poll = pde->proc_fops->poll;
 		if (poll)
@@ -434,7 +442,7 @@ static const char *proc_get_link(struct dentry *dentry,
 				 struct delayed_call *done)
 {
 	struct proc_dir_entry *pde = PDE(inode);
-	if (unlikely(!use_pde(pde)))
+	if (!use_pde(pde))
 		return ERR_PTR(-EINVAL);
 	set_delayed_call(done, proc_put_link, pde);
 	return pde->data;
@@ -491,8 +499,17 @@ int proc_fill_super(struct super_block *s)
 	struct inode *root_inode;
 	int ret;
 
+<<<<<<< HEAD
 	s->s_iflags |= SB_I_USERNS_VISIBLE | SB_I_NODEV;
 	s->s_flags |= MS_NODIRATIME | MS_NOSUID | MS_NOEXEC;
+=======
+	if (!proc_parse_options(data, ns))
+		return -EINVAL;
+
+	/* User space would break if executables or devices appear on proc */
+	s->s_iflags |= SB_I_USERNS_VISIBLE | SB_I_NOEXEC | SB_I_NODEV;
+	s->s_flags |= SB_NODIRATIME | SB_NOSUID | SB_NOEXEC;
+>>>>>>> v4.19.83
 	s->s_blocksize = 1024;
 	s->s_blocksize_bits = 10;
 	s->s_magic = PROC_SUPER_MAGIC;

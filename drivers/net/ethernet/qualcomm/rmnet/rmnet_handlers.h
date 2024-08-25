@@ -19,10 +19,14 @@
 
 #include "rmnet_config.h"
 
+<<<<<<< HEAD
 enum rmnet_packet_context {
 	RMNET_NET_RX_CTX,
 	RMNET_WQ_CTX,
 };
+=======
+void rmnet_egress_handler(struct sk_buff *skb);
+>>>>>>> v4.19.83
 
 void rmnet_egress_handler(struct sk_buff *skb);
 void rmnet_deliver_skb(struct sk_buff *skb, struct rmnet_port *port);

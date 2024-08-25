@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * This file is part of STM32 ADC driver
  *
@@ -6,19 +7,6 @@
  *
  * Inspired from: fsl-imx25-tsadc
  *
- * License type: GPLv2
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 as published by
- * the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <linux/clk.h>
@@ -33,51 +21,22 @@
 
 #include "stm32-adc-core.h"
 
-/* STM32F4 - common registers for all ADC instances: 1, 2 & 3 */
-#define STM32F4_ADC_CSR			(STM32_ADCX_COMN_OFFSET + 0x00)
-#define STM32F4_ADC_CCR			(STM32_ADCX_COMN_OFFSET + 0x04)
-
-/* STM32F4_ADC_CSR - bit fields */
-#define STM32F4_EOC3			BIT(17)
-#define STM32F4_EOC2			BIT(9)
-#define STM32F4_EOC1			BIT(1)
-
-/* STM32F4_ADC_CCR - bit fields */
-#define STM32F4_ADC_ADCPRE_SHIFT	16
-#define STM32F4_ADC_ADCPRE_MASK		GENMASK(17, 16)
-
-/* STM32 F4 maximum analog clock rate (from datasheet) */
-#define STM32F4_ADC_MAX_CLK_RATE	36000000
-
-/* STM32H7 - common registers for all ADC instances */
-#define STM32H7_ADC_CSR			(STM32_ADCX_COMN_OFFSET + 0x00)
-#define STM32H7_ADC_CCR			(STM32_ADCX_COMN_OFFSET + 0x08)
-
-/* STM32H7_ADC_CSR - bit fields */
-#define STM32H7_EOC_SLV			BIT(18)
-#define STM32H7_EOC_MST			BIT(2)
-
-/* STM32H7_ADC_CCR - bit fields */
-#define STM32H7_PRESC_SHIFT		18
-#define STM32H7_PRESC_MASK		GENMASK(21, 18)
-#define STM32H7_CKMODE_SHIFT		16
-#define STM32H7_CKMODE_MASK		GENMASK(17, 16)
-
-/* STM32 H7 maximum analog clock rate (from datasheet) */
-#define STM32H7_ADC_MAX_CLK_RATE	36000000
-
 /**
  * stm32_adc_common_regs - stm32 common registers, compatible dependent data
  * @csr:	common status register offset
  * @eoc1:	adc1 end of conversion flag in @csr
  * @eoc2:	adc2 end of conversion flag in @csr
  * @eoc3:	adc3 end of conversion flag in @csr
+ * @ier:	interrupt enable register offset for each adc
+ * @eocie_msk:	end of conversion interrupt enable mask in @ier
  */
 struct stm32_adc_common_regs {
 	u32 csr;
 	u32 eoc1_msk;
 	u32 eoc2_msk;
 	u32 eoc3_msk;
+	u32 ier;
+	u32 eocie_msk;
 };
 
 struct stm32_adc_priv;
@@ -86,15 +45,17 @@ struct stm32_adc_priv;
  * stm32_adc_priv_cfg - stm32 core compatible configuration data
  * @regs:	common registers for all instances
  * @clk_sel:	clock selection routine
+ * @max_clk_rate_hz: maximum analog clock rate (Hz, from datasheet)
  */
 struct stm32_adc_priv_cfg {
 	const struct stm32_adc_common_regs *regs;
 	int (*clk_sel)(struct platform_device *, struct stm32_adc_priv *);
+	u32 max_clk_rate_hz;
 };
 
 /**
  * struct stm32_adc_priv - stm32 ADC core private data
- * @irq:		irq for ADC block
+ * @irq:		irq(s) for ADC block
  * @domain:		irq domain reference
  * @aclk:		clock reference for the analog circuitry
  * @bclk:		bus clock common for all ADCs, depends on part used
@@ -103,7 +64,7 @@ struct stm32_adc_priv_cfg {
  * @common:		common data for all ADC instances
  */
 struct stm32_adc_priv {
-	int				irq;
+	int				irq[STM32_ADC_MAX_ADCS];
 	struct irq_domain		*domain;
 	struct clk			*aclk;
 	struct clk			*bclk;
@@ -139,8 +100,13 @@ static int stm32f4_adc_clk_sel(struct platform_device *pdev,
 	}
 
 	rate = clk_get_rate(priv->aclk);
+	if (!rate) {
+		dev_err(&pdev->dev, "Invalid clock rate: 0\n");
+		return -EINVAL;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(stm32f4_pclk_div); i++) {
-		if ((rate / stm32f4_pclk_div[i]) <= STM32F4_ADC_MAX_CLK_RATE)
+		if ((rate / stm32f4_pclk_div[i]) <= priv->cfg->max_clk_rate_hz)
 			break;
 	}
 	if (i >= ARRAY_SIZE(stm32f4_pclk_div)) {
@@ -216,6 +182,10 @@ static int stm32h7_adc_clk_sel(struct platform_device *pdev,
 		 * From spec: PLL output musn't exceed max rate
 		 */
 		rate = clk_get_rate(priv->aclk);
+		if (!rate) {
+			dev_err(&pdev->dev, "Invalid adc clock rate: 0\n");
+			return -EINVAL;
+		}
 
 		for (i = 0; i < ARRAY_SIZE(stm32h7_adc_ckmodes_spec); i++) {
 			ckmode = stm32h7_adc_ckmodes_spec[i].ckmode;
@@ -225,13 +195,17 @@ static int stm32h7_adc_clk_sel(struct platform_device *pdev,
 			if (ckmode)
 				continue;
 
-			if ((rate / div) <= STM32H7_ADC_MAX_CLK_RATE)
+			if ((rate / div) <= priv->cfg->max_clk_rate_hz)
 				goto out;
 		}
 	}
 
 	/* Synchronous clock modes (e.g. ckmode is 1, 2 or 3) */
 	rate = clk_get_rate(priv->bclk);
+	if (!rate) {
+		dev_err(&pdev->dev, "Invalid bus clock rate: 0\n");
+		return -EINVAL;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(stm32h7_adc_ckmodes_spec); i++) {
 		ckmode = stm32h7_adc_ckmodes_spec[i].ckmode;
@@ -241,7 +215,7 @@ static int stm32h7_adc_clk_sel(struct platform_device *pdev,
 		if (!ckmode)
 			continue;
 
-		if ((rate / div) <= STM32H7_ADC_MAX_CLK_RATE)
+		if ((rate / div) <= priv->cfg->max_clk_rate_hz)
 			goto out;
 	}
 
@@ -271,6 +245,8 @@ static const struct stm32_adc_common_regs stm32f4_adc_common_regs = {
 	.eoc1_msk = STM32F4_EOC1,
 	.eoc2_msk = STM32F4_EOC2,
 	.eoc3_msk = STM32F4_EOC3,
+	.ier = STM32F4_ADC_CR1,
+	.eocie_msk = STM32F4_EOCIE,
 };
 
 /* STM32H7 common registers definitions */
@@ -278,7 +254,23 @@ static const struct stm32_adc_common_regs stm32h7_adc_common_regs = {
 	.csr = STM32H7_ADC_CSR,
 	.eoc1_msk = STM32H7_EOC_MST,
 	.eoc2_msk = STM32H7_EOC_SLV,
+	.ier = STM32H7_ADC_IER,
+	.eocie_msk = STM32H7_EOCIE,
 };
+
+static const unsigned int stm32_adc_offset[STM32_ADC_MAX_ADCS] = {
+	0, STM32_ADC_OFFSET, STM32_ADC_OFFSET * 2,
+};
+
+static unsigned int stm32_adc_eoc_enabled(struct stm32_adc_priv *priv,
+					  unsigned int adc)
+{
+	u32 ier, offset = stm32_adc_offset[adc];
+
+	ier = readl_relaxed(priv->common.base + offset + priv->cfg->regs->ier);
+
+	return ier & priv->cfg->regs->eocie_msk;
+}
 
 /* ADC common interrupt for all instances */
 static void stm32_adc_irq_handler(struct irq_desc *desc)
@@ -290,13 +282,28 @@ static void stm32_adc_irq_handler(struct irq_desc *desc)
 	chained_irq_enter(chip, desc);
 	status = readl_relaxed(priv->common.base + priv->cfg->regs->csr);
 
-	if (status & priv->cfg->regs->eoc1_msk)
+	/*
+	 * End of conversion may be handled by using IRQ or DMA. There may be a
+	 * race here when two conversions complete at the same time on several
+	 * ADCs. EOC may be read 'set' for several ADCs, with:
+	 * - an ADC configured to use DMA (EOC triggers the DMA request, and
+	 *   is then automatically cleared by DR read in hardware)
+	 * - an ADC configured to use IRQs (EOCIE bit is set. The handler must
+	 *   be called in this case)
+	 * So both EOC status bit in CSR and EOCIE control bit must be checked
+	 * before invoking the interrupt handler (e.g. call ISR only for
+	 * IRQ-enabled ADCs).
+	 */
+	if (status & priv->cfg->regs->eoc1_msk &&
+	    stm32_adc_eoc_enabled(priv, 0))
 		generic_handle_irq(irq_find_mapping(priv->domain, 0));
 
-	if (status & priv->cfg->regs->eoc2_msk)
+	if (status & priv->cfg->regs->eoc2_msk &&
+	    stm32_adc_eoc_enabled(priv, 1))
 		generic_handle_irq(irq_find_mapping(priv->domain, 1));
 
-	if (status & priv->cfg->regs->eoc3_msk)
+	if (status & priv->cfg->regs->eoc3_msk &&
+	    stm32_adc_eoc_enabled(priv, 2))
 		generic_handle_irq(irq_find_mapping(priv->domain, 2));
 
 	chained_irq_exit(chip, desc);
@@ -327,11 +334,24 @@ static int stm32_adc_irq_probe(struct platform_device *pdev,
 			       struct stm32_adc_priv *priv)
 {
 	struct device_node *np = pdev->dev.of_node;
+	unsigned int i;
 
-	priv->irq = platform_get_irq(pdev, 0);
-	if (priv->irq < 0) {
-		dev_err(&pdev->dev, "failed to get irq\n");
-		return priv->irq;
+	for (i = 0; i < STM32_ADC_MAX_ADCS; i++) {
+		priv->irq[i] = platform_get_irq(pdev, i);
+		if (priv->irq[i] < 0) {
+			/*
+			 * At least one interrupt must be provided, make others
+			 * optional:
+			 * - stm32f4/h7 shares a common interrupt.
+			 * - stm32mp1, has one line per ADC (either for ADC1,
+			 *   ADC2 or both).
+			 */
+			if (i && priv->irq[i] == -ENXIO)
+				continue;
+			dev_err(&pdev->dev, "failed to get irq\n");
+
+			return priv->irq[i];
+		}
 	}
 
 	priv->domain = irq_domain_add_simple(np, STM32_ADC_MAX_ADCS, 0,
@@ -342,8 +362,12 @@ static int stm32_adc_irq_probe(struct platform_device *pdev,
 		return -ENOMEM;
 	}
 
-	irq_set_chained_handler(priv->irq, stm32_adc_irq_handler);
-	irq_set_handler_data(priv->irq, priv);
+	for (i = 0; i < STM32_ADC_MAX_ADCS; i++) {
+		if (priv->irq[i] < 0)
+			continue;
+		irq_set_chained_handler(priv->irq[i], stm32_adc_irq_handler);
+		irq_set_handler_data(priv->irq[i], priv);
+	}
 
 	return 0;
 }
@@ -352,11 +376,17 @@ static void stm32_adc_irq_remove(struct platform_device *pdev,
 				 struct stm32_adc_priv *priv)
 {
 	int hwirq;
+	unsigned int i;
 
 	for (hwirq = 0; hwirq < STM32_ADC_MAX_ADCS; hwirq++)
 		irq_dispose_mapping(irq_find_mapping(priv->domain, hwirq));
 	irq_domain_remove(priv->domain);
-	irq_set_chained_handler(priv->irq, NULL);
+
+	for (i = 0; i < STM32_ADC_MAX_ADCS; i++) {
+		if (priv->irq[i] < 0)
+			continue;
+		irq_set_chained_handler(priv->irq[i], NULL);
+	}
 }
 
 static int stm32_adc_probe(struct platform_device *pdev)
@@ -496,11 +526,19 @@ static int stm32_adc_remove(struct platform_device *pdev)
 static const struct stm32_adc_priv_cfg stm32f4_adc_priv_cfg = {
 	.regs = &stm32f4_adc_common_regs,
 	.clk_sel = stm32f4_adc_clk_sel,
+	.max_clk_rate_hz = 36000000,
 };
 
 static const struct stm32_adc_priv_cfg stm32h7_adc_priv_cfg = {
 	.regs = &stm32h7_adc_common_regs,
 	.clk_sel = stm32h7_adc_clk_sel,
+	.max_clk_rate_hz = 36000000,
+};
+
+static const struct stm32_adc_priv_cfg stm32mp1_adc_priv_cfg = {
+	.regs = &stm32h7_adc_common_regs,
+	.clk_sel = stm32h7_adc_clk_sel,
+	.max_clk_rate_hz = 40000000,
 };
 
 static const struct of_device_id stm32_adc_of_match[] = {
@@ -510,6 +548,9 @@ static const struct of_device_id stm32_adc_of_match[] = {
 	}, {
 		.compatible = "st,stm32h7-adc-core",
 		.data = (void *)&stm32h7_adc_priv_cfg
+	}, {
+		.compatible = "st,stm32mp1-adc-core",
+		.data = (void *)&stm32mp1_adc_priv_cfg
 	}, {
 	},
 };

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Copyright (c) 2015, Linaro Limited
  * Copyright (c) 2014, 2017, The Linux Foundation. All rights reserved.
@@ -10,13 +11,22 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+=======
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (c) 2017, Linaro Limited
+ * Author: Georgi Djakov <georgi.djakov@linaro.org>
+>>>>>>> v4.19.83
  */
 
 #ifndef __QCOM_CLK_REGMAP_MUX_DIV_H__
 #define __QCOM_CLK_REGMAP_MUX_DIV_H__
 
 #include <linux/clk-provider.h>
+<<<<<<< HEAD
 #include "clk-rcg.h"
+=======
+>>>>>>> v4.19.83
 #include "clk-regmap.h"
 
 /**
@@ -28,6 +38,7 @@
  * @src_shift:	lowest bit of source select field
  * @div:	the divider raw configuration value
  * @src:	the mux index which will be used if the clock is enabled
+<<<<<<< HEAD
  * @safe_src:	the safe source mux value we switch to, while the main PLL is
  *		reconfigured
  * @safe_div:	the safe divider value that we set, while the main PLL is
@@ -45,6 +56,13 @@
  * @clk_nb:	clock notifier registered for clock rate change
  */
 
+=======
+ * @parent_map: map from parent_names index to src_sel field
+ * @clkr:	handle between common and hardware-specific interfaces
+ * @pclk:	the input PLL clock
+ * @clk_nb:	clock notifier for rate changes of the input PLL
+ */
+>>>>>>> v4.19.83
 struct clk_regmap_mux_div {
 	u32				reg_offset;
 	u32				hid_width;
@@ -53,16 +71,26 @@ struct clk_regmap_mux_div {
 	u32				src_shift;
 	u32				div;
 	u32				src;
+<<<<<<< HEAD
 	u32				safe_src;
 	u32				safe_div;
 	unsigned long			safe_freq;
 	const struct parent_map		*parent_map;
 	struct clk_regmap		clkr;
+=======
+	const u32			*parent_map;
+	struct clk_regmap		clkr;
+	struct clk			*pclk;
+>>>>>>> v4.19.83
 	struct notifier_block		clk_nb;
 };
 
 extern const struct clk_ops clk_regmap_mux_div_ops;
+<<<<<<< HEAD
 int __mux_div_set_src_div(struct clk_regmap_mux_div *md, u32 src, u32 div);
 int mux_div_get_src_div(struct clk_regmap_mux_div *md, u32 *src, u32 *div);
+=======
+extern int mux_div_set_src_div(struct clk_regmap_mux_div *md, u32 src, u32 div);
+>>>>>>> v4.19.83
 
 #endif

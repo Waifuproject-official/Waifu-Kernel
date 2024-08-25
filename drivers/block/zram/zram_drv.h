@@ -21,9 +21,13 @@
 #include <linux/spinlock.h>
 
 #include "zcomp.h"
+<<<<<<< HEAD
 #include "zram_dedup.h"
 
 #define SECTOR_SHIFT		9
+=======
+
+>>>>>>> v4.19.83
 #define SECTORS_PER_PAGE_SHIFT	(PAGE_SHIFT - SECTOR_SHIFT)
 #define SECTORS_PER_PAGE	(1 << SECTORS_PER_PAGE_SHIFT)
 #define ZRAM_LOGICAL_BLOCK_SHIFT 12
@@ -50,9 +54,13 @@ enum zram_pageflags {
 	ZRAM_LOCK = ZRAM_FLAG_SHIFT,
 	ZRAM_SAME,	/* Page consists the same element */
 	ZRAM_WB,	/* page is stored on backing_device */
+<<<<<<< HEAD
 	ZRAM_UNDER_WB,	/* page is under writeback */
 	ZRAM_HUGE,	/* Incompressible page */
 	ZRAM_IDLE,	/* not accessed page since last idle marking */
+=======
+	ZRAM_HUGE,	/* Incompressible page */
+>>>>>>> v4.19.83
 
 	__NR_ZRAM_PAGEFLAGS,
 };
@@ -73,7 +81,11 @@ struct zram_table_entry {
 		struct zram_entry *entry;
 		unsigned long element;
 	};
+<<<<<<< HEAD
 	unsigned long flags;
+=======
+	unsigned long value;
+>>>>>>> v4.19.83
 #ifdef CONFIG_ZRAM_MEMORY_TRACKING
 	ktime_t ac_time;
 #endif
@@ -92,6 +104,7 @@ struct zram_stats {
 	atomic64_t pages_stored;	/* no. of pages currently stored */
 	atomic_long_t max_used_pages;	/* no. of maximum pages stored */
 	atomic64_t writestall;		/* no. of write slow paths */
+<<<<<<< HEAD
 	atomic64_t dup_data_size;	/*
 					 * compressed size of pages
 					 * duplicated
@@ -108,6 +121,9 @@ struct zram_stats {
 struct zram_hash {
 	spinlock_t lock;
 	struct rb_root rb_root;
+=======
+	atomic64_t miss_free;		/* no. of missed free */
+>>>>>>> v4.19.83
 };
 
 struct zram {

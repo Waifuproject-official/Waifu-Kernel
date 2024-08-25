@@ -12,7 +12,6 @@
 
 #include <linux/kernel.h>
 #include <linux/cpuidle.h>
-#include <linux/pm_qos.h>
 #include <linux/time.h>
 #include <linux/ktime.h>
 #include <linux/hrtimer.h>
@@ -21,7 +20,6 @@
 #include <linux/sched/loadavg.h>
 #include <linux/sched/stat.h>
 #include <linux/math64.h>
-#include <linux/cpu.h>
 
 /*
  * Please note when changing the tuning values:
@@ -287,25 +285,23 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 		       bool *stop_tick)
 {
 	struct menu_device *data = this_cpu_ptr(&menu_devices);
-	struct device *device = get_cpu_device(dev->cpu);
-	int latency_req = pm_qos_request(PM_QOS_CPU_DMA_LATENCY);
+	int latency_req = cpuidle_governor_latency_req(dev->cpu);
 	int i;
 	int first_idx;
 	int idx;
 	unsigned int interactivity_req;
 	unsigned int expected_interval;
 	unsigned long nr_iowaiters, cpu_load;
+<<<<<<< HEAD
 	int resume_latency = dev_pm_qos_raw_read_value(device);
+=======
+>>>>>>> v4.19.83
 	ktime_t delta_next;
 
 	if (data->needs_update) {
 		menu_update(drv, dev);
 		data->needs_update = 0;
 	}
-
-	/* resume_latency is 0 means no restriction */
-	if (resume_latency && resume_latency < latency_req)
-		latency_req = resume_latency;
 
 	/* Special case when user has set very strict latency requirement */
 	if (unlikely(latency_req == 0)) {
@@ -337,9 +333,8 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 		unsigned int polling_threshold;
 
 		/*
-		 * We want to default to C1 (hlt), not to busy polling
-		 * unless the timer is happening really really soon, or
-		 * C1's exit latency exceeds the user configured limit.
+		 * Default to a physical idle state, not to busy polling, unless
+		 * a timer is going to trigger really really soon.
 		 */
 		polling_threshold = max_t(unsigned int, 20, s->target_residency);
 		if (data->next_timer_us > polling_threshold &&
@@ -358,6 +353,7 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 		 * If the tick is already stopped, the cost of possible short
 		 * idle duration misprediction is much higher, because the CPU
 		 * may be stuck in a shallow idle state for a long time as a
+<<<<<<< HEAD
 		 * result of it.  In that case say we might mispredict and try
 		 * to force the CPU into a state for which we would have stopped
 		 * the tick, unless a timer is going to expire really soon
@@ -366,6 +362,14 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 		if (data->predicted_us < TICK_USEC)
 			data->predicted_us = min_t(unsigned int, TICK_USEC,
 						   ktime_to_us(delta_next));
+=======
+		 * result of it.  In that case say we might mispredict and use
+		 * the known time till the closest timer event for the idle
+		 * state selection.
+		 */
+		if (data->predicted_us < TICK_USEC)
+			data->predicted_us = ktime_to_us(delta_next);
+>>>>>>> v4.19.83
 	} else {
 		/*
 		 * Use the performance multiplier and the user-configurable
@@ -390,8 +394,38 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 			continue;
 		if (idx == -1)
 			idx = i; /* first enabled state */
+<<<<<<< HEAD
 		if (s->target_residency > data->predicted_us)
 			break;
+=======
+		if (s->target_residency > data->predicted_us) {
+			if (data->predicted_us < TICK_USEC)
+				break;
+
+			if (!tick_nohz_tick_stopped()) {
+				/*
+				 * If the state selected so far is shallow,
+				 * waking up early won't hurt, so retain the
+				 * tick in that case and let the governor run
+				 * again in the next iteration of the loop.
+				 */
+				expected_interval = drv->states[idx].target_residency;
+				break;
+			}
+
+			/*
+			 * If the state selected so far is shallow and this
+			 * state's target residency matches the time till the
+			 * closest timer event, select this one to avoid getting
+			 * stuck in the shallow one for too long.
+			 */
+			if (drv->states[idx].target_residency < TICK_USEC &&
+			    s->target_residency <= ktime_to_us(delta_next))
+				idx = i;
+
+			goto out;
+		}
+>>>>>>> v4.19.83
 		if (s->exit_latency > latency_req) {
 			/*
 			 * If we break out of the loop for latency reasons, use
@@ -412,14 +446,23 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 	 * Don't stop the tick if the selected state is a polling one or if the
 	 * expected idle duration is shorter than the tick period length.
 	 */
+<<<<<<< HEAD
 	if ((drv->states[idx].flags & CPUIDLE_FLAG_POLLING) ||
 	    expected_interval < TICK_USEC) {
+=======
+	if (((drv->states[idx].flags & CPUIDLE_FLAG_POLLING) ||
+	     expected_interval < TICK_USEC) && !tick_nohz_tick_stopped()) {
+>>>>>>> v4.19.83
 		unsigned int delta_next_us = ktime_to_us(delta_next);
 
 		*stop_tick = false;
 
+<<<<<<< HEAD
 		if (!tick_nohz_tick_stopped() && idx > 0 &&
 		    drv->states[idx].target_residency > delta_next_us) {
+=======
+		if (idx > 0 && drv->states[idx].target_residency > delta_next_us) {
+>>>>>>> v4.19.83
 			/*
 			 * The tick is not going to be stopped and the target
 			 * residency of the state to be returned is not within
@@ -427,8 +470,13 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 			 * tick, so try to correct that.
 			 */
 			for (i = idx - 1; i >= 0; i--) {
+<<<<<<< HEAD
 			    if (drv->states[i].disabled ||
 			        dev->states_usage[i].disable)
+=======
+				if (drv->states[i].disabled ||
+				    dev->states_usage[i].disable)
+>>>>>>> v4.19.83
 					continue;
 
 				idx = i;
@@ -438,6 +486,10 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
 		}
 	}
 
+<<<<<<< HEAD
+=======
+out:
+>>>>>>> v4.19.83
 	data->last_state_idx = idx;
 
 	return data->last_state_idx;

@@ -81,7 +81,11 @@ extern unsigned int vced_count, vcei_count;
 
 #endif
 
+<<<<<<< HEAD
 #define VDSO_RANDOMIZE_SIZE	(TASK_IS_32BIT_ADDR ? SZ_1M : SZ_256M)
+=======
+#define VDSO_RANDOMIZE_SIZE	(TASK_IS_32BIT_ADDR ? SZ_1M : SZ_64M)
+>>>>>>> v4.19.83
 
 extern unsigned long mips_stack_top(void);
 #define STACK_TOP		mips_stack_top()
@@ -367,8 +371,6 @@ struct task_struct;
 
 /* Free all resources held by a thread. */
 #define release_thread(thread) do { } while(0)
-
-extern unsigned long thread_saved_pc(struct task_struct *tsk);
 
 /*
  * Do necessary setup to start up a newly executed thread.

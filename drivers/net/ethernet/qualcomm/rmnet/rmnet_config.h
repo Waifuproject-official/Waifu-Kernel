@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /* Copyright (c) 2013-2014, 2016-2020 The Linux Foundation. All rights reserved.
+=======
+/* Copyright (c) 2013-2014, 2016-2018 The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -26,6 +30,7 @@ struct rmnet_endpoint {
 	u8 mux_id;
 	struct net_device *egress_dev;
 	struct hlist_node hlnode;
+<<<<<<< HEAD
 };
 
 struct rmnet_agg_stats {
@@ -59,6 +64,8 @@ struct rmnet_egress_agg_params {
 struct rmnet_agg_page {
 	struct list_head list;
 	struct page *page;
+=======
+>>>>>>> v4.19.83
 };
 
 /* One instance of this structure is instantiated for each real_dev associated
@@ -71,6 +78,7 @@ struct rmnet_port {
 	u8 rmnet_mode;
 	struct hlist_head muxed_ep[RMNET_MAX_LOGICAL_EP];
 	struct net_device *bridge_ep;
+<<<<<<< HEAD
 	void *rmnet_perf;
 
 	struct rmnet_egress_agg_params egress_agg_params;
@@ -99,6 +107,8 @@ struct rmnet_port {
 	/* Descriptor pool */
 	spinlock_t desc_pool_lock;
 	struct rmnet_frag_descriptor_pool *frag_desc_pool;
+=======
+>>>>>>> v4.19.83
 };
 
 extern struct rtnl_link_ops rmnet_link_ops;
@@ -109,6 +119,7 @@ struct rmnet_vnd_stats {
 	u64 tx_pkts;
 	u64 tx_bytes;
 	u32 tx_drops;
+<<<<<<< HEAD
 };
 
 struct rmnet_pcpu_stats {
@@ -194,6 +205,40 @@ struct rmnet_port *rmnet_get_port(struct net_device *real_dev);
 struct rmnet_endpoint *rmnet_get_endpoint(struct rmnet_port *port, u8 mux_id);
 int rmnet_add_bridge(struct net_device *rmnet_dev,
 		     struct net_device *slave_dev);
+=======
+};
+
+struct rmnet_pcpu_stats {
+	struct rmnet_vnd_stats stats;
+	struct u64_stats_sync syncp;
+};
+
+struct rmnet_priv_stats {
+	u64 csum_ok;
+	u64 csum_valid_unset;
+	u64 csum_validation_failed;
+	u64 csum_err_bad_buffer;
+	u64 csum_err_invalid_ip_version;
+	u64 csum_err_invalid_transport;
+	u64 csum_fragmented_pkt;
+	u64 csum_skipped;
+	u64 csum_sw;
+};
+
+struct rmnet_priv {
+	u8 mux_id;
+	struct net_device *real_dev;
+	struct rmnet_pcpu_stats __percpu *pcpu_stats;
+	struct gro_cells gro_cells;
+	struct rmnet_priv_stats stats;
+};
+
+struct rmnet_port *rmnet_get_port(struct net_device *real_dev);
+struct rmnet_endpoint *rmnet_get_endpoint(struct rmnet_port *port, u8 mux_id);
+int rmnet_add_bridge(struct net_device *rmnet_dev,
+		     struct net_device *slave_dev,
+		     struct netlink_ext_ack *extack);
+>>>>>>> v4.19.83
 int rmnet_del_bridge(struct net_device *rmnet_dev,
 		     struct net_device *slave_dev);
 #endif /* _RMNET_CONFIG_H_ */

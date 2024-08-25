@@ -35,7 +35,11 @@ static void cpufreq_stats_update(struct cpufreq_stats *stats)
 	spin_lock_irqsave(&cpufreq_stats_lock, flags);
 	stats->time_in_state[stats->last_index] += cur_time - stats->last_time;
 	stats->last_time = cur_time;
+<<<<<<< HEAD
 	spin_unlock_irqrestore(&cpufreq_stats_lock, flags);
+=======
+	spin_unlock(&cpufreq_stats_lock);
+>>>>>>> v4.19.83
 }
 
 static void cpufreq_stats_clear_table(struct cpufreq_stats *stats)

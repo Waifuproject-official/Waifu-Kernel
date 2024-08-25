@@ -20,7 +20,7 @@
 	EM( MR_SYSCALL,		"syscall_or_cpuset")		\
 	EM( MR_MEMPOLICY_MBIND,	"mempolicy_mbind")		\
 	EM( MR_NUMA_MISPLACED,	"numa_misplaced")		\
-	EMe(MR_CMA,		"cma")
+	EMe(MR_CONTIG_RANGE,	"contig_range")
 
 /*
  * First define the enums in the above macros to be exported to userspace
@@ -70,6 +70,7 @@ TRACE_EVENT(mm_migrate_pages,
 		__print_symbolic(__entry->mode, MIGRATE_MODE),
 		__print_symbolic(__entry->reason, MIGRATE_REASON))
 );
+<<<<<<< HEAD
 
 TRACE_EVENT(mm_numa_migrate_ratelimit,
 
@@ -118,6 +119,8 @@ TRACE_EVENT(mm_migrate_pages_start,
 		__print_symbolic(__entry->mode, MIGRATE_MODE),
 		__print_symbolic(__entry->reason, MIGRATE_REASON))
 );
+=======
+>>>>>>> v4.19.83
 #endif /* _TRACE_MIGRATE_H */
 
 /* This part must be outside protection */

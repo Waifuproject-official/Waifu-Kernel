@@ -290,7 +290,7 @@ static int ocfs2_info_scan_inode_alloc(struct ocfs2_super *osb,
 	if (inode_alloc)
 		inode_lock(inode_alloc);
 
-	if (o2info_coherent(&fi->ifi_req)) {
+	if (inode_alloc && o2info_coherent(&fi->ifi_req)) {
 		status = ocfs2_inode_lock(inode_alloc, &bh, 0);
 		if (status < 0) {
 			mlog_errno(status);
@@ -402,7 +402,7 @@ out_err:
 static void o2ffg_update_histogram(struct ocfs2_info_free_chunk_list *hist,
 				   unsigned int chunksize)
 {
-	int index;
+	u32 index;
 
 	index = __ilog2_u32(chunksize);
 	if (index >= OCFS2_INFO_MAX_HIST)

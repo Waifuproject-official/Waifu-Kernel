@@ -63,19 +63,10 @@ static int ufs_qcom_set_dme_vs_core_clk_ctrl_clear_div(struct ufs_hba *hba,
 						       u32 clk_1us_cycles,
 						       u32 clk_40ns_cycles);
 
-static void ufs_qcom_dump_regs(struct ufs_hba *hba, int offset, int len,
-		char *prefix)
-{
-	print_hex_dump(KERN_ERR, prefix,
-			len > 4 ? DUMP_PREFIX_OFFSET : DUMP_PREFIX_NONE,
-			16, 4, (void __force *)hba->mmio_base + offset,
-			len * 4, false);
-}
-
 static void ufs_qcom_dump_regs_wrapper(struct ufs_hba *hba, int offset, int len,
-		char *prefix, void *priv)
+				       const char *prefix, void *priv)
 {
-	ufs_qcom_dump_regs(hba, offset, len, prefix);
+	ufshcd_dump_regs(hba, offset, len * 4, prefix);
 }
 
 static int ufs_qcom_get_connected_tx_lanes(struct ufs_hba *hba, u32 *tx_lanes)
@@ -270,18 +261,28 @@ static int ufs_qcom_power_up_sequence(struct ufs_hba *hba)
 	bool is_rate_B = (UFS_QCOM_LIMIT_HS_RATE == PA_HS_MODE_B)
 							? true : false;
 
+<<<<<<< HEAD
 	if (hba->reinit_g4_rate_A)
 		is_rate_B = false;
+=======
+	if (is_rate_B)
+		phy_set_mode(phy, PHY_MODE_UFS_HS_B);
+>>>>>>> v4.19.83
 
 	/* Assert PHY reset and apply PHY calibration values */
 	ufs_qcom_assert_reset(hba);
 	/* provide 1ms delay to let the reset pulse propagate */
 	usleep_range(1000, 1100);
 
+<<<<<<< HEAD
 	ret = ufs_qcom_phy_calibrate_phy(phy, is_rate_B, hba->reinit_g4_rate_A);
 
+=======
+	/* phy initialization - calibrate the phy */
+	ret = phy_init(phy);
+>>>>>>> v4.19.83
 	if (ret) {
-		dev_err(hba->dev, "%s: ufs_qcom_phy_calibrate_phy() failed, ret = %d\n",
+		dev_err(hba->dev, "%s: phy init failed, ret = %d\n",
 			__func__, ret);
 		goto out;
 	}
@@ -294,21 +295,22 @@ static int ufs_qcom_power_up_sequence(struct ufs_hba *hba)
 	 * voltage, current to settle down before starting serdes.
 	 */
 	usleep_range(1000, 1100);
-	ret = ufs_qcom_phy_start_serdes(phy);
-	if (ret) {
-		dev_err(hba->dev, "%s: ufs_qcom_phy_start_serdes() failed, ret = %d\n",
-			__func__, ret);
-		goto out;
-	}
 
-	ret = ufs_qcom_phy_is_pcs_ready(phy);
-	if (ret)
-		dev_err(hba->dev,
-			"%s: is_physical_coding_sublayer_ready() failed, ret = %d\n",
+	/* power on phy - start serdes and phy's power and clocks */
+	ret = phy_power_on(phy);
+	if (ret) {
+		dev_err(hba->dev, "%s: phy power on failed, ret = %d\n",
 			__func__, ret);
+		goto out_disable_phy;
+	}
 
 	ufs_qcom_select_unipro_mode(host);
 
+	return 0;
+
+out_disable_phy:
+	ufs_qcom_assert_reset(hba);
+	phy_exit(phy);
 out:
 	return ret;
 }
@@ -1886,6 +1888,7 @@ static int ufs_qcom_init(struct ufs_hba *hba)
 	ufs_qcom_phy_save_controller_version(host->generic_phy,
 		host->hw_ver.major, host->hw_ver.minor, host->hw_ver.step);
 
+<<<<<<< HEAD
 	err = ufs_qcom_parse_reg_info(host, "qcom,vddp-ref-clk",
 				      &host->vddp_ref_clk);
 	phy_init(host->generic_phy);
@@ -1902,6 +1905,11 @@ static int ufs_qcom_init(struct ufs_hba *hba)
 	err = ufs_qcom_init_lane_clks(host);
 	if (err)
 		goto out_disable_vddp;
+=======
+	err = ufs_qcom_init_lane_clks(host);
+	if (err)
+		goto out_variant_clear;
+>>>>>>> v4.19.83
 
 	ufs_qcom_parse_lpm(host);
 	if (host->disable_lpm)
@@ -1925,12 +1933,15 @@ static int ufs_qcom_init(struct ufs_hba *hba)
 
 	goto out;
 
+<<<<<<< HEAD
 out_disable_vddp:
 	if (host->vddp_ref_clk)
 		ufs_qcom_disable_vreg(dev, host->vddp_ref_clk);
 out_unregister_bus:
 	phy_exit(host->generic_phy);
 	msm_bus_scale_unregister_client(host->bus_vote.client_handle);
+=======
+>>>>>>> v4.19.83
 out_variant_clear:
 	devm_kfree(dev, host);
 	ufshcd_set_variant(hba, NULL);
@@ -2096,6 +2107,7 @@ static int ufs_qcom_clk_scale_notify(struct ufs_hba *hba,
 	return err;
 }
 
+<<<<<<< HEAD
 /*
  * This function should be called to restore the security configuration of UFS
  * register space after coming out of UFS host core power collapse.
@@ -2122,6 +2134,11 @@ static inline u32 ufs_qcom_get_scale_down_gear(struct ufs_hba *hba)
 void ufs_qcom_print_hw_debug_reg_all(struct ufs_hba *hba, void *priv,
 		void (*print_fn)(struct ufs_hba *hba, int offset, int num_regs,
 				char *str, void *priv))
+=======
+static void ufs_qcom_print_hw_debug_reg_all(struct ufs_hba *hba,
+		void *priv, void (*print_fn)(struct ufs_hba *hba,
+		int offset, int num_regs, const char *str, void *priv))
+>>>>>>> v4.19.83
 {
 	u32 reg;
 	struct ufs_qcom_host *host;
@@ -2143,7 +2160,7 @@ void ufs_qcom_print_hw_debug_reg_all(struct ufs_hba *hba, void *priv,
 	print_fn(hba, reg, 44, "UFS_UFS_DBG_RD_REG_OCSC ", priv);
 
 	reg = ufshcd_readl(hba, REG_UFS_CFG1);
-	reg |= UFS_BIT(17);
+	reg |= UTP_DBG_RAMS_EN;
 	ufshcd_writel(hba, reg, REG_UFS_CFG1);
 
 	reg = ufs_qcom_get_debug_reg_offset(host, UFS_UFS_DBG_RD_EDTL_RAM);
@@ -2156,7 +2173,7 @@ void ufs_qcom_print_hw_debug_reg_all(struct ufs_hba *hba, void *priv,
 	print_fn(hba, reg, 64, "UFS_UFS_DBG_RD_PRDT_RAM ", priv);
 
 	/* clear bit 17 - UTP_DBG_RAMS_EN */
-	ufshcd_rmwl(hba, UFS_BIT(17), 0, REG_UFS_CFG1);
+	ufshcd_rmwl(hba, UTP_DBG_RAMS_EN, 0, REG_UFS_CFG1);
 
 	reg = ufs_qcom_get_debug_reg_offset(host, UFS_DBG_RD_REG_UAWM);
 	print_fn(hba, reg, 4, "UFS_DBG_RD_REG_UAWM ", priv);
@@ -2318,7 +2335,7 @@ out:
 
 static void ufs_qcom_testbus_read(struct ufs_hba *hba)
 {
-	ufs_qcom_dump_regs(hba, UFS_TEST_BUS, 1, "UFS_TEST_BUS ");
+	ufshcd_dump_regs(hba, UFS_TEST_BUS, 4, "UFS_TEST_BUS ");
 }
 
 static void ufs_qcom_print_unipro_testbus(struct ufs_hba *hba)
@@ -2344,6 +2361,7 @@ static void ufs_qcom_print_unipro_testbus(struct ufs_hba *hba)
 
 static void ufs_qcom_print_utp_hci_testbus(struct ufs_hba *hba)
 {
+<<<<<<< HEAD
 	struct ufs_qcom_host *host = ufshcd_get_variant(hba);
 	u32 *testbus = NULL;
 	int i, nminor = 32, testbus_len = nminor * sizeof(u32);
@@ -2374,6 +2392,10 @@ static void ufs_qcom_dump_dbg_regs(struct ufs_hba *hba, bool no_sleep)
 
 	if (no_sleep)
 		return;
+=======
+	ufshcd_dump_regs(hba, REG_UFS_SYS1CLK_1US, 16 * 4,
+			 "HCI Vendor Specific Registers ");
+>>>>>>> v4.19.83
 
 	/* sleep a bit intermittently as we are dumping too much data */
 	usleep_range(1000, 1100);

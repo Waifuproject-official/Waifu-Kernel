@@ -55,15 +55,15 @@ set_plugin_dir := 1
 
 # Set plugin_dir to preffered global plugin location
 # If we install under $HOME directory we go under
-# $(HOME)/.traceevent/plugins
+# $(HOME)/.local/lib/traceevent/plugins
 #
 # We dont set PLUGIN_DIR in case we install under $HOME
 # directory, because by default the code looks under:
-# $(HOME)/.traceevent/plugins by default.
+# $(HOME)/.local/lib/traceevent/plugins by default.
 #
 ifeq ($(plugin_dir),)
 ifeq ($(prefix),$(HOME))
-override plugin_dir = $(HOME)/.traceevent/plugins
+override plugin_dir = $(HOME)/.local/lib/traceevent/plugins
 set_plugin_dir := 0
 else
 override plugin_dir = $(libdir)/traceevent/plugins
@@ -233,12 +233,12 @@ endef
 tags:	force
 	$(RM) tags
 	find . -name '*.[ch]' | xargs ctags --extra=+f --c-kinds=+px \
-	--regex-c++='/_PE\(([^,)]*).*/PEVENT_ERRNO__\1/'
+	--regex-c++='/_PE\(([^,)]*).*/TEP_ERRNO__\1/'
 
 TAGS:	force
 	$(RM) TAGS
 	find . -name '*.[ch]' | xargs etags \
-	--regex='/_PE(\([^,)]*\).*/PEVENT_ERRNO__\1/'
+	--regex='/_PE(\([^,)]*\).*/TEP_ERRNO__\1/'
 
 define do_install_mkdir
 	if [ ! -d '$(DESTDIR_SQ)$1' ]; then		\
@@ -259,8 +259,8 @@ endef
 
 define do_generate_dynamic_list_file
 	symbol_type=`$(NM) -u -D $1 | awk 'NF>1 {print $$1}' | \
-	xargs echo "U W w" | tr ' ' '\n' | sort -u | xargs echo`;\
-	if [ "$$symbol_type" = "U W w" ];then				\
+	xargs echo "U w W" | tr 'w ' 'W\n' | sort -u | xargs echo`;\
+	if [ "$$symbol_type" = "U W" ];then				\
 		(echo '{';						\
 		$(NM) -u -D $1 | awk 'NF>1 {print "\t"$$2";"}' | sort -u;\
 		echo '};';						\

@@ -1,4 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
+<<<<<<< HEAD
  * Copyright (c) 2010-2013, 2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -9,6 +11,9 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+=======
+ * Copyright (c) 2010-2013, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  */
 
 #include <linux/kernel.h>

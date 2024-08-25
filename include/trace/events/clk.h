@@ -192,6 +192,7 @@ DEFINE_EVENT(clk_phase, clk_set_phase_complete,
 	TP_ARGS(core, phase)
 );
 
+<<<<<<< HEAD
 DECLARE_EVENT_CLASS(clk_state_dump,
 
 	TP_PROTO(const char *name, unsigned int prepare_count,
@@ -228,6 +229,8 @@ DEFINE_EVENT(clk_state_dump, clk_state,
 	TP_ARGS(name, prepare_count, enable_count, rate, vdd_level)
 );
 
+=======
+>>>>>>> v4.19.83
 DECLARE_EVENT_CLASS(clk_duty_cycle,
 
 	TP_PROTO(struct clk_core *core, struct clk_duty *duty),

@@ -120,6 +120,14 @@ config PINCTRL_MSM8996
 	  This is the pinctrl, pinmux, pinconf and gpiolib driver for the
 	  Qualcomm TLMM block found in the Qualcomm MSM8996 platform.
 
+config PINCTRL_MSM8998
+	tristate "Qualcomm MSM8998 pin controller driver"
+	depends on GPIOLIB && OF
+	select PINCTRL_MSM
+	help
+	  This is the pinctrl, pinmux, pinconf and gpiolib driver for the
+	  Qualcomm TLMM block found in the Qualcomm MSM8998 platform.
+
 config PINCTRL_QDF2XXX
 	tristate "Qualcomm Technologies QDF2xxx pin controller driver"
 	depends on GPIOLIB && ACPI
@@ -153,6 +161,7 @@ config PINCTRL_QCOM_SSBI_PMIC
          which are using SSBI for communication with SoC. Example PMIC's
          devices are pm8058 and pm8921.
 
+<<<<<<< HEAD
 config PINCTRL_SM8150
 	tristate "Qualcomm Technologies Inc SM8150 pin controller driver"
 	depends on GPIOLIB && OF
@@ -222,5 +231,15 @@ config PINCTRL_SLPI
 	help
 	  This is the pinctrl, pinmux and pinconf driver for the
 	  SLPI pin controller block.
+=======
+config PINCTRL_SDM845
+       tristate "Qualcomm Technologies Inc SDM845 pin controller driver"
+       depends on GPIOLIB && OF
+       select PINCTRL_MSM
+       help
+         This is the pinctrl, pinmux, pinconf and gpiolib driver for the
+         Qualcomm Technologies Inc TLMM block found on the Qualcomm
+         Technologies Inc SDM845 platform.
+>>>>>>> v4.19.83
 
 endif

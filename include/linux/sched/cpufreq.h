@@ -8,6 +8,7 @@
  * Interface between cpufreq drivers and the scheduler:
  */
 
+<<<<<<< HEAD
 #define SCHED_CPUFREQ_RT	(1U << 0)
 #define SCHED_CPUFREQ_DL	(1U << 1)
 #define SCHED_CPUFREQ_IOWAIT	(1U << 2)
@@ -19,6 +20,10 @@
 #define SCHED_CPUFREQ_CONTINUE (1U << 8)
 
 #define SCHED_CPUFREQ_RT_DL	(SCHED_CPUFREQ_RT | SCHED_CPUFREQ_DL)
+=======
+#define SCHED_CPUFREQ_IOWAIT	(1U << 0)
+#define SCHED_CPUFREQ_MIGRATION	(1U << 1)
+>>>>>>> v4.19.83
 
 #ifdef CONFIG_CPU_FREQ
 struct update_util_data {

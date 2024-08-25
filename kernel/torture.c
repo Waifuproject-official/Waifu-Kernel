@@ -50,6 +50,7 @@
 #include <linux/ktime.h>
 #include <asm/byteorder.h>
 #include <linux/torture.h>
+#include "rcu/rcu.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Paul E. McKenney <paulmck@us.ibm.com>");
@@ -502,7 +503,7 @@ static int torture_shutdown(void *arg)
 		torture_shutdown_hook();
 	else
 		VERBOSE_TOROUT_STRING("No torture_shutdown_hook(), skipping.");
-	ftrace_dump(DUMP_ALL);
+	rcu_ftrace_dump(DUMP_ALL);
 	kernel_power_off();	/* Shut down the system. */
 	return 0;
 }
@@ -574,6 +575,7 @@ static int stutter;
  */
 void stutter_wait(const char *title)
 {
+<<<<<<< HEAD
 	cond_resched_tasks_rcu_qs();
 	while (READ_ONCE(stutter_pause_test)) {
 		if (stutter_pause_test)
@@ -583,7 +585,21 @@ void stutter_wait(const char *title)
 				while (READ_ONCE(stutter_pause_test))
 					cond_resched();
 		else
+=======
+	int spt;
+
+	cond_resched_tasks_rcu_qs();
+	spt = READ_ONCE(stutter_pause_test);
+	for (; spt; spt = READ_ONCE(stutter_pause_test)) {
+		if (spt == 1) {
+			schedule_timeout_interruptible(1);
+		} else if (spt == 2) {
+			while (READ_ONCE(stutter_pause_test))
+				cond_resched();
+		} else {
+>>>>>>> v4.19.83
 			schedule_timeout_interruptible(round_jiffies_relative(HZ));
+		}
 		torture_shutdown_absorb(title);
 	}
 }
@@ -597,17 +613,15 @@ static int torture_stutter(void *arg)
 {
 	VERBOSE_TOROUT_STRING("torture_stutter task started");
 	do {
-		if (!torture_must_stop()) {
-			if (stutter > 1) {
-				schedule_timeout_interruptible(stutter - 1);
-				WRITE_ONCE(stutter_pause_test, 2);
-			}
-			schedule_timeout_interruptible(1);
+		if (!torture_must_stop() && stutter > 1) {
 			WRITE_ONCE(stutter_pause_test, 1);
+			schedule_timeout_interruptible(stutter - 1);
+			WRITE_ONCE(stutter_pause_test, 2);
+			schedule_timeout_interruptible(1);
 		}
+		WRITE_ONCE(stutter_pause_test, 0);
 		if (!torture_must_stop())
 			schedule_timeout_interruptible(stutter);
-		WRITE_ONCE(stutter_pause_test, 0);
 		torture_shutdown_absorb("torture_stutter");
 	} while (!torture_must_stop());
 	torture_kthread_stopping("torture_stutter");

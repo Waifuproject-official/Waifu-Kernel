@@ -169,6 +169,7 @@ struct sd_switch_caps {
 #define UHS_DDR50_MAX_DTR	50000000
 #define UHS_SDR25_MAX_DTR	UHS_DDR50_MAX_DTR
 #define UHS_SDR12_MAX_DTR	25000000
+#define DEFAULT_SPEED_MAX_DTR	UHS_SDR12_MAX_DTR
 	unsigned int		sd3_bus_mode;
 #define UHS_SDR12_BUS_SPEED	0
 #define HIGH_SPEED_BUS_SPEED	1
@@ -330,6 +331,7 @@ struct mmc_card {
 	unsigned int		state;		/* (our) card state */
 #define MMC_STATE_CMDQ		(1<<12)         /* card is in cmd queue mode */
 	unsigned int		quirks; 	/* card quirks */
+	unsigned int		quirk_max_rate;	/* max rate set by quirks */
 #define MMC_QUIRK_LENIENT_FN0	(1<<0)		/* allow SDIO FN0 writes outside of the VS CCCR range */
 #define MMC_QUIRK_BLKSZ_FOR_BYTE_MODE (1<<1)	/* use func->cur_blksize */
 						/* for byte mode */
@@ -393,10 +395,15 @@ struct mmc_card {
 	unsigned int		nr_parts;
 	unsigned int		part_curr;
 
+<<<<<<< HEAD
 	struct notifier_block   reboot_notify;
 	enum mmc_pon_type	pon_type;
 	bool cmdq_init;
 	struct mmc_bkops_info bkops;
+=======
+	unsigned int		bouncesz;	/* Bounce buffer size */
+	struct workqueue_struct *complete_wq;	/* Private workqueue */
+>>>>>>> v4.19.83
 };
 
 static inline bool mmc_large_sector(struct mmc_card *card)

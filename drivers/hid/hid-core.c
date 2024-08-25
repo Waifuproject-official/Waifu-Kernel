@@ -57,7 +57,9 @@ MODULE_PARM_DESC(ignore_special_drivers, "Ignore any special drivers and handle 
  * Register a new report for a device.
  */
 
-struct hid_report *hid_register_report(struct hid_device *device, unsigned type, unsigned id)
+struct hid_report *hid_register_report(struct hid_device *device,
+				       unsigned int type, unsigned int id,
+				       unsigned int application)
 {
 	struct hid_report_enum *report_enum = device->report_enum + type;
 	struct hid_report *report;
@@ -78,6 +80,7 @@ struct hid_report *hid_register_report(struct hid_device *device, unsigned type,
 	report->type = type;
 	report->size = 0;
 	report->device = device;
+	report->application = application;
 	report_enum->report_id_hash[id] = report;
 
 	list_add_tail(&report->list, &report_enum->report_list);
@@ -125,14 +128,27 @@ static int open_collection(struct hid_parser *parser, unsigned type)
 
 	usage = parser->local.usage[0];
 
-	if (parser->collection_stack_ptr == HID_COLLECTION_STACK_SIZE) {
-		hid_err(parser->device, "collection stack overflow\n");
-		return -EINVAL;
+	if (parser->collection_stack_ptr == parser->collection_stack_size) {
+		unsigned int *collection_stack;
+		unsigned int new_size = parser->collection_stack_size +
+					HID_COLLECTION_STACK_SIZE;
+
+		collection_stack = krealloc(parser->collection_stack,
+					    new_size * sizeof(unsigned int),
+					    GFP_KERNEL);
+		if (!collection_stack)
+			return -ENOMEM;
+
+		parser->collection_stack = collection_stack;
+		parser->collection_stack_size = new_size;
 	}
 
 	if (parser->device->maxcollection == parser->device->collection_size) {
-		collection = kmalloc(sizeof(struct hid_collection) *
-				parser->device->collection_size * 2, GFP_KERNEL);
+		collection = kmalloc(
+				array3_size(sizeof(struct hid_collection),
+					    parser->device->collection_size,
+					    2),
+				GFP_KERNEL);
 		if (collection == NULL) {
 			hid_err(parser->device, "failed to reallocate collection array\n");
 			return -ENOMEM;
@@ -199,13 +215,14 @@ static unsigned hid_lookup_collection(struct hid_parser *parser, unsigned type)
  * Add a usage to the temporary parser table.
  */
 
-static int hid_add_usage(struct hid_parser *parser, unsigned usage)
+static int hid_add_usage(struct hid_parser *parser, unsigned usage, u8 size)
 {
 	if (parser->local.usage_index >= HID_MAX_USAGES) {
 		hid_err(parser->device, "usage index exceeded\n");
 		return -1;
 	}
 	parser->local.usage[parser->local.usage_index] = usage;
+	parser->local.usage_size[parser->local.usage_index] = size;
 	parser->local.collection_index[parser->local.usage_index] =
 		parser->collection_stack_ptr ?
 		parser->collection_stack[parser->collection_stack_ptr - 1] : 0;
@@ -221,11 +238,15 @@ static int hid_add_field(struct hid_parser *parser, unsigned report_type, unsign
 {
 	struct hid_report *report;
 	struct hid_field *field;
-	unsigned usages;
-	unsigned offset;
-	unsigned i;
+	unsigned int usages;
+	unsigned int offset;
+	unsigned int i;
+	unsigned int application;
 
-	report = hid_register_report(parser->device, report_type, parser->global.report_id);
+	application = hid_lookup_collection(parser, HID_COLLECTION_APPLICATION);
+
+	report = hid_register_report(parser->device, report_type,
+				     parser->global.report_id, application);
 	if (!report) {
 		hid_err(parser->device, "hid_register_report failed\n");
 		return -1;
@@ -259,7 +280,7 @@ static int hid_add_field(struct hid_parser *parser, unsigned report_type, unsign
 
 	field->physical = hid_lookup_collection(parser, HID_COLLECTION_PHYSICAL);
 	field->logical = hid_lookup_collection(parser, HID_COLLECTION_LOGICAL);
-	field->application = hid_lookup_collection(parser, HID_COLLECTION_APPLICATION);
+	field->application = application;
 
 	for (i = 0; i < usages; i++) {
 		unsigned j = i;
@@ -462,10 +483,7 @@ static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 			return 0;
 		}
 
-		if (item->size <= 2)
-			data = (parser->global.usage_page << 16) + data;
-
-		return hid_add_usage(parser, data);
+		return hid_add_usage(parser, data, item->size);
 
 	case HID_LOCAL_ITEM_TAG_USAGE_MINIMUM:
 
@@ -473,9 +491,6 @@ static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 			dbg_hid("alternative usage ignored\n");
 			return 0;
 		}
-
-		if (item->size <= 2)
-			data = (parser->global.usage_page << 16) + data;
 
 		parser->local.usage_minimum = data;
 		return 0;
@@ -486,9 +501,6 @@ static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 			dbg_hid("alternative usage ignored\n");
 			return 0;
 		}
-
-		if (item->size <= 2)
-			data = (parser->global.usage_page << 16) + data;
 
 		count = data - parser->local.usage_minimum;
 		if (count + parser->local.usage_index >= HID_MAX_USAGES) {
@@ -509,7 +521,7 @@ static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 		}
 
 		for (n = parser->local.usage_minimum; n <= data; n++)
-			if (hid_add_usage(parser, n)) {
+			if (hid_add_usage(parser, n, item->size)) {
 				dbg_hid("hid_add_usage failed\n");
 				return -1;
 			}
@@ -524,6 +536,22 @@ static int hid_parser_local(struct hid_parser *parser, struct hid_item *item)
 }
 
 /*
+ * Concatenate Usage Pages into Usages where relevant:
+ * As per specification, 6.2.2.8: "When the parser encounters a main item it
+ * concatenates the last declared Usage Page with a Usage to form a complete
+ * usage value."
+ */
+
+static void hid_concatenate_usage_page(struct hid_parser *parser)
+{
+	int i;
+
+	for (i = 0; i < parser->local.usage_index; i++)
+		if (parser->local.usage_size[i] <= 2)
+			parser->local.usage[i] += parser->global.usage_page << 16;
+}
+
+/*
  * Process a main item.
  */
 
@@ -531,6 +559,8 @@ static int hid_parser_main(struct hid_parser *parser, struct hid_item *item)
 {
 	__u32 data;
 	int ret;
+
+	hid_concatenate_usage_page(parser);
 
 	data = item_udata(item);
 
@@ -551,7 +581,7 @@ static int hid_parser_main(struct hid_parser *parser, struct hid_item *item)
 		ret = hid_add_field(parser, HID_FEATURE_REPORT, data);
 		break;
 	default:
-		hid_err(parser->device, "unknown main item tag 0x%x\n", item->tag);
+		hid_warn(parser->device, "unknown main item tag 0x%x\n", item->tag);
 		ret = 0;
 	}
 
@@ -741,6 +771,8 @@ static int hid_scan_main(struct hid_parser *parser, struct hid_item *item)
 	__u32 data;
 	int i;
 
+	hid_concatenate_usage_page(parser);
+
 	data = item_udata(item);
 
 	switch (item->tag) {
@@ -830,31 +862,7 @@ static int hid_scan_report(struct hid_device *hid)
 		break;
 	}
 
-	/* fall back to generic driver in case specific driver doesn't exist */
-	switch (hid->group) {
-	case HID_GROUP_MULTITOUCH_WIN_8:
-		/* fall-through */
-	case HID_GROUP_MULTITOUCH:
-		if (!IS_ENABLED(CONFIG_HID_MULTITOUCH))
-			hid->group = HID_GROUP_GENERIC;
-		break;
-	case HID_GROUP_SENSOR_HUB:
-		if (!IS_ENABLED(CONFIG_HID_SENSOR_HUB))
-			hid->group = HID_GROUP_GENERIC;
-		break;
-	case HID_GROUP_RMI:
-		if (!IS_ENABLED(CONFIG_HID_RMI))
-			hid->group = HID_GROUP_GENERIC;
-		break;
-	case HID_GROUP_WACOM:
-		if (!IS_ENABLED(CONFIG_HID_WACOM))
-			hid->group = HID_GROUP_GENERIC;
-		break;
-	case HID_GROUP_LOGITECH_DJ_DEVICE:
-		if (!IS_ENABLED(CONFIG_HID_LOGITECH_DJ))
-			hid->group = HID_GROUP_GENERIC;
-		break;
-	}
+	kfree(parser->collection_stack);
 	vfree(parser);
 	return 0;
 }
@@ -967,6 +975,7 @@ int hid_open_report(struct hid_device *device)
 	__u8 *start;
 	__u8 *buf;
 	__u8 *end;
+	__u8 *next;
 	int ret;
 	static int (*dispatch_type[])(struct hid_parser *parser,
 				      struct hid_item *item) = {
@@ -1004,7 +1013,7 @@ int hid_open_report(struct hid_device *device)
 	parser = vzalloc(sizeof(struct hid_parser));
 	if (!parser) {
 		ret = -ENOMEM;
-		goto err;
+		goto alloc_err;
 	}
 
 	parser->device = device;
@@ -1020,7 +1029,8 @@ int hid_open_report(struct hid_device *device)
 	device->collection_size = HID_DEFAULT_NUM_COLLECTIONS;
 
 	ret = -EINVAL;
-	while ((start = fetch_item(start, end, &item)) != NULL) {
+	while ((next = fetch_item(start, end, &item)) != NULL) {
+		start = next;
 
 		if (item.format != HID_ITEM_FORMAT_SHORT) {
 			hid_err(device, "unexpected long global item\n");
@@ -1043,14 +1053,18 @@ int hid_open_report(struct hid_device *device)
 				hid_err(device, "unbalanced delimiter at end of report description\n");
 				goto err;
 			}
+			kfree(parser->collection_stack);
 			vfree(parser);
 			device->status |= HID_STAT_PARSED;
 			return 0;
 		}
 	}
 
-	hid_err(device, "item fetching failed at offset %d\n", (int)(end - start));
+	hid_err(device, "item fetching failed at offset %u/%u\n",
+		size - (unsigned int)(end - start), size);
 err:
+	kfree(parser->collection_stack);
+alloc_err:
 	vfree(parser);
 	hid_close_report(device);
 	return ret;
@@ -1296,7 +1310,7 @@ static void hid_input_field(struct hid_device *hid, struct hid_field *field,
 	__s32 max = field->logical_maximum;
 	__s32 *value;
 
-	value = kmalloc(sizeof(__s32) * count, GFP_ATOMIC);
+	value = kmalloc_array(count, sizeof(__s32), GFP_ATOMIC);
 	if (!value)
 		return;
 
@@ -1597,8 +1611,8 @@ unlock:
 }
 EXPORT_SYMBOL_GPL(hid_input_report);
 
-static bool hid_match_one_id(struct hid_device *hdev,
-		const struct hid_device_id *id)
+bool hid_match_one_id(const struct hid_device *hdev,
+		      const struct hid_device_id *id)
 {
 	return (id->bus == HID_BUS_ANY || id->bus == hdev->bus) &&
 		(id->group == HID_GROUP_ANY || id->group == hdev->group) &&
@@ -1606,7 +1620,7 @@ static bool hid_match_one_id(struct hid_device *hdev,
 		(id->product == HID_ANY_ID || id->product == hdev->product);
 }
 
-const struct hid_device_id *hid_match_id(struct hid_device *hdev,
+const struct hid_device_id *hid_match_id(const struct hid_device *hdev,
 		const struct hid_device_id *id)
 {
 	for (; id->bus; id++)
@@ -1662,7 +1676,7 @@ static struct bin_attribute dev_bin_attr_report_desc = {
 	.size = HID_MAX_DESCRIPTOR_SIZE,
 };
 
-static struct device_attribute dev_attr_country = {
+static const struct device_attribute dev_attr_country = {
 	.attr = { .name = "country", .mode = 0444 },
 	.show = show_country,
 };
@@ -1823,7 +1837,7 @@ EXPORT_SYMBOL_GPL(hid_hw_stop);
  *
  * Tell underlying HW to start delivering events from the device.
  * This function should be called sometime after successful call
- * to hid_hiw_start().
+ * to hid_hw_start().
  */
 int hid_hw_open(struct hid_device *hdev)
 {
@@ -1862,6 +1876,7 @@ void hid_hw_close(struct hid_device *hdev)
 }
 EXPORT_SYMBOL_GPL(hid_hw_close);
 
+<<<<<<< HEAD
 /*
  * A list of devices for which there is a specialized driver on HID bus.
  *
@@ -2400,6 +2415,8 @@ static const struct hid_device_id hid_have_special_driver[] = {
 	{ }
 };
 
+=======
+>>>>>>> v4.19.83
 struct hid_dynid {
 	struct list_head list;
 	struct hid_device_id id;
@@ -2466,8 +2483,8 @@ static void hid_free_dynids(struct hid_driver *hdrv)
 	spin_unlock(&hdrv->dyn_lock);
 }
 
-static const struct hid_device_id *hid_match_device(struct hid_device *hdev,
-		struct hid_driver *hdrv)
+const struct hid_device_id *hid_match_device(struct hid_device *hdev,
+					     struct hid_driver *hdrv)
 {
 	struct hid_dynid *dynid;
 
@@ -2482,6 +2499,7 @@ static const struct hid_device_id *hid_match_device(struct hid_device *hdev,
 
 	return hid_match_id(hdev, hdrv->id_table);
 }
+EXPORT_SYMBOL_GPL(hid_match_device);
 
 static int hid_bus_match(struct device *dev, struct device_driver *drv)
 {
@@ -2490,6 +2508,29 @@ static int hid_bus_match(struct device *dev, struct device_driver *drv)
 
 	return hid_match_device(hdev, hdrv) != NULL;
 }
+
+/**
+ * hid_compare_device_paths - check if both devices share the same path
+ * @hdev_a: hid device
+ * @hdev_b: hid device
+ * @separator: char to use as separator
+ *
+ * Check if two devices share the same path up to the last occurrence of
+ * the separator char. Both paths must exist (i.e., zero-length paths
+ * don't match).
+ */
+bool hid_compare_device_paths(struct hid_device *hdev_a,
+			      struct hid_device *hdev_b, char separator)
+{
+	int n1 = strrchr(hdev_a->phys, separator) - hdev_a->phys;
+	int n2 = strrchr(hdev_b->phys, separator) - hdev_b->phys;
+
+	if (n1 != n2 || n1 <= 0 || n2 <= 0)
+		return false;
+
+	return !strncmp(hdev_a->phys, hdev_b->phys, n1);
+}
+EXPORT_SYMBOL_GPL(hid_compare_device_paths);
 
 static int hid_device_probe(struct device *dev)
 {
@@ -2504,6 +2545,8 @@ static int hid_device_probe(struct device *dev)
 	}
 	hdev->io_started = false;
 
+	clear_bit(ffs(HID_STAT_REPROBED), &hdev->status);
+
 	if (!hdev->driver) {
 		id = hid_match_device(hdev, hdrv);
 		if (id == NULL) {
@@ -2511,6 +2554,25 @@ static int hid_device_probe(struct device *dev)
 			goto unlock;
 		}
 
+		if (hdrv->match) {
+			if (!hdrv->match(hdev, hid_ignore_special_drivers)) {
+				ret = -ENODEV;
+				goto unlock;
+			}
+		} else {
+			/*
+			 * hid-generic implements .match(), so if
+			 * hid_ignore_special_drivers is set, we can safely
+			 * return.
+			 */
+			if (hid_ignore_special_drivers) {
+				ret = -ENODEV;
+				goto unlock;
+			}
+		}
+
+		/* reset the quirks that has been previously set */
+		hdev->quirks = hid_lookup_quirk(hdev);
 		hdev->driver = hdrv;
 		if (hdrv->probe) {
 			ret = hdrv->probe(hdev, id);
@@ -2607,7 +2669,7 @@ static int hid_uevent(struct device *dev, struct kobj_uevent_env *env)
 	return 0;
 }
 
-static struct bus_type hid_bus_type = {
+struct bus_type hid_bus_type = {
 	.name		= "hid",
 	.dev_groups	= hid_dev_groups,
 	.drv_groups	= hid_drv_groups,
@@ -2616,6 +2678,7 @@ static struct bus_type hid_bus_type = {
 	.remove		= hid_device_remove,
 	.uevent		= hid_uevent,
 };
+<<<<<<< HEAD
 
 /* a list of devices that shouldn't be handled by HID core at all */
 static const struct hid_device_id hid_ignore_list[] = {
@@ -2938,6 +3001,9 @@ bool hid_ignore(struct hid_device *hdev)
 	return !!hid_match_id(hdev, hid_ignore_list);
 }
 EXPORT_SYMBOL_GPL(hid_ignore);
+=======
+EXPORT_SYMBOL(hid_bus_type);
+>>>>>>> v4.19.83
 
 int hid_add_device(struct hid_device *hdev)
 {
@@ -2946,6 +3012,8 @@ int hid_add_device(struct hid_device *hdev)
 
 	if (WARN_ON(hdev->status & HID_STAT_ADDED))
 		return -EBUSY;
+
+	hdev->quirks = hid_lookup_quirk(hdev);
 
 	/* we need to kill them here, otherwise they will stay allocated to
 	 * wait for coming driver */
@@ -2976,7 +3044,7 @@ int hid_add_device(struct hid_device *hdev)
 	if (hid_ignore_special_drivers) {
 		hdev->group = HID_GROUP_GENERIC;
 	} else if (!hdev->group &&
-		   !hid_match_id(hdev, hid_have_special_driver)) {
+		   !(hdev->quirks & HID_QUIRK_HAVE_SPECIAL_DRIVER)) {
 		ret = hid_scan_report(hdev);
 		if (ret)
 			hid_warn(hdev, "bad device descriptor (%d)\n", ret);
@@ -3060,9 +3128,42 @@ void hid_destroy_device(struct hid_device *hdev)
 }
 EXPORT_SYMBOL_GPL(hid_destroy_device);
 
+
+static int __hid_bus_reprobe_drivers(struct device *dev, void *data)
+{
+	struct hid_driver *hdrv = data;
+	struct hid_device *hdev = to_hid_device(dev);
+
+	if (hdev->driver == hdrv &&
+	    !hdrv->match(hdev, hid_ignore_special_drivers) &&
+	    !test_and_set_bit(ffs(HID_STAT_REPROBED), &hdev->status))
+		return device_reprobe(dev);
+
+	return 0;
+}
+
+static int __hid_bus_driver_added(struct device_driver *drv, void *data)
+{
+	struct hid_driver *hdrv = to_hid_driver(drv);
+
+	if (hdrv->match) {
+		bus_for_each_dev(&hid_bus_type, NULL, hdrv,
+				 __hid_bus_reprobe_drivers);
+	}
+
+	return 0;
+}
+
+static int __bus_removed_driver(struct device_driver *drv, void *data)
+{
+	return bus_rescan_devices(&hid_bus_type);
+}
+
 int __hid_register_driver(struct hid_driver *hdrv, struct module *owner,
 		const char *mod_name)
 {
+	int ret;
+
 	hdrv->driver.name = hdrv->name;
 	hdrv->driver.bus = &hid_bus_type;
 	hdrv->driver.owner = owner;
@@ -3071,7 +3172,13 @@ int __hid_register_driver(struct hid_driver *hdrv, struct module *owner,
 	INIT_LIST_HEAD(&hdrv->dyn_list);
 	spin_lock_init(&hdrv->dyn_lock);
 
-	return driver_register(&hdrv->driver);
+	ret = driver_register(&hdrv->driver);
+
+	if (ret == 0)
+		bus_for_each_drv(&hid_bus_type, NULL, NULL,
+				 __hid_bus_driver_added);
+
+	return ret;
 }
 EXPORT_SYMBOL_GPL(__hid_register_driver);
 
@@ -3079,6 +3186,8 @@ void hid_unregister_driver(struct hid_driver *hdrv)
 {
 	driver_unregister(&hdrv->driver);
 	hid_free_dynids(hdrv);
+
+	bus_for_each_drv(&hid_bus_type, NULL, hdrv, __bus_removed_driver);
 }
 EXPORT_SYMBOL_GPL(hid_unregister_driver);
 
@@ -3133,6 +3242,7 @@ static void __exit hid_exit(void)
 	hid_debug_exit();
 	hidraw_exit();
 	bus_unregister(&hid_bus_type);
+	hid_quirks_exit(HID_BUS_ANY);
 }
 
 module_init(hid_init);
@@ -3142,4 +3252,3 @@ MODULE_AUTHOR("Andreas Gal");
 MODULE_AUTHOR("Vojtech Pavlik");
 MODULE_AUTHOR("Jiri Kosina");
 MODULE_LICENSE("GPL");
-

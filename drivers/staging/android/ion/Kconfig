@@ -3,9 +3,14 @@ menuconfig ION
 	depends on HAVE_MEMBLOCK && HAS_DMA && MMU
 	select GENERIC_ALLOCATOR
 	select DMA_SHARED_BUFFER
+<<<<<<< HEAD
 	select MSM_SECURE_BUFFER
 	---help---
 	  Chose this option to enable the ION Memory Manager,
+=======
+	help
+	  Choose this option to enable the ION Memory Manager,
+>>>>>>> v4.19.83
 	  used by Android to efficiently allocate buffers
 	  from userspace that can be shared between drivers.
 	  If you're not using Android its probably safe to

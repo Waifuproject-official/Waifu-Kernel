@@ -166,6 +166,9 @@ struct qcom_smp2p {
 	struct mbox_client mbox_client;
 	struct mbox_chan *mbox_chan;
 
+	struct mbox_client mbox_client;
+	struct mbox_chan *mbox_chan;
+
 	struct list_head inbound;
 	struct list_head outbound;
 };
@@ -632,17 +635,13 @@ static int qcom_smp2p_probe(struct platform_device *pdev)
 
 	key = "qcom,local-pid";
 	ret = of_property_read_u32(pdev->dev.of_node, key, &smp2p->local_pid);
-	if (ret < 0) {
-		dev_err(&pdev->dev, "failed to read %s\n", key);
-		return -EINVAL;
-	}
+	if (ret)
+		goto report_read_failure;
 
 	key = "qcom,remote-pid";
 	ret = of_property_read_u32(pdev->dev.of_node, key, &smp2p->remote_pid);
-	if (ret < 0) {
-		dev_err(&pdev->dev, "failed to read %s\n", key);
-		return -EINVAL;
-	}
+	if (ret)
+		goto report_read_failure;
 
 	smp2p->irq = platform_get_irq(pdev, 0);
 	if (smp2p->irq < 0) {
@@ -656,6 +655,20 @@ static int qcom_smp2p_probe(struct platform_device *pdev)
 	if (IS_ERR(smp2p->mbox_chan)) {
 		if (PTR_ERR(smp2p->mbox_chan) != -ENODEV)
 			return PTR_ERR(smp2p->mbox_chan);
+<<<<<<< HEAD
+=======
+
+		smp2p->mbox_chan = NULL;
+
+		ret = smp2p_parse_ipc(smp2p);
+		if (ret)
+			return ret;
+	}
+
+	ret = qcom_smp2p_alloc_outbound_item(smp2p);
+	if (ret < 0)
+		goto release_mbox;
+>>>>>>> v4.19.83
 
 		smp2p->mbox_chan = NULL;
 
@@ -700,6 +713,10 @@ release_mbox:
 	mbox_free_channel(smp2p->mbox_chan);
 
 	return ret;
+
+report_read_failure:
+	dev_err(&pdev->dev, "failed to read %s\n", key);
+	return -EINVAL;
 }
 
 static int qcom_smp2p_remove(struct platform_device *pdev)

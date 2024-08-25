@@ -5,6 +5,7 @@
 #if !defined(_TRACE_POWER_H) || defined(TRACE_HEADER_MULTI_READ)
 #define _TRACE_POWER_H
 
+#include <linux/cpufreq.h>
 #include <linux/ktime.h>
 #include <linux/pm_qos.h>
 #include <linux/tracepoint.h>
@@ -150,6 +151,7 @@ DEFINE_EVENT(cpu, cpu_frequency,
 
 TRACE_EVENT(cpu_frequency_limits,
 
+<<<<<<< HEAD
 	TP_PROTO(unsigned int max_freq, unsigned int min_freq,
 		unsigned int cpu_id),
 
@@ -165,6 +167,22 @@ TRACE_EVENT(cpu_frequency_limits,
 		__entry->min_freq = min_freq;
 		__entry->max_freq = max_freq;
 		__entry->cpu_id = cpu_id;
+=======
+	TP_PROTO(struct cpufreq_policy *policy),
+
+	TP_ARGS(policy),
+
+	TP_STRUCT__entry(
+		__field(u32, min_freq)
+		__field(u32, max_freq)
+		__field(u32, cpu_id)
+	),
+
+	TP_fast_assign(
+		__entry->min_freq = policy->min;
+		__entry->max_freq = policy->max;
+		__entry->cpu_id = policy->cpu;
+>>>>>>> v4.19.83
 	),
 
 	TP_printk("min=%lu max=%lu cpu_id=%lu",
@@ -173,6 +191,7 @@ TRACE_EVENT(cpu_frequency_limits,
 		  (unsigned long)__entry->cpu_id)
 );
 
+<<<<<<< HEAD
 TRACE_EVENT(cpu_frequency_switch_start,
 
 	TP_PROTO(unsigned int start_freq, unsigned int end_freq,
@@ -215,6 +234,8 @@ TRACE_EVENT(cpu_frequency_switch_end,
 	TP_printk("cpu_id=%lu", (unsigned long)__entry->cpu_id)
 );
 
+=======
+>>>>>>> v4.19.83
 TRACE_EVENT(device_pm_callback_start,
 
 	TP_PROTO(struct device *dev, const char *pm_ops, int event),

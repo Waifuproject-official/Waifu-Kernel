@@ -105,7 +105,11 @@ bool wil_is_tx_idle(struct wil6210_priv *wil)
 	unsigned long data_comp_to;
 	int min_ring_id = wil_get_min_tx_ring_id(wil);
 
+<<<<<<< HEAD
 	for (i = min_ring_id; i < WIL6210_MAX_TX_RINGS; i++) {
+=======
+	for (i = 0; i < WIL6210_MAX_TX_RINGS; i++) {
+>>>>>>> v4.19.83
 		struct wil_ring *vring = &wil->ring_tx[i];
 		int vring_index = vring - wil->ring_tx;
 		struct wil_ring_tx_data *txdata =
@@ -763,11 +767,23 @@ void wil_netif_rx_any(struct sk_buff *skb, struct net_device *ndev)
 		[GRO_HELD]		= "GRO_HELD",
 		[GRO_NORMAL]		= "GRO_NORMAL",
 		[GRO_DROP]		= "GRO_DROP",
+		[GRO_CONSUMED]		= "GRO_CONSUMED",
 	};
 
 	wil->txrx_ops.get_netif_rx_params(skb, &cid, &security);
 
 	stats = &wil->sta[cid].stats;
+<<<<<<< HEAD
+=======
+
+	if (ndev->features & NETIF_F_RXHASH)
+		/* fake L4 to ensure it won't be re-calculated later
+		 * set hash to any non-zero value to activate rps
+		 * mechanism, core will be chosen according
+		 * to user-level rps configuration.
+		 */
+		skb_set_hash(skb, 1, PKT_HASH_TYPE_L4);
+>>>>>>> v4.19.83
 
 	skb_orphan(skb);
 
@@ -784,6 +800,7 @@ void wil_netif_rx_any(struct sk_buff *skb, struct net_device *ndev)
 		return;
 	}
 
+<<<<<<< HEAD
 	if (wdev->iftype == NL80211_IFTYPE_STATION) {
 		if (mcast && ether_addr_equal(eth->h_source, ndev->dev_addr)) {
 			/* mcast packet looped back to us */
@@ -792,6 +809,9 @@ void wil_netif_rx_any(struct sk_buff *skb, struct net_device *ndev)
 			goto stats;
 		}
 	} else if (wdev->iftype == NL80211_IFTYPE_AP && !vif->ap_isolate) {
+=======
+	if (wdev->iftype == NL80211_IFTYPE_AP && !vif->ap_isolate) {
+>>>>>>> v4.19.83
 		if (mcast) {
 			/* send multicast frames both to higher layers in
 			 * local net stack and back to the wireless medium
@@ -898,7 +918,11 @@ static void wil_rx_buf_len_init(struct wil6210_priv *wil)
 	}
 }
 
+<<<<<<< HEAD
 static int wil_rx_init(struct wil6210_priv *wil, uint order)
+=======
+static int wil_rx_init(struct wil6210_priv *wil, u16 size)
+>>>>>>> v4.19.83
 {
 	struct wil_ring *vring = &wil->ring_rx;
 	int rc;
@@ -912,7 +936,11 @@ static int wil_rx_init(struct wil6210_priv *wil, uint order)
 
 	wil_rx_buf_len_init(wil);
 
+<<<<<<< HEAD
 	vring->size = 1 << order;
+=======
+	vring->size = size;
+>>>>>>> v4.19.83
 	vring->is_rx = true;
 	rc = wil_vring_alloc(wil, vring);
 	if (rc)
@@ -1077,6 +1105,7 @@ static int wil_vring_init_tx(struct wil6210_vif *vif, int id, int size,
 	return rc;
 }
 
+<<<<<<< HEAD
 static int wil_tx_vring_modify(struct wil6210_vif *vif, int ring_id, int cid,
 			       int tid)
 {
@@ -1162,6 +1191,11 @@ fail:
 int wil_vring_init_bcast(struct wil6210_vif *vif, int id, int size)
 {
 	struct wil6210_priv *wil = vif_to_wil(vif);
+=======
+int wil_vring_init_bcast(struct wil6210_vif *vif, int id, int size)
+{
+	struct wil6210_priv *wil = vif_to_wil(vif);
+>>>>>>> v4.19.83
 	int rc;
 	struct wmi_bcast_vring_cfg_cmd cmd = {
 		.action = cpu_to_le32(WMI_VRING_CMD_ADD),
@@ -2049,6 +2083,7 @@ static inline void __wil_update_net_queues(struct wil6210_priv *wil,
 
 	if (unlikely(!vif))
 		return;
+<<<<<<< HEAD
 
 	if (ring)
 		wil_dbg_txrx(wil, "vring %d, mid %d, check_stop=%d, stopped=%d",
@@ -2058,6 +2093,17 @@ static inline void __wil_update_net_queues(struct wil6210_priv *wil,
 		wil_dbg_txrx(wil, "check_stop=%d, mid=%d, stopped=%d",
 			     check_stop, vif->mid, vif->net_queue_stopped);
 
+=======
+
+	if (ring)
+		wil_dbg_txrx(wil, "vring %d, mid %d, check_stop=%d, stopped=%d",
+			     (int)(ring - wil->ring_tx), vif->mid, check_stop,
+			     vif->net_queue_stopped);
+	else
+		wil_dbg_txrx(wil, "check_stop=%d, mid=%d, stopped=%d",
+			     check_stop, vif->mid, vif->net_queue_stopped);
+
+>>>>>>> v4.19.83
 	if (check_stop == vif->net_queue_stopped)
 		/* net queues already in desired state */
 		return;
@@ -2078,7 +2124,11 @@ static inline void __wil_update_net_queues(struct wil6210_priv *wil,
 		return;
 
 	/* check wake */
+<<<<<<< HEAD
 	for (i = min_ring_id; i < WIL6210_MAX_TX_RINGS; i++) {
+=======
+	for (i = 0; i < WIL6210_MAX_TX_RINGS; i++) {
+>>>>>>> v4.19.83
 		struct wil_ring *cur_ring = &wil->ring_tx[i];
 		struct wil_ring_tx_data  *txdata = &wil->ring_tx_data[i];
 
@@ -2383,7 +2433,10 @@ void wil_init_txrx_ops_legacy_dma(struct wil6210_priv *wil)
 	wil->txrx_ops.ring_init_bcast = wil_vring_init_bcast;
 	wil->txrx_ops.tx_init = wil_tx_init;
 	wil->txrx_ops.tx_fini = wil_tx_fini;
+<<<<<<< HEAD
 	wil->txrx_ops.tx_ring_modify = wil_tx_vring_modify;
+=======
+>>>>>>> v4.19.83
 	/* RX ops */
 	wil->txrx_ops.rx_init = wil_rx_init;
 	wil->txrx_ops.wmi_addba_rx_resp = wmi_addba_rx_resp;

@@ -34,6 +34,16 @@ arm*)
   GOODREG=%r0
   BADREG=%ax
 ;;
+<<<<<<< HEAD
+=======
+ppc*)
+  GOODREG=%r3
+  BADREG=%msr
+;;
+*)
+  echo "Please implement other architecture here"
+  exit_untested
+>>>>>>> v4.19.83
 esac
 
 test_goodarg() # Good-args

@@ -109,9 +109,15 @@ static struct dentry *proc_mount(struct file_system_type *fs_type,
 	struct pid_namespace *ns;
 	char *options;
 
+<<<<<<< HEAD
 	if (flags & MS_KERNMOUNT) {
 		ns = (struct pid_namespace *)data;
 		options = NULL;
+=======
+	if (flags & SB_KERNMOUNT) {
+		ns = data;
+		data = NULL;
+>>>>>>> v4.19.83
 	} else {
 		ns = task_active_pid_ns(current);
 		options = data;
@@ -174,7 +180,10 @@ void __init proc_root_init(void)
 	proc_symlink("mounts", NULL, "self/mounts");
 
 	proc_net_init();
+<<<<<<< HEAD
 	proc_uid_init();
+=======
+>>>>>>> v4.19.83
 	proc_mkdir("fs", NULL);
 	proc_mkdir("driver", NULL);
 	proc_create_mount_point("fs/nfsd"); /* somewhere for the nfsd filesystem to be mounted */
@@ -244,11 +253,11 @@ struct proc_dir_entry proc_root = {
 	.namelen	= 5, 
 	.mode		= S_IFDIR | S_IRUGO | S_IXUGO, 
 	.nlink		= 2, 
-	.count		= ATOMIC_INIT(1),
+	.refcnt		= REFCOUNT_INIT(1),
 	.proc_iops	= &proc_root_inode_operations, 
 	.proc_fops	= &proc_root_operations,
 	.parent		= &proc_root,
-	.subdir		= RB_ROOT_CACHED,
+	.subdir		= RB_ROOT,
 	.name		= "/proc",
 };
 

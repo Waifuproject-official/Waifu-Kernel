@@ -513,20 +513,29 @@ static void virtio_scsi_init_hdr_pi(struct virtio_device *vdev,
 
 	if (sc->sc_data_direction == DMA_TO_DEVICE)
 		cmd_pi->pi_bytesout = cpu_to_virtio32(vdev,
-							blk_rq_sectors(rq) *
-							bi->tuple_size);
+						      bio_integrity_bytes(bi,
+							blk_rq_sectors(rq)));
 	else if (sc->sc_data_direction == DMA_FROM_DEVICE)
 		cmd_pi->pi_bytesin = cpu_to_virtio32(vdev,
-						       blk_rq_sectors(rq) *
-						       bi->tuple_size);
+						     bio_integrity_bytes(bi,
+							blk_rq_sectors(rq)));
 }
 #endif
 
-static int virtscsi_queuecommand(struct virtio_scsi *vscsi,
-				 struct virtio_scsi_vq *req_vq,
+static struct virtio_scsi_vq *virtscsi_pick_vq_mq(struct virtio_scsi *vscsi,
+						  struct scsi_cmnd *sc)
+{
+	u32 tag = blk_mq_unique_tag(sc->request);
+	u16 hwq = blk_mq_unique_tag_to_hwq(tag);
+
+	return &vscsi->req_vqs[hwq];
+}
+
+static int virtscsi_queuecommand(struct Scsi_Host *shost,
 				 struct scsi_cmnd *sc)
 {
-	struct Scsi_Host *shost = virtio_scsi_host(vscsi->vdev);
+	struct virtio_scsi *vscsi = shost_priv(shost);
+	struct virtio_scsi_vq *req_vq = virtscsi_pick_vq_mq(vscsi, sc);
 	struct virtio_scsi_cmd *cmd = scsi_cmd_priv(sc);
 	unsigned long flags;
 	int req_size;
@@ -569,6 +578,7 @@ static int virtscsi_queuecommand(struct virtio_scsi *vscsi,
 	return 0;
 }
 
+<<<<<<< HEAD
 static int virtscsi_queuecommand_single(struct Scsi_Host *sh,
 					struct scsi_cmnd *sc)
 {
@@ -595,6 +605,8 @@ static int virtscsi_queuecommand_multi(struct Scsi_Host *sh,
 	return virtscsi_queuecommand(vscsi, req_vq, sc);
 }
 
+=======
+>>>>>>> v4.19.83
 static int virtscsi_tmf(struct virtio_scsi *vscsi, struct virtio_scsi_cmd *cmd)
 {
 	DECLARE_COMPLETION_ONSTACK(comp);
@@ -748,12 +760,13 @@ static enum blk_eh_timer_return virtscsi_eh_timed_out(struct scsi_cmnd *scmnd)
 	return BLK_EH_RESET_TIMER;
 }
 
-static struct scsi_host_template virtscsi_host_template_single = {
+static struct scsi_host_template virtscsi_host_template = {
 	.module = THIS_MODULE,
 	.name = "Virtio SCSI HBA",
 	.proc_name = "virtio_scsi",
 	.this_id = -1,
 	.cmd_size = sizeof(struct virtio_scsi_cmd),
+<<<<<<< HEAD
 	.queuecommand = virtscsi_queuecommand_single,
 	.change_queue_depth = virtscsi_change_queue_depth,
 	.eh_abort_handler = virtscsi_abort,
@@ -776,6 +789,9 @@ static struct scsi_host_template virtscsi_host_template_multi = {
 	.this_id = -1,
 	.cmd_size = sizeof(struct virtio_scsi_cmd),
 	.queuecommand = virtscsi_queuecommand_multi,
+=======
+	.queuecommand = virtscsi_queuecommand,
+>>>>>>> v4.19.83
 	.change_queue_depth = virtscsi_change_queue_depth,
 	.eh_abort_handler = virtscsi_abort,
 	.eh_device_reset_handler = virtscsi_device_reset,
@@ -830,9 +846,10 @@ static int virtscsi_init(struct virtio_device *vdev,
 	struct irq_affinity desc = { .pre_vectors = 2 };
 
 	num_vqs = vscsi->num_queues + VIRTIO_SCSI_VQ_BASE;
-	vqs = kmalloc(num_vqs * sizeof(struct virtqueue *), GFP_KERNEL);
-	callbacks = kmalloc(num_vqs * sizeof(vq_callback_t *), GFP_KERNEL);
-	names = kmalloc(num_vqs * sizeof(char *), GFP_KERNEL);
+	vqs = kmalloc_array(num_vqs, sizeof(struct virtqueue *), GFP_KERNEL);
+	callbacks = kmalloc_array(num_vqs, sizeof(vq_callback_t *),
+				  GFP_KERNEL);
+	names = kmalloc_array(num_vqs, sizeof(char *), GFP_KERNEL);
 
 	if (!callbacks || !vqs || !names) {
 		err = -ENOMEM;
@@ -881,7 +898,6 @@ static int virtscsi_probe(struct virtio_device *vdev)
 	u32 sg_elems, num_targets;
 	u32 cmd_per_lun;
 	u32 num_queues;
-	struct scsi_host_template *hostt;
 
 	if (!vdev->config->get) {
 		dev_err(&vdev->dev, "%s failure: config access disabled\n",
@@ -894,12 +910,7 @@ static int virtscsi_probe(struct virtio_device *vdev)
 
 	num_targets = virtscsi_config_get(vdev, max_target) + 1;
 
-	if (num_queues == 1)
-		hostt = &virtscsi_host_template_single;
-	else
-		hostt = &virtscsi_host_template_multi;
-
-	shost = scsi_host_alloc(hostt,
+	shost = scsi_host_alloc(&virtscsi_host_template,
 		sizeof(*vscsi) + sizeof(vscsi->req_vqs[0]) * num_queues);
 	if (!shost)
 		return -ENOMEM;

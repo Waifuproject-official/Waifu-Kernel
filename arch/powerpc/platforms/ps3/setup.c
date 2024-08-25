@@ -113,6 +113,10 @@ static void ps3_panic(char *str)
 	printk("   System does not reboot automatically.\n");
 	printk("   Please press POWER button.\n");
 	printk("\n");
+<<<<<<< HEAD
+=======
+	panic_flush_kmsg_end();
+>>>>>>> v4.19.83
 
 	while(1)
 		lv1_pause(1);

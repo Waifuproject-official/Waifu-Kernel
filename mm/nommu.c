@@ -453,18 +453,6 @@ void __weak vmalloc_sync_all(void)
 {
 }
 
-/**
- *	alloc_vm_area - allocate a range of kernel address space
- *	@size:		size of the area
- *
- *	Returns:	NULL on failure, vm_struct on success
- *
- *	This function reserves a range of kernel address space, and
- *	allocates pagetables to map that range.  No actual mappings
- *	are created.  If the kernel address space is not shared
- *	between processes, it syncs the pagetable across all
- *	processes.
- */
 struct vm_struct *alloc_vm_area(size_t size, pte_t **ptes)
 {
 	BUG();
@@ -659,22 +647,6 @@ static void put_nommu_region(struct vm_region *region)
 }
 
 /*
- * update protection on a vma
- */
-static void protect_vma(struct vm_area_struct *vma, unsigned long flags)
-{
-#ifdef CONFIG_MPU
-	struct mm_struct *mm = vma->vm_mm;
-	long start = vma->vm_start & PAGE_MASK;
-	while (start < vma->vm_end) {
-		protect_page(mm, start, flags);
-		start += PAGE_SIZE;
-	}
-	update_protections(mm);
-#endif
-}
-
-/*
  * add a VMA into a process's mm_struct in the appropriate place in the list
  * and tree and add to the address space's page tree also if not an anonymous
  * page
@@ -690,8 +662,6 @@ static void add_vma_to_mm(struct mm_struct *mm, struct vm_area_struct *vma)
 
 	mm->map_count++;
 	vma->vm_mm = mm;
-
-	protect_vma(vma, vma->vm_flags);
 
 	/* add the VMA to the mapping */
 	if (vma->vm_file) {
@@ -752,8 +722,6 @@ static void delete_vma_from_mm(struct vm_area_struct *vma)
 	struct address_space *mapping;
 	struct mm_struct *mm = vma->vm_mm;
 	struct task_struct *curr = current;
-
-	protect_vma(vma, 0);
 
 	mm->map_count--;
 	for (i = 0; i < VMACACHE_SIZE; i++) {
@@ -1167,6 +1135,8 @@ static int do_mmap_private(struct vm_area_struct *vma,
 		if (ret < len)
 			memset(base + ret, 0, len - ret);
 
+	} else {
+		vma_set_anonymous(vma);
 	}
 
 	return 0;
@@ -1226,7 +1196,11 @@ unsigned long do_mmap(struct file *file,
 	if (!region)
 		goto error_getting_region;
 
+<<<<<<< HEAD
 	vma = vm_area_alloc();
+=======
+	vma = vm_area_alloc(current->mm);
+>>>>>>> v4.19.83
 	if (!vma)
 		goto error_getting_vma;
 
@@ -1234,7 +1208,10 @@ unsigned long do_mmap(struct file *file,
 	region->vm_flags = vm_flags;
 	region->vm_pgoff = pgoff;
 
+<<<<<<< HEAD
 	INIT_VMA(vma);
+=======
+>>>>>>> v4.19.83
 	vma->vm_flags = vm_flags;
 	vma->vm_pgoff = pgoff;
 
@@ -1413,9 +1390,9 @@ error_getting_region:
 	return -ENOMEM;
 }
 
-SYSCALL_DEFINE6(mmap_pgoff, unsigned long, addr, unsigned long, len,
-		unsigned long, prot, unsigned long, flags,
-		unsigned long, fd, unsigned long, pgoff)
+unsigned long ksys_mmap_pgoff(unsigned long addr, unsigned long len,
+			      unsigned long prot, unsigned long flags,
+			      unsigned long fd, unsigned long pgoff)
 {
 	struct file *file = NULL;
 	unsigned long retval = -EBADF;
@@ -1437,6 +1414,13 @@ out:
 	return retval;
 }
 
+SYSCALL_DEFINE6(mmap_pgoff, unsigned long, addr, unsigned long, len,
+		unsigned long, prot, unsigned long, flags,
+		unsigned long, fd, unsigned long, pgoff)
+{
+	return ksys_mmap_pgoff(addr, len, prot, flags, fd, pgoff);
+}
+
 #ifdef __ARCH_WANT_SYS_OLD_MMAP
 struct mmap_arg_struct {
 	unsigned long addr;
@@ -1456,8 +1440,8 @@ SYSCALL_DEFINE1(old_mmap, struct mmap_arg_struct __user *, arg)
 	if (offset_in_page(a.offset))
 		return -EINVAL;
 
-	return sys_mmap_pgoff(a.addr, a.len, a.prot, a.flags, a.fd,
-			      a.offset >> PAGE_SHIFT);
+	return ksys_mmap_pgoff(a.addr, a.len, a.prot, a.flags, a.fd,
+			       a.offset >> PAGE_SHIFT);
 }
 #endif /* __ARCH_WANT_SYS_OLD_MMAP */
 
@@ -1491,7 +1475,6 @@ int split_vma(struct mm_struct *mm, struct vm_area_struct *vma,
 	}
 
 	/* most fields are the same, copy all, and then fixup */
-	*new = *vma;
 	*region = *vma->vm_region;
 	new->vm_region = region;
 
@@ -1778,14 +1761,7 @@ unsigned long arch_get_unmapped_area(struct file *file, unsigned long addr,
 	return -ENOMEM;
 }
 
-void unmap_mapping_range(struct address_space *mapping,
-			 loff_t const holebegin, loff_t const holelen,
-			 int even_cows)
-{
-}
-EXPORT_SYMBOL(unmap_mapping_range);
-
-int filemap_fault(struct vm_fault *vmf)
+vm_fault_t filemap_fault(struct vm_fault *vmf)
 {
 	BUG();
 	return 0;
@@ -1805,7 +1781,8 @@ int __access_remote_vm(struct task_struct *tsk, struct mm_struct *mm,
 	struct vm_area_struct *vma;
 	int write = gup_flags & FOLL_WRITE;
 
-	down_read(&mm->mmap_sem);
+	if (down_read_killable(&mm->mmap_sem))
+		return 0;
 
 	/* the access must start within one of the target process's mappings */
 	vma = find_vma(mm, addr);
@@ -1833,7 +1810,7 @@ int __access_remote_vm(struct task_struct *tsk, struct mm_struct *mm,
 }
 
 /**
- * @access_remote_vm - access another process' address space
+ * access_remote_vm - access another process' address space
  * @mm:		the mm_struct of the target address space
  * @addr:	start address to access
  * @buf:	source or destination buffer

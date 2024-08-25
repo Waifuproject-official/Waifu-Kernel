@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* Copyright (c) 2011-2012, 2017-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -8,6 +9,11 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+/*
+ * Copyright (c) 2011-2012, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  */
 
 #ifndef _CORESIGHT_PRIV_H
@@ -66,7 +72,8 @@ static DEVICE_ATTR_RO(name)
 #define coresight_simple_reg64(type, name, lo_off, hi_off)		\
 	__coresight_simple_func(type, NULL, name, lo_off, hi_off)
 
-extern const u32 barrier_pkt[5];
+extern const u32 barrier_pkt[4];
+#define CORESIGHT_BARRIER_PKT_SIZE (sizeof(barrier_pkt))
 
 enum etm_addr_type {
 	ETM_ADDR_TYPE_NONE,
@@ -104,6 +111,13 @@ struct cs_buffers {
 	bool			snapshot;
 	void			**data_pages;
 };
+
+static inline void coresight_insert_barrier_packet(void *buf)
+{
+	if (buf)
+		memcpy(buf, barrier_pkt, CORESIGHT_BARRIER_PKT_SIZE);
+}
+
 
 static inline void CS_LOCK(void __iomem *addr)
 {

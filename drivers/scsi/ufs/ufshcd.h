@@ -203,7 +203,11 @@ struct ufs_pm_lvl_states {
  * @lun: LUN of the command
  * @intr_cmd: Interrupt command (doesn't participate in interrupt aggregation)
  * @issue_time_stamp: time stamp for debug purposes
+<<<<<<< HEAD
  * @complete_time_stamp: time stamp for statistics
+=======
+ * @compl_time_stamp: time stamp for statistics
+>>>>>>> v4.19.83
  * @req_abort_skip: skip request abort task flag
  */
 struct ufshcd_lrb {
@@ -227,7 +231,11 @@ struct ufshcd_lrb {
 	u8 lun; /* UPIU LUN id field is only 8-bit wide */
 	bool intr_cmd;
 	ktime_t issue_time_stamp;
+<<<<<<< HEAD
 	ktime_t complete_time_stamp;
+=======
+	ktime_t compl_time_stamp;
+>>>>>>> v4.19.83
 
 	bool req_abort_skip;
 
@@ -270,7 +278,11 @@ struct ufs_desc_size {
 	int interc_desc;
 	int unit_desc;
 	int conf_desc;
+<<<<<<< HEAD
 	int health_desc;
+=======
+	int hlth_desc;
+>>>>>>> v4.19.83
 };
 
 /**
@@ -897,6 +909,9 @@ struct ufs_hba {
 	int spm_lvl;
 	int pm_op_in_progress;
 
+	/* Auto-Hibernate Idle Timer register value */
+	u32 ahit;
+
 	struct ufshcd_lrb *lrb;
 	unsigned long lrb_in_use;
 
@@ -917,13 +932,13 @@ struct ufs_hba {
 	u32 dev_ref_clk_freq;
 
 	/* Interrupt aggregation support is broken */
-	#define UFSHCD_QUIRK_BROKEN_INTR_AGGR			UFS_BIT(0)
+	#define UFSHCD_QUIRK_BROKEN_INTR_AGGR			0x1
 
 	/*
 	 * delay before each dme command is required as the unipro
 	 * layer has shown instabilities
 	 */
-	#define UFSHCD_QUIRK_DELAY_BEFORE_DME_CMDS		UFS_BIT(1)
+	#define UFSHCD_QUIRK_DELAY_BEFORE_DME_CMDS		0x2
 
 	/*
 	 * If UFS host controller is having issue in processing LCC (Line
@@ -932,21 +947,21 @@ struct ufs_hba {
 	 * the LCC transmission on UFS device (by clearing TX_LCC_ENABLE
 	 * attribute of device to 0).
 	 */
-	#define UFSHCD_QUIRK_BROKEN_LCC				UFS_BIT(2)
+	#define UFSHCD_QUIRK_BROKEN_LCC				0x4
 
 	/*
 	 * The attribute PA_RXHSUNTERMCAP specifies whether or not the
 	 * inbound Link supports unterminated line in HS mode. Setting this
 	 * attribute to 1 fixes moving to HS gear.
 	 */
-	#define UFSHCD_QUIRK_BROKEN_PA_RXHSUNTERMCAP		UFS_BIT(3)
+	#define UFSHCD_QUIRK_BROKEN_PA_RXHSUNTERMCAP		0x8
 
 	/*
 	 * This quirk needs to be enabled if the host contoller only allows
 	 * accessing the peer dme attributes in AUTO mode (FAST AUTO or
 	 * SLOW AUTO).
 	 */
-	#define UFSHCD_QUIRK_DME_PEER_ACCESS_AUTO_MODE		UFS_BIT(4)
+	#define UFSHCD_QUIRK_DME_PEER_ACCESS_AUTO_MODE		0x10
 
 	/*
 	 * This quirk needs to be enabled if the host contoller doesn't
@@ -954,16 +969,36 @@ struct ufs_hba {
 	 * is enabled, standard UFS host driver will call the vendor specific
 	 * ops (get_ufs_hci_version) to get the correct version.
 	 */
-	#define UFSHCD_QUIRK_BROKEN_UFS_HCI_VERSION		UFS_BIT(5)
+	#define UFSHCD_QUIRK_BROKEN_UFS_HCI_VERSION		0x20
 
 	/*
 	 * This quirk needs to be enabled if the host contoller regards
 	 * resolution of the values of PRDTO and PRDTL in UTRD as byte.
 	 */
-	#define UFSHCD_QUIRK_PRDT_BYTE_GRAN			UFS_BIT(7)
+	#define UFSHCD_QUIRK_PRDT_BYTE_GRAN			0x80
 
+<<<<<<< HEAD
 	/* HIBERN8 support is broken */
 	#define UFSHCD_QUIRK_BROKEN_HIBERN8			UFS_BIT(8)
+=======
+	/*
+	 * Clear handling for transfer/task request list is just opposite.
+	 */
+	#define UFSHCI_QUIRK_BROKEN_REQ_LIST_CLR		0x100
+
+	/*
+	 * This quirk needs to be enabled if host controller doesn't allow
+	 * that the interrupt aggregation timer and counter are reset by s/w.
+	 */
+	#define UFSHCI_QUIRK_SKIP_RESET_INTR_AGGR		0x200
+
+	/*
+	 * This quirks needs to be enabled if host controller cannot be
+	 * enabled via HCE register.
+	 */
+	#define UFSHCI_QUIRK_BROKEN_HCE				0x400
+	unsigned int quirks;	/* Deviations from standard UFSHCI spec. */
+>>>>>>> v4.19.83
 
 	/*
 	 * UFS controller version register (VER) wrongly advertise the version
@@ -1140,6 +1175,7 @@ struct ufs_hba {
 	struct io_latency_state io_lat_read;
 	struct io_latency_state io_lat_write;
 	struct ufs_desc_size desc_size;
+<<<<<<< HEAD
 	bool restore_needed;
 
 	/* To monitor slow UFS I/O requests. */
@@ -1164,6 +1200,9 @@ struct ufs_hba {
 		atomic_t count;
 		bool active;
 	} pm_qos;
+=======
+	atomic_t scsi_block_reqs_cnt;
+>>>>>>> v4.19.83
 };
 
 static inline void ufshcd_mark_shutdown_ongoing(struct ufs_hba *hba)
@@ -1306,7 +1345,12 @@ extern int ufshcd_dme_set_attr(struct ufs_hba *hba, u32 attr_sel,
 			       u8 attr_set, u32 mib_val, u8 peer);
 extern int ufshcd_dme_get_attr(struct ufs_hba *hba, u32 attr_sel,
 			       u32 *mib_val, u8 peer);
+<<<<<<< HEAD
 extern int ufshcd_scale_clks(struct ufs_hba *hba, bool scale_up);
+=======
+extern int ufshcd_config_pwr_mode(struct ufs_hba *hba,
+			struct ufs_pa_layer_attr *desired_pwr_mode);
+>>>>>>> v4.19.83
 
 /* UIC command interfaces for DME primitives */
 #define DME_LOCAL	0
@@ -1409,8 +1453,22 @@ static inline void ufshcd_init_req_stats(struct ufs_hba *hba)
 }
 
 /* Expose Query-Request API */
+int ufshcd_query_descriptor_retry(struct ufs_hba *hba,
+				  enum query_opcode opcode,
+				  enum desc_idn idn, u8 index,
+				  u8 selector,
+				  u8 *desc_buf, int *buf_len);
+int ufshcd_read_desc_param(struct ufs_hba *hba,
+			   enum desc_idn desc_id,
+			   int desc_index,
+			   u8 param_offset,
+			   u8 *param_read_buf,
+			   u8 param_size);
+int ufshcd_query_attr(struct ufs_hba *hba, enum query_opcode opcode,
+		      enum attr_idn idn, u8 index, u8 selector, u32 *attr_val);
 int ufshcd_query_flag(struct ufs_hba *hba, enum query_opcode opcode,
 	enum flag_idn idn, bool *flag_res);
+<<<<<<< HEAD
 int ufshcd_query_attr(struct ufs_hba *hba, enum query_opcode opcode,
 	enum attr_idn idn, u8 index, u8 selector, u32 *attr_val);
 int ufshcd_query_descriptor_retry(struct ufs_hba *hba, enum query_opcode opcode,
@@ -1424,6 +1482,10 @@ void ufshcd_release_all(struct ufs_hba *hba);
 int ufshcd_comp_scsi_upiu(struct ufs_hba *hba, struct ufshcd_lrb *lrbp);
 int ufshcd_map_sg(struct ufs_hba *hba, struct ufshcd_lrb *lrbp);
 #endif
+=======
+int ufshcd_read_string_desc(struct ufs_hba *hba, int desc_index,
+			    u8 *buf, u32 size, bool ascii);
+>>>>>>> v4.19.83
 
 int ufshcd_hold(struct ufs_hba *hba, bool async);
 void ufshcd_release(struct ufs_hba *hba, bool no_sched);
@@ -1569,6 +1631,7 @@ static inline int ufshcd_vops_full_reset(struct ufs_hba *hba)
 	return 0;
 }
 
+<<<<<<< HEAD
 static inline void ufshcd_vops_dbg_register_dump(struct ufs_hba *hba,
 						 bool no_sleep)
 {
@@ -1684,5 +1747,26 @@ static inline int ufshcd_vops_crypto_engine_get_req_status(struct ufs_hba *hba)
 #define UFSHCD_DEFAULT_SLOWIO_WRITE_US	(10000000) /* 10 seconds */
 #define UFSHCD_DEFAULT_SLOWIO_UNMAP_US	(30000000) /* 30 seconds */
 #define UFSHCD_DEFAULT_SLOWIO_SYNC_US	(10000000) /* 10 seconds */
+=======
+extern struct ufs_pm_lvl_states ufs_pm_lvl_states[];
+
+/*
+ * ufshcd_scsi_to_upiu_lun - maps scsi LUN to UPIU LUN
+ * @scsi_lun: scsi LUN id
+ *
+ * Returns UPIU LUN id
+ */
+static inline u8 ufshcd_scsi_to_upiu_lun(unsigned int scsi_lun)
+{
+	if (scsi_is_wlun(scsi_lun))
+		return (scsi_lun & UFS_UPIU_MAX_UNIT_NUM_ID)
+			| UFS_UPIU_WLUN_ID;
+	else
+		return scsi_lun & UFS_UPIU_MAX_UNIT_NUM_ID;
+}
+
+int ufshcd_dump_regs(struct ufs_hba *hba, size_t offset, size_t len,
+		     const char *prefix);
+>>>>>>> v4.19.83
 
 #endif /* End of Header */

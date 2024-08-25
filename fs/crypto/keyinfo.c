@@ -22,10 +22,13 @@
 
 static struct crypto_shash *essiv_hash_tfm;
 
+<<<<<<< HEAD
 /* Table of keys referenced by FS_POLICY_FLAG_DIRECT_KEY policies */
 static DEFINE_HASHTABLE(fscrypt_master_keys, 6); /* 6 bits = 64 buckets */
 static DEFINE_SPINLOCK(fscrypt_master_keys_lock);
 
+=======
+>>>>>>> v4.19.83
 /*
  * Key derivation function.  This generates the derived key by encrypting the
  * master key with AES-128-ECB using the inode's nonce as the AES key.
@@ -130,30 +133,74 @@ invalid:
 	return ERR_PTR(-ENOKEY);
 }
 
+<<<<<<< HEAD
 static struct fscrypt_mode available_modes[] = {
+=======
+/* Find the master key, then derive the inode's actual encryption key */
+static int find_and_derive_key(const struct inode *inode,
+			       const struct fscrypt_context *ctx,
+			       u8 *derived_key, unsigned int derived_keysize)
+{
+	struct key *key;
+	const struct fscrypt_key *payload;
+	int err;
+
+	key = find_and_lock_process_key(FS_KEY_DESC_PREFIX,
+					ctx->master_key_descriptor,
+					derived_keysize, &payload);
+	if (key == ERR_PTR(-ENOKEY) && inode->i_sb->s_cop->key_prefix) {
+		key = find_and_lock_process_key(inode->i_sb->s_cop->key_prefix,
+						ctx->master_key_descriptor,
+						derived_keysize, &payload);
+	}
+	if (IS_ERR(key))
+		return PTR_ERR(key);
+	err = derive_key_aes(payload->raw, ctx, derived_key, derived_keysize);
+	up_read(&key->sem);
+	key_put(key);
+	return err;
+}
+
+static struct fscrypt_mode {
+	const char *friendly_name;
+	const char *cipher_str;
+	int keysize;
+	bool logged_impl_name;
+} available_modes[] = {
+>>>>>>> v4.19.83
 	[FS_ENCRYPTION_MODE_AES_256_XTS] = {
 		.friendly_name = "AES-256-XTS",
 		.cipher_str = "xts(aes)",
 		.keysize = 64,
+<<<<<<< HEAD
 		.ivsize = 16,
+=======
+>>>>>>> v4.19.83
 	},
 	[FS_ENCRYPTION_MODE_AES_256_CTS] = {
 		.friendly_name = "AES-256-CTS-CBC",
 		.cipher_str = "cts(cbc(aes))",
 		.keysize = 32,
+<<<<<<< HEAD
 		.ivsize = 16,
+=======
+>>>>>>> v4.19.83
 	},
 	[FS_ENCRYPTION_MODE_AES_128_CBC] = {
 		.friendly_name = "AES-128-CBC",
 		.cipher_str = "cbc(aes)",
 		.keysize = 16,
+<<<<<<< HEAD
 		.ivsize = 16,
 		.needs_essiv = true,
+=======
+>>>>>>> v4.19.83
 	},
 	[FS_ENCRYPTION_MODE_AES_128_CTS] = {
 		.friendly_name = "AES-128-CTS-CBC",
 		.cipher_str = "cts(cbc(aes))",
 		.keysize = 16,
+<<<<<<< HEAD
 		.ivsize = 16,
 	},
 	[FS_ENCRYPTION_MODE_ADIANTUM] = {
@@ -166,6 +213,8 @@ static struct fscrypt_mode available_modes[] = {
 		.friendly_name = "ICE",
 		.cipher_str = "bugon",
 		.keysize = 64,
+=======
+>>>>>>> v4.19.83
 	},
 };
 
@@ -533,6 +582,10 @@ int fscrypt_get_encryption_info(struct inode *inode)
 {
 	struct fscrypt_info *crypt_info;
 	struct fscrypt_context ctx;
+<<<<<<< HEAD
+=======
+	struct crypto_skcipher *ctfm;
+>>>>>>> v4.19.83
 	struct fscrypt_mode *mode;
 	u8 *raw_key = NULL;
 	int res;
@@ -582,8 +635,11 @@ int fscrypt_get_encryption_info(struct inode *inode)
 		res = PTR_ERR(mode);
 		goto out;
 	}
+<<<<<<< HEAD
 	WARN_ON(mode->ivsize > FSCRYPT_MAX_IV_SIZE);
 	crypt_info->ci_mode = mode;
+=======
+>>>>>>> v4.19.83
 
 	/*
 	 * This cannot be a stack buffer because it may be passed to the
@@ -594,6 +650,7 @@ int fscrypt_get_encryption_info(struct inode *inode)
 	if (!raw_key)
 		goto out;
 
+<<<<<<< HEAD
 	if (S_ISREG(inode->i_mode) && is_private_data_mode(&ctx)) {
 		if (!fscrypt_is_ice_capable(inode->i_sb)) {
 			pr_warn("%s: ICE support not available\n",
@@ -617,6 +674,49 @@ int fscrypt_get_encryption_info(struct inode *inode)
 		goto out;
 
 do_ice:
+=======
+	res = find_and_derive_key(inode, &ctx, raw_key, mode->keysize);
+	if (res)
+		goto out;
+
+	ctfm = crypto_alloc_skcipher(mode->cipher_str, 0, 0);
+	if (IS_ERR(ctfm)) {
+		res = PTR_ERR(ctfm);
+		fscrypt_warn(inode->i_sb,
+			     "error allocating '%s' transform for inode %lu: %d",
+			     mode->cipher_str, inode->i_ino, res);
+		goto out;
+	}
+	if (unlikely(!mode->logged_impl_name)) {
+		/*
+		 * fscrypt performance can vary greatly depending on which
+		 * crypto algorithm implementation is used.  Help people debug
+		 * performance problems by logging the ->cra_driver_name the
+		 * first time a mode is used.  Note that multiple threads can
+		 * race here, but it doesn't really matter.
+		 */
+		mode->logged_impl_name = true;
+		pr_info("fscrypt: %s using implementation \"%s\"\n",
+			mode->friendly_name,
+			crypto_skcipher_alg(ctfm)->base.cra_driver_name);
+	}
+	crypt_info->ci_ctfm = ctfm;
+	crypto_skcipher_set_flags(ctfm, CRYPTO_TFM_REQ_WEAK_KEY);
+	res = crypto_skcipher_setkey(ctfm, raw_key, mode->keysize);
+	if (res)
+		goto out;
+
+	if (S_ISREG(inode->i_mode) &&
+	    crypt_info->ci_data_mode == FS_ENCRYPTION_MODE_AES_128_CBC) {
+		res = init_essiv_generator(crypt_info, raw_key, mode->keysize);
+		if (res) {
+			fscrypt_warn(inode->i_sb,
+				     "error initializing ESSIV generator for inode %lu: %d",
+				     inode->i_ino, res);
+			goto out;
+		}
+	}
+>>>>>>> v4.19.83
 	if (cmpxchg(&inode->i_crypt_info, NULL, crypt_info) == NULL)
 		crypt_info = NULL;
 out:

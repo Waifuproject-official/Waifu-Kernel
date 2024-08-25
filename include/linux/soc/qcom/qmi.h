@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  * Copyright (c) 2017, Linaro Ltd.
@@ -10,6 +11,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+=======
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017, Linaro Ltd.
+>>>>>>> v4.19.83
  */
 #ifndef __QMI_HELPERS_H__
 #define __QMI_HELPERS_H__
@@ -19,9 +26,16 @@
 #include <linux/list.h>
 #include <linux/qrtr.h>
 #include <linux/types.h>
+<<<<<<< HEAD
 #include <linux/mutex.h>
 #include <linux/workqueue.h>
 
+=======
+#include <linux/workqueue.h>
+
+struct socket;
+
+>>>>>>> v4.19.83
 /**
  * qmi_header - wireformat header of QMI messages
  * @type:	type of message
@@ -67,7 +81,11 @@ enum qmi_array_type {
  * @data_type:	Data type of this element.
  * @elem_len:	Array length of this element, if an array.
  * @elem_size:	Size of a single instance of this data type.
+<<<<<<< HEAD
  * @is_array:	Array type of this element.
+=======
+ * @array_type:	Array type of this element.
+>>>>>>> v4.19.83
  * @tlv_type:	QMI message specific type to identify which element
  *		is present in an incoming message.
  * @offset:	Specifies the offset of the first instance of this
@@ -79,7 +97,11 @@ struct qmi_elem_info {
 	enum qmi_elem_type data_type;
 	u32 elem_len;
 	u32 elem_size;
+<<<<<<< HEAD
 	enum qmi_array_type is_array;
+=======
+	enum qmi_array_type array_type;
+>>>>>>> v4.19.83
 	u8 tlv_type;
 	u32 offset;
 	struct qmi_elem_info *ei_array;
@@ -95,7 +117,10 @@ struct qmi_elem_info {
 #define QMI_ERR_CLIENT_IDS_EXHAUSTED_V01	5
 #define QMI_ERR_INVALID_ID_V01			41
 #define QMI_ERR_ENCODING_V01			58
+<<<<<<< HEAD
 #define QMI_ERR_DISABLED_V01			69
+=======
+>>>>>>> v4.19.83
 #define QMI_ERR_INCOMPATIBLE_STATE_V01		90
 #define QMI_ERR_NOT_SUPPORTED_V01		94
 
@@ -161,11 +186,18 @@ struct qmi_ops {
 			   unsigned int node, unsigned int port);
 };
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> v4.19.83
 /**
  * struct qmi_txn - transaction context
  * @qmi:	QMI handle this transaction is associated with
  * @id:		transaction id
+<<<<<<< HEAD
+=======
+ * @lock:	for synchronization between handler and waiter of messages
+>>>>>>> v4.19.83
  * @completion:	completion object as the transaction receives a response
  * @result:	result code for the completed transaction
  * @ei:		description of the QMI encoded response (optional)
@@ -174,8 +206,14 @@ struct qmi_ops {
 struct qmi_txn {
 	struct qmi_handle *qmi;
 
+<<<<<<< HEAD
 	u16 id;
 
+=======
+	int id;
+
+	struct mutex lock;
+>>>>>>> v4.19.83
 	struct completion completion;
 	int result;
 
@@ -240,7 +278,11 @@ struct qmi_handle {
 	struct idr txns;
 	struct mutex txn_lock;
 
+<<<<<<< HEAD
 	struct qmi_msg_handler *handlers;
+=======
+	const struct qmi_msg_handler *handlers;
+>>>>>>> v4.19.83
 };
 
 int qmi_add_lookup(struct qmi_handle *qmi, unsigned int service,
@@ -249,7 +291,12 @@ int qmi_add_server(struct qmi_handle *qmi, unsigned int service,
 		   unsigned int version, unsigned int instance);
 
 int qmi_handle_init(struct qmi_handle *qmi, size_t max_msg_len,
+<<<<<<< HEAD
 		    struct qmi_ops *ops, struct qmi_msg_handler *handlers);
+=======
+		    const struct qmi_ops *ops,
+		    const struct qmi_msg_handler *handlers);
+>>>>>>> v4.19.83
 void qmi_handle_release(struct qmi_handle *qmi);
 
 ssize_t qmi_send_request(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
@@ -273,6 +320,9 @@ int qmi_txn_init(struct qmi_handle *qmi, struct qmi_txn *txn,
 		 struct qmi_elem_info *ei, void *c_struct);
 int qmi_txn_wait(struct qmi_txn *txn, unsigned long timeout);
 void qmi_txn_cancel(struct qmi_txn *txn);
+<<<<<<< HEAD
 void qmi_set_sndtimeo(struct qmi_handle *qmi, long timeo);
+=======
+>>>>>>> v4.19.83
 
 #endif

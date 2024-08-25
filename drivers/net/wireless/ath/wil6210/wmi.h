@@ -95,8 +95,11 @@ enum wmi_fw_capability {
 	WMI_FW_CAPABILITY_SET_SILENT_RSSI_TABLE		= 13,
 	WMI_FW_CAPABILITY_LO_POWER_CALIB_FROM_OTP	= 14,
 	WMI_FW_CAPABILITY_PNO				= 15,
+<<<<<<< HEAD
 	WMI_FW_CAPABILITY_CONNECT_SNR_THR		= 16,
 	WMI_FW_CAPABILITY_CHANNEL_BONDING		= 17,
+=======
+>>>>>>> v4.19.83
 	WMI_FW_CAPABILITY_REF_CLOCK_CONTROL		= 18,
 	WMI_FW_CAPABILITY_AP_SME_OFFLOAD_NONE		= 19,
 	WMI_FW_CAPABILITY_MULTI_VIFS			= 20,
@@ -105,7 +108,10 @@ enum wmi_fw_capability {
 	WMI_FW_CAPABILITY_AMSDU				= 23,
 	WMI_FW_CAPABILITY_RAW_MODE			= 24,
 	WMI_FW_CAPABILITY_TX_REQ_EXT			= 25,
+<<<<<<< HEAD
 	WMI_FW_CAPABILITY_CHANNEL_4			= 26,
+=======
+>>>>>>> v4.19.83
 	WMI_FW_CAPABILITY_MAX,
 };
 
@@ -2393,7 +2399,10 @@ struct wmi_ft_reassoc_status_event {
 	__le16 beacon_ie_len;
 	__le16 reassoc_req_ie_len;
 	__le16 reassoc_resp_ie_len;
+<<<<<<< HEAD
 	u8 reserved[4];
+=======
+>>>>>>> v4.19.83
 	u8 ie_info[0];
 } __packed;
 
@@ -2404,7 +2413,11 @@ struct wmi_rx_mgmt_info {
 	u8 range;
 	u8 sqi;
 	__le16 stype;
+<<<<<<< HEAD
 	__le16 snr;
+=======
+	__le16 status;
+>>>>>>> v4.19.83
 	__le32 len;
 	/* Not resolved when == 0xFFFFFFFF == > Broadcast to all MIDS */
 	u8 qid;

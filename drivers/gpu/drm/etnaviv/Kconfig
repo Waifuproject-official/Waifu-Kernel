@@ -8,16 +8,16 @@ config DRM_ETNAVIV
 	select SYNC_FILE
 	select THERMAL if DRM_ETNAVIV_THERMAL
 	select TMPFS
-	select IOMMU_API
-	select IOMMU_SUPPORT
 	select WANT_DEV_COREDUMP
 	select CMA if HAVE_DMA_CONTIGUOUS
 	select DMA_CMA if HAVE_DMA_CONTIGUOUS
+	select DRM_SCHED
 	help
 	  DRM driver for Vivante GPUs.
 
 config DRM_ETNAVIV_THERMAL
 	bool "enable ETNAVIV thermal throttling"
+<<<<<<< HEAD
 	depends on DRM_ETNAVIV
 	default y
 	help
@@ -26,8 +26,10 @@ config DRM_ETNAVIV_THERMAL
 
 config DRM_ETNAVIV_REGISTER_LOGGING
 	bool "enable ETNAVIV register logging"
+=======
+>>>>>>> v4.19.83
 	depends on DRM_ETNAVIV
+	default y
 	help
-	  Compile in support for logging register reads/writes in a format
-	  that can be parsed by envytools demsm tool.  If enabled, register
-	  logging can be switched on via etnaviv.reglog=y module param.
+	  Compile in support for thermal throttling.
+	  Say Y unless you want to risk burning your SoC.

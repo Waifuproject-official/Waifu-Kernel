@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /* Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
+=======
+/* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -40,7 +44,11 @@ void rmnet_vnd_rx_fixup(struct net_device *dev, u32 skb_len)
 
 	u64_stats_update_begin(&pcpu_ptr->syncp);
 	pcpu_ptr->stats.rx_pkts++;
+<<<<<<< HEAD
 	pcpu_ptr->stats.rx_bytes += skb_len;
+=======
+	pcpu_ptr->stats.rx_bytes += skb->len;
+>>>>>>> v4.19.83
 	u64_stats_update_end(&pcpu_ptr->syncp);
 }
 
@@ -53,7 +61,11 @@ void rmnet_vnd_tx_fixup(struct net_device *dev, u32 skb_len)
 
 	u64_stats_update_begin(&pcpu_ptr->syncp);
 	pcpu_ptr->stats.tx_pkts++;
+<<<<<<< HEAD
 	pcpu_ptr->stats.tx_bytes += skb_len;
+=======
+	pcpu_ptr->stats.tx_bytes += skb->len;
+>>>>>>> v4.19.83
 	u64_stats_update_end(&pcpu_ptr->syncp);
 }
 
@@ -69,6 +81,7 @@ static netdev_tx_t rmnet_vnd_start_xmit(struct sk_buff *skb,
 
 	priv = netdev_priv(dev);
 	if (priv->real_dev) {
+<<<<<<< HEAD
 		ip_type = (ip_hdr(skb)->version == 4) ?
 					AF_INET : AF_INET6;
 		mark = skb->mark;
@@ -77,6 +90,9 @@ static netdev_tx_t rmnet_vnd_start_xmit(struct sk_buff *skb,
 		rmnet_egress_handler(skb);
 		qmi_rmnet_burst_fc_check(dev, ip_type, mark, len);
 		qmi_rmnet_work_maybe_restart(rmnet_get_rmnet_port(dev));
+=======
+		rmnet_egress_handler(skb);
+>>>>>>> v4.19.83
 	} else {
 		this_cpu_inc(priv->pcpu_stats->stats.tx_drops);
 		kfree_skb(skb);
@@ -121,6 +137,7 @@ static int rmnet_vnd_init(struct net_device *dev)
 static void rmnet_vnd_uninit(struct net_device *dev)
 {
 	struct rmnet_priv *priv = netdev_priv(dev);
+<<<<<<< HEAD
 	void *qos;
 
 	gro_cells_destroy(&priv->gro_cells);
@@ -129,6 +146,11 @@ static void rmnet_vnd_uninit(struct net_device *dev)
 	qos = rcu_dereference(priv->qos_info);
 	RCU_INIT_POINTER(priv->qos_info, NULL);
 	qmi_rmnet_qos_exit_pre(qos);
+=======
+
+	gro_cells_destroy(&priv->gro_cells);
+	free_percpu(priv->pcpu_stats);
+>>>>>>> v4.19.83
 }
 
 static void rmnet_get_stats64(struct net_device *dev,
@@ -162,6 +184,7 @@ static void rmnet_get_stats64(struct net_device *dev,
 	s->tx_dropped = total_stats.tx_drops;
 }
 
+<<<<<<< HEAD
 static u16 rmnet_vnd_select_queue(struct net_device *dev,
 				  struct sk_buff *skb,
 				  void *accel_priv,
@@ -176,6 +199,8 @@ static u16 rmnet_vnd_select_queue(struct net_device *dev,
 	return (txq < dev->real_num_tx_queues) ? txq : 0;
 }
 
+=======
+>>>>>>> v4.19.83
 static const struct net_device_ops rmnet_vnd_ops = {
 	.ndo_start_xmit = rmnet_vnd_start_xmit,
 	.ndo_change_mtu = rmnet_vnd_change_mtu,
@@ -185,7 +210,10 @@ static const struct net_device_ops rmnet_vnd_ops = {
 	.ndo_init       = rmnet_vnd_init,
 	.ndo_uninit     = rmnet_vnd_uninit,
 	.ndo_get_stats64 = rmnet_get_stats64,
+<<<<<<< HEAD
 	.ndo_select_queue = rmnet_vnd_select_queue,
+=======
+>>>>>>> v4.19.83
 };
 
 static const char rmnet_gstrings_stats[][ETH_GSTRING_LEN] = {
@@ -198,6 +226,7 @@ static const char rmnet_gstrings_stats[][ETH_GSTRING_LEN] = {
 	"Checksum skipped on ip fragment",
 	"Checksum skipped",
 	"Checksum computed in software",
+<<<<<<< HEAD
 	"Checksum computed in hardware",
 	"Coalescing packets received",
 	"Coalesced packets",
@@ -242,6 +271,8 @@ static const char rmnet_port_gstrings_stats[][ETH_GSTRING_LEN] = {
 	"DL trailer pkts received",
 	"UL agg reuse",
 	"UL agg alloc",
+=======
+>>>>>>> v4.19.83
 };
 
 static void rmnet_get_strings(struct net_device *dev, u32 stringset, u8 *buf)
@@ -250,9 +281,12 @@ static void rmnet_get_strings(struct net_device *dev, u32 stringset, u8 *buf)
 	case ETH_SS_STATS:
 		memcpy(buf, &rmnet_gstrings_stats,
 		       sizeof(rmnet_gstrings_stats));
+<<<<<<< HEAD
 		memcpy(buf + sizeof(rmnet_gstrings_stats),
 		       &rmnet_port_gstrings_stats,
 		       sizeof(rmnet_port_gstrings_stats));
+=======
+>>>>>>> v4.19.83
 		break;
 	}
 }
@@ -261,8 +295,12 @@ static int rmnet_get_sset_count(struct net_device *dev, int sset)
 {
 	switch (sset) {
 	case ETH_SS_STATS:
+<<<<<<< HEAD
 		return ARRAY_SIZE(rmnet_gstrings_stats) +
 		       ARRAY_SIZE(rmnet_port_gstrings_stats);
+=======
+		return ARRAY_SIZE(rmnet_gstrings_stats);
+>>>>>>> v4.19.83
 	default:
 		return -EOPNOTSUPP;
 	}
@@ -273,6 +311,7 @@ static void rmnet_get_ethtool_stats(struct net_device *dev,
 {
 	struct rmnet_priv *priv = netdev_priv(dev);
 	struct rmnet_priv_stats *st = &priv->stats;
+<<<<<<< HEAD
 	struct rmnet_port_priv_stats *stp;
 	struct rmnet_port *port;
 
@@ -308,13 +347,23 @@ static int rmnet_stats_reset(struct net_device *dev)
 	memset(st, 0, sizeof(*st));
 
 	return 0;
+=======
+
+	if (!data)
+		return;
+
+	memcpy(data, st, ARRAY_SIZE(rmnet_gstrings_stats) * sizeof(u64));
+>>>>>>> v4.19.83
 }
 
 static const struct ethtool_ops rmnet_ethtool_ops = {
 	.get_ethtool_stats = rmnet_get_ethtool_stats,
 	.get_strings = rmnet_get_strings,
 	.get_sset_count = rmnet_get_sset_count,
+<<<<<<< HEAD
 	.nway_reset = rmnet_stats_reset,
+=======
+>>>>>>> v4.19.83
 };
 
 /* Called by kernel whenever a new rmnet<n> device is created. Sets MTU,
@@ -325,7 +374,7 @@ void rmnet_vnd_setup(struct net_device *rmnet_dev)
 	rmnet_dev->netdev_ops = &rmnet_vnd_ops;
 	rmnet_dev->mtu = RMNET_DFLT_PACKET_SIZE;
 	rmnet_dev->needed_headroom = RMNET_NEEDED_HEADROOM;
-	random_ether_addr(rmnet_dev->dev_addr);
+	eth_random_addr(rmnet_dev->dev_addr);
 	rmnet_dev->tx_queue_len = RMNET_TX_QUEUE_LEN;
 
 	/* Raw IP mode */
@@ -336,6 +385,13 @@ void rmnet_vnd_setup(struct net_device *rmnet_dev)
 
 	rmnet_dev->needs_free_netdev = true;
 	rmnet_dev->ethtool_ops = &rmnet_ethtool_ops;
+<<<<<<< HEAD
+=======
+
+	/* This perm addr will be used as interface identifier by IPv6 */
+	rmnet_dev->addr_assign_type = NET_ADDR_RANDOM;
+	eth_random_addr(rmnet_dev->perm_addr);
+>>>>>>> v4.19.83
 }
 
 /* Exposed API */
@@ -357,7 +413,10 @@ int rmnet_vnd_newlink(u8 id, struct net_device *rmnet_dev,
 	rmnet_dev->hw_features = NETIF_F_RXCSUM;
 	rmnet_dev->hw_features |= NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM;
 	rmnet_dev->hw_features |= NETIF_F_SG;
+<<<<<<< HEAD
 	rmnet_dev->hw_features |= NETIF_F_GRO_HW;
+=======
+>>>>>>> v4.19.83
 
 	priv->real_dev = real_dev;
 
@@ -370,8 +429,11 @@ int rmnet_vnd_newlink(u8 id, struct net_device *rmnet_dev,
 		rmnet_dev->rtnl_link_ops = &rmnet_link_ops;
 
 		priv->mux_id = id;
+<<<<<<< HEAD
 		rcu_assign_pointer(priv->qos_info,
 				   qmi_rmnet_qos_init(real_dev, rmnet_dev, id));
+=======
+>>>>>>> v4.19.83
 
 		netdev_dbg(rmnet_dev, "rmnet dev created\n");
 	}

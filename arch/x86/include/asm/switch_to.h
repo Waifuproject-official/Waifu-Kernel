@@ -13,8 +13,7 @@ __visible struct task_struct *__switch_to(struct task_struct *prev,
 					  struct task_struct *next);
 
 /* This runs runs on the previous thread's stack. */
-static inline void prepare_switch_to(struct task_struct *prev,
-				     struct task_struct *next)
+static inline void prepare_switch_to(struct task_struct *next)
 {
 #ifdef CONFIG_VMAP_STACK
 	/*
@@ -41,6 +40,7 @@ asmlinkage void ret_from_fork(void);
  * order of the fields must match the code in __switch_to_asm().
  */
 struct inactive_task_frame {
+	unsigned long flags;
 #ifdef CONFIG_X86_64
 	unsigned long r15;
 	unsigned long r14;
@@ -67,7 +67,7 @@ struct fork_frame {
 
 #define switch_to(prev, next, last)					\
 do {									\
-	prepare_switch_to(prev, next);					\
+	prepare_switch_to(next);					\
 									\
 	((last) = __switch_to_asm((prev), (next)));			\
 } while (0)
@@ -85,6 +85,7 @@ static inline void refresh_sysenter_cs(struct thread_struct *thread)
 #endif
 
 /* This is used when switching tasks or entering/exiting vm86 mode. */
+<<<<<<< HEAD
 static inline void update_sp0(struct task_struct *task)
 {
 	/* On x86_64, sp0 always points to the entry trampoline stack, which is constant: */
@@ -94,6 +95,27 @@ static inline void update_sp0(struct task_struct *task)
 	if (static_cpu_has(X86_FEATURE_XENPV))
 		load_sp0(task_top_of_stack(task));
 #endif
+=======
+static inline void update_task_stack(struct task_struct *task)
+{
+	/* sp0 always points to the entry trampoline stack, which is constant: */
+#ifdef CONFIG_X86_32
+	if (static_cpu_has(X86_FEATURE_XENPV))
+		load_sp0(task->thread.sp0);
+	else
+		this_cpu_write(cpu_tss_rw.x86_tss.sp1, task->thread.sp0);
+#else
+	/*
+	 * x86-64 updates x86_tss.sp1 via cpu_current_top_of_stack. That
+	 * doesn't work on x86-32 because sp1 and
+	 * cpu_current_top_of_stack have different values (because of
+	 * the non-zero stack-padding on 32bit).
+	 */
+	if (static_cpu_has(X86_FEATURE_XENPV))
+		load_sp0(task_top_of_stack(task));
+#endif
+
+>>>>>>> v4.19.83
 }
 
 #endif /* _ASM_X86_SWITCH_TO_H */

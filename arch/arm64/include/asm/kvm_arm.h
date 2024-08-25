@@ -23,8 +23,17 @@
 #include <asm/types.h>
 
 /* Hyp Configuration Register (HCR) bits */
+<<<<<<< HEAD
 #define HCR_API		(UL(1) << 41)
 #define HCR_APK		(UL(1) << 40)
+=======
+#define HCR_FWB		(UL(1) << 46)
+#define HCR_API		(UL(1) << 41)
+#define HCR_APK		(UL(1) << 40)
+#define HCR_TEA		(UL(1) << 37)
+#define HCR_TERR	(UL(1) << 36)
+#define HCR_TLOR	(UL(1) << 35)
+>>>>>>> v4.19.83
 #define HCR_E2H		(UL(1) << 34)
 #define HCR_ID		(UL(1) << 33)
 #define HCR_CD		(UL(1) << 32)
@@ -64,6 +73,7 @@
 
 /*
  * The bits we set in HCR:
+ * TLOR:	Trap LORegion register accesses
  * RW:		64bit by default, can be overridden for 32bit VMs
  * TAC:		Trap ACTLR
  * TSC:		Trap SMC
@@ -81,9 +91,13 @@
  */
 #define HCR_GUEST_FLAGS (HCR_TSC | HCR_TSW | HCR_TWE | HCR_TWI | HCR_VM | \
 			 HCR_TVM | HCR_BSU_IS | HCR_FB | HCR_TAC | \
-			 HCR_AMO | HCR_SWIO | HCR_TIDCP | HCR_RW)
+			 HCR_AMO | HCR_SWIO | HCR_TIDCP | HCR_RW | HCR_TLOR | \
+			 HCR_FMO | HCR_IMO)
 #define HCR_VIRT_EXCP_MASK (HCR_VSE | HCR_VI | HCR_VF)
+<<<<<<< HEAD
 #define HCR_INT_OVERRIDE   (HCR_FMO | HCR_IMO)
+=======
+>>>>>>> v4.19.83
 #define HCR_HOST_NVHE_FLAGS (HCR_RW | HCR_API | HCR_APK)
 #define HCR_HOST_VHE_FLAGS (HCR_RW | HCR_TGE | HCR_E2H)
 
@@ -188,7 +202,12 @@
 #define CPTR_EL2_TTA	(1 << 20)
 #define CPTR_EL2_TFP	(1 << CPTR_EL2_TFP_SHIFT)
 #define CPTR_EL2_TZ	(1 << 8)
+<<<<<<< HEAD
 #define CPTR_EL2_DEFAULT	0x000033ff
+=======
+#define CPTR_EL2_RES1	0x000032ff /* known RES1 bits in CPTR_EL2 */
+#define CPTR_EL2_DEFAULT	CPTR_EL2_RES1
+>>>>>>> v4.19.83
 
 /* Hyp Debug Configuration Register bits */
 #define MDCR_EL2_TPMS		(1 << 14)
@@ -239,5 +258,6 @@
 
 #define CPACR_EL1_FPEN		(3 << 20)
 #define CPACR_EL1_TTA		(1 << 28)
+#define CPACR_EL1_DEFAULT	(CPACR_EL1_FPEN | CPACR_EL1_ZEN_EL1EN)
 
 #endif /* __ARM64_KVM_ARM_H__ */

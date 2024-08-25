@@ -351,7 +351,7 @@ static void free_channel(struct vmbus_channel *channel)
 {
 	tasklet_kill(&channel->callback_event);
 
-	kfree_rcu(channel, rcu);
+	kobject_put(&channel->kobj);
 }
 
 static void percpu_channel_enq(void *arg)
@@ -374,12 +374,15 @@ static void percpu_channel_deq(void *arg)
 static void vmbus_release_relid(u32 relid)
 {
 	struct vmbus_channel_relid_released msg;
+	int ret;
 
 	memset(&msg, 0, sizeof(struct vmbus_channel_relid_released));
 	msg.child_relid = relid;
 	msg.header.msgtype = CHANNELMSG_RELID_RELEASED;
-	vmbus_post_msg(&msg, sizeof(struct vmbus_channel_relid_released),
-		       true);
+	ret = vmbus_post_msg(&msg, sizeof(struct vmbus_channel_relid_released),
+			     true);
+
+	trace_vmbus_release_relid(&msg, ret);
 }
 
 void hv_process_channel_removal(u32 relid)
@@ -477,6 +480,13 @@ static void vmbus_add_channel_work(struct work_struct *work)
 
 	if (primary_channel != NULL) {
 		/* newchannel is a sub-channel. */
+<<<<<<< HEAD
+=======
+		struct hv_device *dev = primary_channel->device_obj;
+
+		if (vmbus_add_channel_kobj(dev, newchannel))
+			goto err_deq_chan;
+>>>>>>> v4.19.83
 
 		if (primary_channel->sc_creation_callback != NULL)
 			primary_channel->sc_creation_callback(newchannel);
@@ -646,10 +656,8 @@ static DEFINE_SPINLOCK(bind_channel_to_cpu_lock);
 /*
  * Starting with Win8, we can statically distribute the incoming
  * channel interrupt load by binding a channel to VCPU.
- * We do this in a hierarchical fashion:
- * First distribute the primary channels across available NUMA nodes
- * and then distribute the subchannels amongst the CPUs in the NUMA
- * node assigned to the primary channel.
+ * We distribute the interrupt loads to one or more NUMA nodes based on
+ * the channel's affinity_policy.
  *
  * For pre-win8 hosts or non-performance critical channels we assign the
  * first CPU in the first NUMA node.
@@ -875,6 +883,8 @@ static void vmbus_onoffer(struct vmbus_channel_message_header *hdr)
 
 	offer = (struct vmbus_channel_offer_channel *)hdr;
 
+	trace_vmbus_onoffer(offer);
+
 	/* Allocate the channel object and save this offer. */
 	newchannel = alloc_channel();
 	if (!newchannel) {
@@ -915,6 +925,8 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
 	struct device *dev;
 
 	rescind = (struct vmbus_channel_rescind_offer *)hdr;
+
+	trace_vmbus_onoffer_rescind(rescind);
 
 	/*
 	 * The offer msg and the corresponding rescind msg
@@ -1050,6 +1062,8 @@ static void vmbus_onopen_result(struct vmbus_channel_message_header *hdr)
 
 	result = (struct vmbus_channel_open_result *)hdr;
 
+	trace_vmbus_onopen_result(result);
+
 	/*
 	 * Find the open msg, copy the result and signal/unblock the wait event
 	 */
@@ -1093,6 +1107,8 @@ static void vmbus_ongpadl_created(struct vmbus_channel_message_header *hdr)
 	unsigned long flags;
 
 	gpadlcreated = (struct vmbus_channel_gpadl_created *)hdr;
+
+	trace_vmbus_ongpadl_created(gpadlcreated);
 
 	/*
 	 * Find the establish msg, copy the result and signal/unblock the wait
@@ -1142,6 +1158,8 @@ static void vmbus_ongpadl_torndown(
 
 	gpadl_torndown = (struct vmbus_channel_gpadl_torndown *)hdr;
 
+	trace_vmbus_ongpadl_torndown(gpadl_torndown);
+
 	/*
 	 * Find the open msg, copy the result and signal/unblock the wait event
 	 */
@@ -1185,6 +1203,9 @@ static void vmbus_onversion_response(
 	unsigned long flags;
 
 	version_response = (struct vmbus_channel_version_response *)hdr;
+
+	trace_vmbus_onversion_response(version_response);
+
 	spin_lock_irqsave(&vmbus_connection.channelmsg_lock, flags);
 
 	list_for_each_entry(msginfo, &vmbus_connection.chn_msg_list,
@@ -1244,6 +1265,8 @@ void vmbus_onmessage(void *context)
 	hdr = (struct vmbus_channel_message_header *)msg->u.payload;
 	size = msg->header.payload_size;
 
+	trace_vmbus_on_message(hdr);
+
 	if (hdr->msgtype >= CHANNELMSG_COUNT) {
 		pr_err("Received invalid channel message type %d size %d\n",
 			   hdr->msgtype, size);
@@ -1277,9 +1300,11 @@ int vmbus_request_offers(void)
 
 	msg->msgtype = CHANNELMSG_REQUESTOFFERS;
 
-
 	ret = vmbus_post_msg(msg, sizeof(struct vmbus_channel_message_header),
 			     true);
+
+	trace_vmbus_request_offers(ret);
+
 	if (ret != 0) {
 		pr_err("Unable to request offers - %d\n", ret);
 

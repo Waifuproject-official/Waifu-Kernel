@@ -18,10 +18,7 @@ obj-$(CONFIG_PINCTRL)		+= pinctrl/
 obj-$(CONFIG_GPIOLIB)		+= gpio/
 obj-y				+= pwm/
 
-obj-$(CONFIG_PCI)		+= pci/
-obj-$(CONFIG_PCI_ENDPOINT)	+= pci/endpoint/
-# PCI dwc controller drivers
-obj-y				+= pci/dwc/
+obj-y				+= pci/
 
 obj-$(CONFIG_PARISC)		+= parisc/
 obj-$(CONFIG_RAPIDIO)		+= rapidio/
@@ -81,8 +78,12 @@ obj-$(CONFIG_DMA_SHARED_BUFFER) += dma-buf/
 obj-$(CONFIG_NUBUS)		+= nubus/
 obj-y				+= macintosh/
 obj-$(CONFIG_IDE)		+= ide/
+<<<<<<< HEAD
 obj-$(CONFIG_CRYPTO)		+= crypto/
 obj-$(CONFIG_SCSI)		+= scsi/
+=======
+obj-y				+= scsi/
+>>>>>>> v4.19.83
 obj-y				+= nvme/
 obj-$(CONFIG_ATA)		+= ata/
 obj-$(CONFIG_TARGET_CORE)	+= target/
@@ -91,6 +92,7 @@ obj-$(CONFIG_SPI)		+= spi/
 obj-$(CONFIG_SPMI)		+= spmi/
 obj-$(CONFIG_SLIMBUS)		+= slimbus/
 obj-$(CONFIG_HSI)		+= hsi/
+obj-$(CONFIG_SLIMBUS)		+= slimbus/
 obj-y				+= net/
 obj-$(CONFIG_ATM)		+= atm/
 obj-$(CONFIG_FUSION)		+= message/
@@ -131,6 +133,7 @@ obj-$(CONFIG_ACCESSIBILITY)	+= accessibility/
 obj-$(CONFIG_ISDN)		+= isdn/
 obj-$(CONFIG_EDAC)		+= edac/
 obj-$(CONFIG_EISA)		+= eisa/
+obj-$(CONFIG_PM_OPP)		+= opp/
 obj-$(CONFIG_CPU_FREQ)		+= cpufreq/
 obj-$(CONFIG_CPU_IDLE)		+= cpuidle/
 obj-y				+= mmc/
@@ -159,6 +162,7 @@ obj-$(CONFIG_MAILBOX)		+= mailbox/
 obj-$(CONFIG_HWSPINLOCK)	+= hwspinlock/
 obj-$(CONFIG_REMOTEPROC)	+= remoteproc/
 obj-$(CONFIG_RPMSG)		+= rpmsg/
+obj-$(CONFIG_SOUNDWIRE)		+= soundwire/
 
 obj-$(CONFIG_ENERGY_MODEL)	+= energy_model/
 
@@ -188,7 +192,13 @@ obj-$(CONFIG_FPGA)		+= fpga/
 obj-$(CONFIG_FSI)		+= fsi/
 obj-$(CONFIG_TEE)		+= tee/
 obj-$(CONFIG_MULTIPLEXER)	+= mux/
+<<<<<<< HEAD
 obj-$(CONFIG_SENSORS_SSC)	+= sensors/
 obj-$(CONFIG_ESOC)              += esoc/
 # GNSS driver
 obj-$(CONFIG_GNSS_SIRF)		+= gnsssirf/
+=======
+obj-$(CONFIG_UNISYS_VISORBUS)	+= visorbus/
+obj-$(CONFIG_SIOX)		+= siox/
+obj-$(CONFIG_GNSS)		+= gnss/
+>>>>>>> v4.19.83

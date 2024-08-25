@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  *  thermal_helpers.c - helper functions to handle thermal devices
  *
@@ -7,10 +8,6 @@
  *  Copyright (C) 2008 Intel Corp
  *  Copyright (C) 2008 Zhang Rui <rui.zhang@intel.com>
  *  Copyright (C) 2008 Sujith Thomas <sujith.thomas@intel.com>
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; version 2 of the License.
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
@@ -191,10 +188,17 @@ void thermal_cdev_update(struct thermal_cooling_device *cdev)
 				current_target = instance->target;
 		}
 	}
+<<<<<<< HEAD
 	trace_cdev_update_start(cdev);
 	cdev->ops->set_cur_state(cdev, current_target);
 	if (cdev->ops->set_min_state)
 		cdev->ops->set_min_state(cdev, min_target);
+=======
+
+	if (!cdev->ops->set_cur_state(cdev, target))
+		thermal_cooling_device_stats_update(cdev, target);
+
+>>>>>>> v4.19.83
 	cdev->updated = true;
 	mutex_unlock(&cdev->lock);
 	trace_cdev_update(cdev, current_target, min_target);

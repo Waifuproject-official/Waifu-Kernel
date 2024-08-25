@@ -216,9 +216,9 @@ static void idletimer_tg_work(struct work_struct *work)
 		notify_netlink_uevent(timer->attr.attr.name, timer);
 }
 
-static void idletimer_tg_expired(unsigned long data)
+static void idletimer_tg_expired(struct timer_list *t)
 {
-	struct idletimer_tg *timer = (struct idletimer_tg *) data;
+	struct idletimer_tg *timer = from_timer(timer, t, timer);
 
 	pr_debug("timer %s expired\n", timer->attr.attr.name);
 	spin_lock_bh(&timestamp_lock);
@@ -293,6 +293,22 @@ static int idletimer_check_sysfs_name(const char *name, unsigned int size)
 	return 0;
 }
 
+static int idletimer_check_sysfs_name(const char *name, unsigned int size)
+{
+	int ret;
+
+	ret = xt_check_proc_name(name, size);
+	if (ret < 0)
+		return ret;
+
+	if (!strcmp(name, "power") ||
+	    !strcmp(name, "subsystem") ||
+	    !strcmp(name, "uevent"))
+		return -EINVAL;
+
+	return 0;
+}
+
 static int idletimer_tg_create(struct idletimer_tg_info *info)
 {
 	int ret;
@@ -313,7 +329,7 @@ static int idletimer_tg_create(struct idletimer_tg_info *info)
 		ret = -ENOMEM;
 		goto out_free_timer;
 	}
-	info->timer->attr.attr.mode = S_IRUGO;
+	info->timer->attr.attr.mode = 0444;
 	info->timer->attr.show = idletimer_tg_show;
 
 	ret = sysfs_create_file(idletimer_tg_kobj, &info->timer->attr.attr);
@@ -326,8 +342,7 @@ static int idletimer_tg_create(struct idletimer_tg_info *info)
 
 	list_add(&info->timer->entry, &idletimer_tg_list);
 
-	setup_timer(&info->timer->timer, idletimer_tg_expired,
-		    (unsigned long) info->timer);
+	timer_setup(&info->timer->timer, idletimer_tg_expired, 0);
 	info->timer->refcnt = 1;
 	info->timer->send_nl_msg = (info->send_nl_msg == 0) ? false : true;
 	info->timer->active = true;
@@ -344,6 +359,8 @@ static int idletimer_tg_create(struct idletimer_tg_info *info)
 	if (ret)
 		printk(KERN_WARNING "[%s] Failed to register pm notifier %d\n",
 				__func__, ret);
+
+	INIT_WORK(&info->timer->work, idletimer_tg_work);
 
 	INIT_WORK(&info->timer->work, idletimer_tg_work);
 

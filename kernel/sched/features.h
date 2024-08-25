@@ -96,6 +96,7 @@ SCHED_FEAT(WA_BIAS, true)
  * UtilEstimation. Use estimated CPU utilization.
  */
 SCHED_FEAT(UTIL_EST, true)
+<<<<<<< HEAD
 SCHED_FEAT(UTIL_EST_FASTUP, true)
 
 /*
@@ -143,3 +144,5 @@ SCHED_FEAT(SCHEDTUNE_BOOST_HOLD_ALL, false)
  * If disabled, boosts will only bias tasks to higher-capacity CPUs.
  */
 SCHED_FEAT(SCHEDTUNE_BOOST_UTIL, true)
+=======
+>>>>>>> v4.19.83

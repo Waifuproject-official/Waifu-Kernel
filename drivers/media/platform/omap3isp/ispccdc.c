@@ -735,7 +735,7 @@ static int ccdc_config(struct isp_ccdc_device *ccdc,
 				return -ENOMEM;
 
 			if (copy_from_user(fpc_new.addr,
-					   (__force void __user *)fpc.fpcaddr,
+					   (__force void __user *)(long)fpc.fpcaddr,
 					   size)) {
 				dma_free_coherent(isp->dev, size, fpc_new.addr,
 						  fpc_new.dma);
@@ -2605,6 +2605,7 @@ int omap3isp_ccdc_register_entities(struct isp_ccdc_device *ccdc,
 	int ret;
 
 	/* Register the subdev and video node. */
+	ccdc->subdev.dev = vdev->mdev->dev;
 	ret = v4l2_device_register_subdev(vdev, &ccdc->subdev);
 	if (ret < 0)
 		goto error;

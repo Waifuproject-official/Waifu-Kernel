@@ -19,11 +19,14 @@
 #define FS_CRYPTO_BLOCK_SIZE		16
 
 struct fscrypt_ctx;
+<<<<<<< HEAD
 
 /* iv sector for security/pfe/pfk_fscrypt.c and f2fs */
 #define PG_DUN(i, p)                                            \
 	(((((u64)(i)->i_ino) & 0xffffffff) << 32) | ((p)->index & 0xffffffff))
 
+=======
+>>>>>>> v4.19.83
 struct fscrypt_info;
 
 struct fscrypt_str {
@@ -256,6 +259,7 @@ static inline int fscrypt_encrypt_symlink(struct inode *inode,
 	return 0;
 }
 
+<<<<<<< HEAD
 /* fscrypt_ice.c */
 #ifdef CONFIG_PFK
 extern int fscrypt_using_hardware_encryption(const struct inode *inode);
@@ -282,4 +286,6 @@ static inline bool fscrypt_mergeable_bio(struct bio *bio,
 	return true;
 }
 #endif
+=======
+>>>>>>> v4.19.83
 #endif	/* _LINUX_FSCRYPT_H */

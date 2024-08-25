@@ -125,7 +125,11 @@ struct wdrr_bucket {
 
 struct hhf_sched_data {
 	struct wdrr_bucket buckets[WDRR_BUCKET_CNT];
+<<<<<<< HEAD
 	siphash_key_t      perturbation;   /* hash perturbation */
+=======
+	siphash_key_t	   perturbation;   /* hash perturbation */
+>>>>>>> v4.19.83
 	u32		   quantum;        /* psched_mtu(qdisc_dev(sch)); */
 	u32		   drop_overlimit; /* number of times max qdisc packet
 					    * limit was hit
@@ -504,7 +508,8 @@ static const struct nla_policy hhf_policy[TCA_HHF_MAX + 1] = {
 	[TCA_HHF_NON_HH_WEIGHT]	 = { .type = NLA_U32 },
 };
 
-static int hhf_change(struct Qdisc *sch, struct nlattr *opt)
+static int hhf_change(struct Qdisc *sch, struct nlattr *opt,
+		      struct netlink_ext_ack *extack)
 {
 	struct hhf_sched_data *q = qdisc_priv(sch);
 	struct nlattr *tb[TCA_HHF_MAX + 1];
@@ -528,7 +533,7 @@ static int hhf_change(struct Qdisc *sch, struct nlattr *opt)
 		new_hhf_non_hh_weight = nla_get_u32(tb[TCA_HHF_NON_HH_WEIGHT]);
 
 	non_hh_quantum = (u64)new_quantum * new_hhf_non_hh_weight;
-	if (non_hh_quantum > INT_MAX)
+	if (non_hh_quantum == 0 || non_hh_quantum > INT_MAX)
 		return -EINVAL;
 
 	sch_tree_lock(sch);
@@ -571,7 +576,8 @@ static int hhf_change(struct Qdisc *sch, struct nlattr *opt)
 	return 0;
 }
 
-static int hhf_init(struct Qdisc *sch, struct nlattr *opt)
+static int hhf_init(struct Qdisc *sch, struct nlattr *opt,
+		    struct netlink_ext_ack *extack)
 {
 	struct hhf_sched_data *q = qdisc_priv(sch);
 	int i;
@@ -589,7 +595,7 @@ static int hhf_init(struct Qdisc *sch, struct nlattr *opt)
 	q->hhf_non_hh_weight = 2;
 
 	if (opt) {
-		int err = hhf_change(sch, opt);
+		int err = hhf_change(sch, opt, extack);
 
 		if (err)
 			return err;

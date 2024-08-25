@@ -40,11 +40,18 @@ int fname_encrypt(struct inode *inode, const struct qstr *iname,
 {
 	struct skcipher_request *req = NULL;
 	DECLARE_CRYPTO_WAIT(wait);
+<<<<<<< HEAD
 	struct fscrypt_info *ci = inode->i_crypt_info;
 	struct crypto_skcipher *tfm = ci->ci_ctfm;
 	union fscrypt_iv iv;
 	struct scatterlist sg;
 	int res;
+=======
+	struct crypto_skcipher *tfm = inode->i_crypt_info->ci_ctfm;
+	int res = 0;
+	char iv[FS_CRYPTO_BLOCK_SIZE];
+	struct scatterlist sg;
+>>>>>>> v4.19.83
 
 	/*
 	 * Copy the filename to the output buffer for encrypting in-place and
@@ -66,7 +73,11 @@ int fname_encrypt(struct inode *inode, const struct qstr *iname,
 			CRYPTO_TFM_REQ_MAY_BACKLOG | CRYPTO_TFM_REQ_MAY_SLEEP,
 			crypto_req_done, &wait);
 	sg_init_one(&sg, out, olen);
+<<<<<<< HEAD
 	skcipher_request_set_crypt(req, &sg, &sg, olen, &iv);
+=======
+	skcipher_request_set_crypt(req, &sg, &sg, olen, iv);
+>>>>>>> v4.19.83
 
 	/* Do the encryption */
 	res = crypto_wait_req(crypto_skcipher_encrypt(req), &wait);
@@ -95,10 +106,16 @@ static int fname_decrypt(struct inode *inode,
 	struct skcipher_request *req = NULL;
 	DECLARE_CRYPTO_WAIT(wait);
 	struct scatterlist src_sg, dst_sg;
+<<<<<<< HEAD
 	struct fscrypt_info *ci = inode->i_crypt_info;
 	struct crypto_skcipher *tfm = ci->ci_ctfm;
 	union fscrypt_iv iv;
 	int res;
+=======
+	struct crypto_skcipher *tfm = inode->i_crypt_info->ci_ctfm;
+	int res = 0;
+	char iv[FS_CRYPTO_BLOCK_SIZE];
+>>>>>>> v4.19.83
 
 	/* Allocate request */
 	req = skcipher_request_alloc(tfm, GFP_NOFS);
@@ -114,7 +131,11 @@ static int fname_decrypt(struct inode *inode,
 	/* Create decryption request */
 	sg_init_one(&src_sg, iname->name, iname->len);
 	sg_init_one(&dst_sg, oname->name, oname->len);
+<<<<<<< HEAD
 	skcipher_request_set_crypt(req, &src_sg, &dst_sg, iname->len, &iv);
+=======
+	skcipher_request_set_crypt(req, &src_sg, &dst_sg, iname->len, iv);
+>>>>>>> v4.19.83
 	res = crypto_wait_req(crypto_skcipher_decrypt(req), &wait);
 	skcipher_request_free(req);
 	if (res < 0) {

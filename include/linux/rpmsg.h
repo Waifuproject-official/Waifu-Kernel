@@ -1,9 +1,11 @@
+/* SPDX-License-Identifier: BSD-3-Clause */
 /*
  * Remote processor messaging
  *
  * Copyright (C) 2011 Texas Instruments, Inc.
  * Copyright (C) 2011 Google, Inc.
  * All rights reserved.
+<<<<<<< HEAD
  * Copyright (c) 2018, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +33,8 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+=======
+>>>>>>> v4.19.83
  */
 
 #ifndef _LINUX_RPMSG_H
@@ -163,7 +167,7 @@ int rpmsg_trysendto(struct rpmsg_endpoint *ept, void *data, int len, u32 dst);
 int rpmsg_trysend_offchannel(struct rpmsg_endpoint *ept, u32 src, u32 dst,
 			     void *data, int len);
 
-unsigned int rpmsg_poll(struct rpmsg_endpoint *ept, struct file *filp,
+__poll_t rpmsg_poll(struct rpmsg_endpoint *ept, struct file *filp,
 			poll_table *wait);
 
 int rpmsg_get_sigs(struct rpmsg_endpoint *ept, u32 *lsigs, u32 *rsigs);
@@ -267,7 +271,7 @@ static inline int rpmsg_trysend_offchannel(struct rpmsg_endpoint *ept, u32 src,
 	return -ENXIO;
 }
 
-static inline unsigned int rpmsg_poll(struct rpmsg_endpoint *ept,
+static inline __poll_t rpmsg_poll(struct rpmsg_endpoint *ept,
 				      struct file *filp, poll_table *wait)
 {
 	/* This shouldn't be possible */

@@ -98,8 +98,8 @@ nfs_page_free(struct nfs_page *p)
 int
 nfs_iocounter_wait(struct nfs_lock_context *l_ctx)
 {
-	return wait_on_atomic_t(&l_ctx->io_count, nfs_wait_atomic_killable,
-			TASK_KILLABLE);
+	return wait_var_event_killable(&l_ctx->io_count,
+				       !atomic_read(&l_ctx->io_count));
 }
 
 /**
@@ -395,7 +395,7 @@ static void nfs_clear_request(struct nfs_page *req)
 	}
 	if (l_ctx != NULL) {
 		if (atomic_dec_and_test(&l_ctx->io_count)) {
-			wake_up_atomic_t(&l_ctx->io_count);
+			wake_up_var(&l_ctx->io_count);
 			if (test_bit(NFS_CONTEXT_UNLOCK, &ctx->flags))
 				rpc_wake_up(&NFS_SERVER(d_inode(ctx->dentry))->uoc_rpcwaitq);
 		}
@@ -537,7 +537,7 @@ EXPORT_SYMBOL_GPL(nfs_pgio_header_free);
  * @cinfo: Commit information for the call (writes only)
  */
 static void nfs_pgio_rpcsetup(struct nfs_pgio_header *hdr,
-			      unsigned int count, unsigned int offset,
+			      unsigned int count,
 			      int how, struct nfs_commit_info *cinfo)
 {
 	struct nfs_page *req = hdr->req;
@@ -546,10 +546,10 @@ static void nfs_pgio_rpcsetup(struct nfs_pgio_header *hdr,
 	 * NB: take care not to mess about with hdr->commit et al. */
 
 	hdr->args.fh     = NFS_FH(hdr->inode);
-	hdr->args.offset = req_offset(req) + offset;
+	hdr->args.offset = req_offset(req);
 	/* pnfs_set_layoutcommit needs this */
 	hdr->mds_offset = hdr->args.offset;
-	hdr->args.pgbase = req->wb_pgbase + offset;
+	hdr->args.pgbase = req->wb_pgbase;
 	hdr->args.pages  = hdr->page_array.pagevec;
 	hdr->args.count  = count;
 	hdr->args.context = get_nfs_open_context(req->wb_context);
@@ -561,12 +561,13 @@ static void nfs_pgio_rpcsetup(struct nfs_pgio_header *hdr,
 	case FLUSH_COND_STABLE:
 		if (nfs_reqs_to_commit(cinfo))
 			break;
+		/* fall through */
 	default:
 		hdr->args.stable = NFS_FILE_SYNC;
 	}
 
 	hdr->res.fattr   = &hdr->fattr;
-	hdr->res.count   = count;
+	hdr->res.count   = 0;
 	hdr->res.eof     = 0;
 	hdr->res.verf    = &hdr->verf;
 	nfs_fattr_init(&hdr->fattr);
@@ -768,8 +769,7 @@ int nfs_generic_pgio(struct nfs_pageio_descriptor *desc,
 	pageused = 0;
 	while (!list_empty(head)) {
 		req = nfs_list_entry(head->next);
-		nfs_list_remove_request(req);
-		nfs_list_add_request(req, &hdr->pages);
+		nfs_list_move_request(req, &hdr->pages);
 
 		if (!last_page || last_page != req->wb_page) {
 			pageused++;
@@ -789,7 +789,7 @@ int nfs_generic_pgio(struct nfs_pageio_descriptor *desc,
 		desc->pg_ioflags &= ~FLUSH_COND_STABLE;
 
 	/* Set up the argument struct */
-	nfs_pgio_rpcsetup(hdr, mirror->pg_count, 0, desc->pg_ioflags, &cinfo);
+	nfs_pgio_rpcsetup(hdr, mirror->pg_count, desc->pg_ioflags, &cinfo);
 	desc->pg_rpc_callops = &nfs_pgio_common_ops;
 	return 0;
 }
@@ -961,8 +961,7 @@ static int nfs_pageio_do_add_request(struct nfs_pageio_descriptor *desc,
 	}
 	if (!nfs_can_coalesce_requests(prev, req, desc))
 		return 0;
-	nfs_list_remove_request(req);
-	nfs_list_add_request(req, &mirror->pg_list);
+	nfs_list_move_request(req, &mirror->pg_list);
 	mirror->pg_count += req->wb_bytes;
 	return 1;
 }
@@ -994,9 +993,14 @@ nfs_pageio_cleanup_request(struct nfs_pageio_descriptor *desc,
 {
 	LIST_HEAD(head);
 
+<<<<<<< HEAD
 	nfs_list_remove_request(req);
 	nfs_list_add_request(req, &head);
 	desc->pg_completion_ops->error_cleanup(&head);
+=======
+	nfs_list_move_request(req, &head);
+	desc->pg_completion_ops->error_cleanup(&head, desc->pg_error);
+>>>>>>> v4.19.83
 }
 
 /**
@@ -1132,7 +1136,12 @@ static void nfs_pageio_error_cleanup(struct nfs_pageio_descriptor *desc)
 
 	for (midx = 0; midx < desc->pg_mirror_count; midx++) {
 		mirror = &desc->pg_mirrors[midx];
+<<<<<<< HEAD
 		desc->pg_completion_ops->error_cleanup(&mirror->pg_list);
+=======
+		desc->pg_completion_ops->error_cleanup(&mirror->pg_list,
+				desc->pg_error);
+>>>>>>> v4.19.83
 	}
 }
 
@@ -1234,21 +1243,23 @@ static void nfs_pageio_complete_mirror(struct nfs_pageio_descriptor *desc,
 int nfs_pageio_resend(struct nfs_pageio_descriptor *desc,
 		      struct nfs_pgio_header *hdr)
 {
-	LIST_HEAD(failed);
+	LIST_HEAD(pages);
 
 	desc->pg_io_completion = hdr->io_completion;
 	desc->pg_dreq = hdr->dreq;
-	while (!list_empty(&hdr->pages)) {
-		struct nfs_page *req = nfs_list_entry(hdr->pages.next);
+	list_splice_init(&hdr->pages, &pages);
+	while (!list_empty(&pages)) {
+		struct nfs_page *req = nfs_list_entry(pages.next);
 
-		nfs_list_remove_request(req);
 		if (!nfs_pageio_add_request(desc, req))
-			nfs_list_add_request(req, &failed);
+			break;
 	}
 	nfs_pageio_complete(desc);
-	if (!list_empty(&failed)) {
-		list_move(&failed, &hdr->pages);
-		return desc->pg_error < 0 ? desc->pg_error : -EIO;
+	if (!list_empty(&pages)) {
+		int err = desc->pg_error < 0 ? desc->pg_error : -EIO;
+		hdr->completion_ops->error_cleanup(&pages, err);
+		nfs_set_pgio_error(hdr, err, hdr->io_start);
+		return err;
 	}
 	return 0;
 }

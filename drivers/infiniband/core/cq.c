@@ -112,29 +112,31 @@ static void ib_cq_poll_work(struct work_struct *work)
 				    IB_POLL_BATCH);
 	if (completed >= IB_POLL_BUDGET_WORKQUEUE ||
 	    ib_req_notify_cq(cq, IB_POLL_FLAGS) > 0)
-		queue_work(ib_comp_wq, &cq->work);
+		queue_work(cq->comp_wq, &cq->work);
 }
 
 static void ib_cq_completion_workqueue(struct ib_cq *cq, void *private)
 {
-	queue_work(ib_comp_wq, &cq->work);
+	queue_work(cq->comp_wq, &cq->work);
 }
 
 /**
- * ib_alloc_cq - allocate a completion queue
+ * __ib_alloc_cq - allocate a completion queue
  * @dev:		device to allocate the CQ for
  * @private:		driver private data, accessible from cq->cq_context
  * @nr_cqe:		number of CQEs to allocate
  * @comp_vector:	HCA completion vectors for this CQ
  * @poll_ctx:		context to poll the CQ from.
+ * @caller:		module owner name.
  *
  * This is the proper interface to allocate a CQ for in-kernel users. A
  * CQ allocated with this interface will automatically be polled from the
  * specified context. The ULP must use wr->wr_cqe instead of wr->wr_id
  * to use this CQ abstraction.
  */
-struct ib_cq *ib_alloc_cq(struct ib_device *dev, void *private,
-		int nr_cqe, int comp_vector, enum ib_poll_context poll_ctx)
+struct ib_cq *__ib_alloc_cq(struct ib_device *dev, void *private,
+			    int nr_cqe, int comp_vector,
+			    enum ib_poll_context poll_ctx, const char *caller)
 {
 	struct ib_cq_init_attr cq_attr = {
 		.cqe		= nr_cqe,
@@ -158,6 +160,10 @@ struct ib_cq *ib_alloc_cq(struct ib_device *dev, void *private,
 	if (!cq->wc)
 		goto out_destroy_cq;
 
+	cq->res.type = RDMA_RESTRACK_CQ;
+	cq->res.kern_name = caller;
+	rdma_restrack_add(&cq->res);
+
 	switch (cq->poll_ctx) {
 	case IB_POLL_DIRECT:
 		cq->comp_handler = ib_cq_completion_direct;
@@ -169,9 +175,12 @@ struct ib_cq *ib_alloc_cq(struct ib_device *dev, void *private,
 		ib_req_notify_cq(cq, IB_CQ_NEXT_COMP);
 		break;
 	case IB_POLL_WORKQUEUE:
+	case IB_POLL_UNBOUND_WORKQUEUE:
 		cq->comp_handler = ib_cq_completion_workqueue;
 		INIT_WORK(&cq->work, ib_cq_poll_work);
 		ib_req_notify_cq(cq, IB_CQ_NEXT_COMP);
+		cq->comp_wq = (cq->poll_ctx == IB_POLL_WORKQUEUE) ?
+				ib_comp_wq : ib_comp_unbound_wq;
 		break;
 	default:
 		ret = -EINVAL;
@@ -182,11 +191,12 @@ struct ib_cq *ib_alloc_cq(struct ib_device *dev, void *private,
 
 out_free_wc:
 	kfree(cq->wc);
+	rdma_restrack_del(&cq->res);
 out_destroy_cq:
 	cq->device->destroy_cq(cq);
 	return ERR_PTR(ret);
 }
-EXPORT_SYMBOL(ib_alloc_cq);
+EXPORT_SYMBOL(__ib_alloc_cq);
 
 /**
  * ib_free_cq - free a completion queue
@@ -206,6 +216,7 @@ void ib_free_cq(struct ib_cq *cq)
 		irq_poll_disable(&cq->iop);
 		break;
 	case IB_POLL_WORKQUEUE:
+	case IB_POLL_UNBOUND_WORKQUEUE:
 		cancel_work_sync(&cq->work);
 		break;
 	default:
@@ -213,6 +224,7 @@ void ib_free_cq(struct ib_cq *cq)
 	}
 
 	kfree(cq->wc);
+	rdma_restrack_del(&cq->res);
 	ret = cq->device->destroy_cq(cq);
 	WARN_ON_ONCE(ret);
 }

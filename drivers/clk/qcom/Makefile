@@ -11,9 +11,13 @@ clk-qcom-y += clk-branch.o
 clk-qcom-y += clk-regmap-divider.o
 clk-qcom-y += clk-regmap-mux.o
 clk-qcom-y += clk-regmap-mux-div.o
+<<<<<<< HEAD
 clk-qcom-y += reset.o clk-voter.o
 clk-qcom-y += clk-dummy.o clk-debug.o
 clk-qcom-y += gdsc-regulator.o
+=======
+clk-qcom-y += reset.o
+>>>>>>> v4.19.83
 clk-qcom-$(CONFIG_QCOM_GDSC) += gdsc.o
 
 # Keep alphabetically sorted by config
@@ -58,9 +62,11 @@ obj-$(CONFIG_MSM_GPUCC_SDMMAGPIE) += gpucc-sdmmagpie.o
 obj-$(CONFIG_MSM_GPUCC_SM6150) += gpucc-sm6150.o
 obj-$(CONFIG_MSM_GPUCC_SM8150) += gpucc-sm8150.o
 obj-$(CONFIG_MSM_LCC_8960) += lcc-msm8960.o
+obj-$(CONFIG_MSM_GCC_8998) += gcc-msm8998.o
 obj-$(CONFIG_MSM_MMCC_8960) += mmcc-msm8960.o
 obj-$(CONFIG_MSM_MMCC_8974) += mmcc-msm8974.o
 obj-$(CONFIG_MSM_MMCC_8996) += mmcc-msm8996.o
+<<<<<<< HEAD
 obj-$(CONFIG_MSM_NPUCC_SDMMAGPIE) += npucc-sdmmagpie.o
 obj-$(CONFIG_MSM_NPUCC_SM8150) += npucc-sm8150.o
 obj-$(CONFIG_MSM_SCC_SM6150) += scc-sm6150.o
@@ -68,8 +74,14 @@ obj-$(CONFIG_MSM_SCC_SM8150) += scc-sm8150.o
 obj-$(CONFIG_MSM_VIDEOCC_SDMMAGPIE) += videocc-sdmmagpie.o
 obj-$(CONFIG_MSM_VIDEOCC_SM6150) += videocc-sm6150.o
 obj-$(CONFIG_MSM_VIDEOCC_SM8150) += videocc-sm8150.o
+=======
+obj-$(CONFIG_QCOM_A53PLL) += a53-pll.o
+obj-$(CONFIG_QCOM_CLK_APCS_MSM8916) += apcs-msm8916.o
+>>>>>>> v4.19.83
 obj-$(CONFIG_QCOM_CLK_RPM) += clk-rpm.o
+obj-$(CONFIG_QCOM_CLK_RPMH) += clk-rpmh.o
 obj-$(CONFIG_QCOM_CLK_SMD_RPM) += clk-smd-rpm.o
+<<<<<<< HEAD
 obj-$(CONFIG_QCOM_CLK_VIRT) += clk-virt.o clk-virt-sm8150.o clk-virt-sm6150.o
 obj-$(CONFIG_QCS_CMN_BLK_PLL) += cmn-blk-pll.o
 obj-$(CONFIG_SM_CAMCC_ATOLL) += camcc-atoll.o
@@ -87,3 +99,9 @@ obj-$(CONFIG_SPMI_PMIC_CLKDIV) += clk-spmi-pmic-div.o
 obj-$(CONFIG_VIRTIO_CLK) += virtio_clk.o virtio_clk_sm8150.o virtio_clk_sm6150.o virtio_clk_sa8195p.o
 
 obj-y += mdss/
+=======
+obj-$(CONFIG_SDM_DISPCC_845) += dispcc-sdm845.o
+obj-$(CONFIG_SDM_GCC_845) += gcc-sdm845.o
+obj-$(CONFIG_SDM_VIDEOCC_845) += videocc-sdm845.o
+obj-$(CONFIG_SPMI_PMIC_CLKDIV) += clk-spmi-pmic-div.o
+>>>>>>> v4.19.83

@@ -72,15 +72,25 @@ static inline void set_fs(mm_segment_t fs)
  * This is equivalent to the following test:
  * (u65)addr + (u65)size <= (u65)current->addr_limit + 1
  */
+<<<<<<< HEAD
 static inline unsigned long __range_ok(unsigned long addr, unsigned long size)
 {
 	unsigned long limit = current_thread_info()->addr_limit;
+=======
+static inline unsigned long __range_ok(const void __user *addr, unsigned long size)
+{
+	unsigned long ret, limit = current_thread_info()->addr_limit;
+>>>>>>> v4.19.83
 
 	__chk_user_ptr(addr);
 	asm volatile(
 	// A + B <= C + 1 for all A,B,C, in four easy steps:
 	// 1: X = A + B; X' = X % 2^64
+<<<<<<< HEAD
 	"	adds	%0, %0, %2\n"
+=======
+	"	adds	%0, %3, %2\n"
+>>>>>>> v4.19.83
 	// 2: Set C = 0 if X > 2^64, to guarantee X' > C in step 4
 	"	csel	%1, xzr, %1, hi\n"
 	// 3: Set X' = ~0 if X >= 2^64. For X == 2^64, this decrements X'
@@ -92,9 +102,15 @@ static inline unsigned long __range_ok(unsigned long addr, unsigned long size)
 	//    testing X' - C == 0, subject to the previous adjustments.
 	"	sbcs	xzr, %0, %1\n"
 	"	cset	%0, ls\n"
+<<<<<<< HEAD
 	: "+r" (addr), "+r" (limit) : "Ir" (size) : "cc");
 
 	return addr;
+=======
+	: "=&r" (ret), "+r" (limit) : "Ir" (size), "0" (addr) : "cc");
+
+	return ret;
+>>>>>>> v4.19.83
 }
 
 /*
@@ -124,8 +140,13 @@ static inline void __uaccess_ttbr0_disable(void)
 	local_irq_save(flags);
 	ttbr = read_sysreg(ttbr1_el1);
 	ttbr &= ~TTBR_ASID_MASK;
+<<<<<<< HEAD
 	/* reserved_ttbr0 placed at the end of swapper_pg_dir */
 	write_sysreg(ttbr + SWAPPER_DIR_SIZE, ttbr0_el1);
+=======
+	/* reserved_ttbr0 placed before swapper_pg_dir */
+	write_sysreg(ttbr - RESERVED_TTBR0_SIZE, ttbr0_el1);
+>>>>>>> v4.19.83
 	isb();
 	/* Set reserved ASID */
 	write_sysreg(ttbr, ttbr1_el1);
@@ -184,6 +205,18 @@ static inline bool uaccess_ttbr0_enable(void)
 	return false;
 }
 #endif
+
+static inline void __uaccess_disable_hw_pan(void)
+{
+	asm(ALTERNATIVE("nop", SET_PSTATE_PAN(0), ARM64_HAS_PAN,
+			CONFIG_ARM64_PAN));
+}
+
+static inline void __uaccess_enable_hw_pan(void)
+{
+	asm(ALTERNATIVE("nop", SET_PSTATE_PAN(1), ARM64_HAS_PAN,
+			CONFIG_ARM64_PAN));
+}
 
 #define __uaccess_disable(alt)						\
 do {									\

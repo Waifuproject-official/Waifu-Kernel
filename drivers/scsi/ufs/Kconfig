@@ -101,6 +101,7 @@ config SCSI_UFS_QCOM
 	  Select this if you have UFS controller on QCOM chipset.
 	  If unsure, say N.
 
+<<<<<<< HEAD
 config SCSI_UFS_QCOM_ICE
 	bool "QCOM specific hooks to Inline Crypto Engine for UFS driver"
 	depends on SCSI_UFS_QCOM && CRYPTO_DEV_QCOM_ICE
@@ -178,3 +179,13 @@ config UFSTW_IGNORE_GUARANTEE_BIT
 	depends on SCSI_UFSHCD && UFSFEATURE && UFSTW
 	---help---
 	ignore the guarantee bit[31] of dTurboWriteBufferLifeTimeEst for PoC
+=======
+config SCSI_UFS_HISI
+	tristate "Hisilicon specific hooks to UFS controller platform driver"
+	depends on (ARCH_HISI || COMPILE_TEST) && SCSI_UFSHCD_PLATFORM
+	---help---
+	  This selects the Hisilicon specific additions to UFSHCD platform driver.
+
+	  Select this if you have UFS controller on Hisilicon chipset.
+	  If unsure, say N.
+>>>>>>> v4.19.83

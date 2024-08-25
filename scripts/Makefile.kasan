@@ -10,6 +10,10 @@ KASAN_SHADOW_OFFSET ?= $(CONFIG_KASAN_SHADOW_OFFSET)
 
 CFLAGS_KASAN_MINIMAL := -fsanitize=kernel-address
 
+<<<<<<< HEAD
+=======
+cc-param = $(call cc-option, -mllvm -$(1), $(call cc-option, --param $(1)))
+>>>>>>> v4.19.83
 
 cc-param = $(call cc-option, -mllvm -$(1), $(call cc-option, --param $(1)))
 ifeq ($(call cc-option, $(CFLAGS_KASAN_MINIMAL) -Werror),)

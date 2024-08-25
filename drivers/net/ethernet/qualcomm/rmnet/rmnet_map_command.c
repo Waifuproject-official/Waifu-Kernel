@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /* Copyright (c) 2013-2019, The Linux Foundation. All rights reserved.
+=======
+/* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -83,8 +87,13 @@ static void rmnet_map_send_ack(struct sk_buff *skb,
 	struct net_device *dev = skb->dev;
 
 	if (port->data_format & RMNET_FLAGS_INGRESS_MAP_CKSUMV4)
+<<<<<<< HEAD
 		pskb_trim(skb,
 			  skb->len - sizeof(struct rmnet_map_dl_csum_trailer));
+=======
+		skb_trim(skb,
+			 skb->len - sizeof(struct rmnet_map_dl_csum_trailer));
+>>>>>>> v4.19.83
 
 	skb->protocol = htons(ETH_P_MAP);
 
@@ -94,6 +103,7 @@ static void rmnet_map_send_ack(struct sk_buff *skb,
 	netif_tx_lock(dev);
 	dev->netdev_ops->ndo_start_xmit(skb, dev);
 	netif_tx_unlock(dev);
+<<<<<<< HEAD
 }
 
 void
@@ -250,6 +260,8 @@ static void rmnet_map_process_flow_end(struct sk_buff *skb,
 			pull_size += sizeof(struct rmnet_map_dl_csum_trailer);
 		pskb_pull(skb, pull_size);
 	}
+=======
+>>>>>>> v4.19.83
 }
 
 /* Process MAP command frame and send N/ACK message as appropriate. Message cmd

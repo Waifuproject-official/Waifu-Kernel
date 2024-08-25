@@ -1,5 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2016, Linaro Ltd
+<<<<<<< HEAD
  * Copyright (c) 2018-2019, The Linux Foundation, All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -10,6 +12,8 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+=======
+>>>>>>> v4.19.83
  */
 
 #include <linux/io.h>
@@ -231,7 +235,11 @@ struct qcom_glink *qcom_glink_smem_register(struct device *parent,
 	ret = device_register(dev);
 	if (ret) {
 		pr_err("failed to register glink edge\n");
+<<<<<<< HEAD
 		kfree(dev);
+=======
+		put_device(dev);
+>>>>>>> v4.19.83
 		return ERR_PTR(ret);
 	}
 
@@ -313,7 +321,11 @@ struct qcom_glink *qcom_glink_smem_register(struct device *parent,
 
 	return glink;
 
+<<<<<<< HEAD
 unregister:
+=======
+err_put_dev:
+>>>>>>> v4.19.83
 	device_unregister(dev);
 
 	return ERR_PTR(ret);

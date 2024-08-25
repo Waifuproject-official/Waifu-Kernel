@@ -20,6 +20,7 @@
 # error "please don't include this file directly"
 #endif
 
+<<<<<<< HEAD
 #include <linux/types.h>
 
 #define TICKET_SHIFT	16
@@ -36,6 +37,9 @@ typedef struct {
 
 #define __ARCH_SPIN_LOCK_UNLOCKED	{ 0 , 0 }
 
+=======
+#include <asm-generic/qspinlock_types.h>
+>>>>>>> v4.19.83
 #include <asm-generic/qrwlock_types.h>
 
 #endif

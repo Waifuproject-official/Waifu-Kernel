@@ -100,8 +100,23 @@ int mb_cache_entry_create(struct mb_cache *cache, gfp_t mask, u32 key,
 	if (cache->c_entry_count >= 2*cache->c_max_entries)
 		mb_cache_shrink(cache, SYNC_SHRINK_BATCH);
 
+<<<<<<< HEAD
 	bucket = &cache->c_bucket[hash_32(key, cache->c_bucket_bits)];
 	head = &bucket->hash;
+=======
+	entry = kmem_cache_alloc(mb_entry_cache, mask);
+	if (!entry)
+		return -ENOMEM;
+
+	INIT_LIST_HEAD(&entry->e_list);
+	/* One ref for hash, one ref returned */
+	atomic_set(&entry->e_refcnt, 1);
+	entry->e_key = key;
+	entry->e_value = value;
+	entry->e_reusable = reusable;
+	entry->e_referenced = 0;
+	head = mb_cache_entry_head(cache, key);
+>>>>>>> v4.19.83
 	hlist_bl_lock(head);
 	list_for_each_entry(tmp_req, &bucket->req_list, lnode) {
 		if (tmp_req->e_key == key && tmp_req->e_value == value) {
@@ -270,7 +285,9 @@ void mb_cache_entry_delete(struct mb_cache *cache, u32 key, u64 value)
 			spin_lock(&cache->c_list_lock);
 			if (!list_empty(&entry->e_list)) {
 				list_del_init(&entry->e_list);
-				cache->c_entry_count--;
+				if (!WARN_ONCE(cache->c_entry_count == 0,
+		"mbcache: attempt to decrement c_entry_count past zero"))
+					cache->c_entry_count--;
 				atomic_dec(&entry->e_refcnt);
 			}
 			spin_unlock(&cache->c_list_lock);
@@ -382,9 +399,16 @@ struct mb_cache *mb_cache_create(int bucket_bits)
 	cache->c_max_entries = bucket_count << 4;
 	INIT_LIST_HEAD(&cache->c_list);
 	spin_lock_init(&cache->c_list_lock);
+<<<<<<< HEAD
 	cache->c_bucket = kmalloc(bucket_count * sizeof(*cache->c_bucket),
 				  GFP_KERNEL);
 	if (!cache->c_bucket) {
+=======
+	cache->c_hash = kmalloc_array(bucket_count,
+				      sizeof(struct hlist_bl_head),
+				      GFP_KERNEL);
+	if (!cache->c_hash) {
+>>>>>>> v4.19.83
 		kfree(cache);
 		goto err_out;
 	}

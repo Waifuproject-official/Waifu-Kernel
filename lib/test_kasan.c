@@ -384,10 +384,9 @@ static noinline void __init memcg_accounted_kmem_cache(void)
 	 */
 	for (i = 0; i < 5; i++) {
 		p = kmem_cache_alloc(cache, GFP_KERNEL);
-		if (!p) {
-			pr_err("Allocation failed\n");
+		if (!p)
 			goto free_cache;
-		}
+
 		kmem_cache_free(cache, p);
 		msleep(100);
 	}
@@ -504,6 +503,29 @@ static noinline void __init use_after_scope_test(void)
 	p[1023] = 1;
 }
 
+<<<<<<< HEAD
+=======
+static noinline void __init kasan_alloca_oob_left(void)
+{
+	volatile int i = 10;
+	char alloca_array[i];
+	char *p = alloca_array - 1;
+
+	pr_info("out-of-bounds to left on alloca\n");
+	*(volatile char *)p;
+}
+
+static noinline void __init kasan_alloca_oob_right(void)
+{
+	volatile int i = 10;
+	char alloca_array[i];
+	char *p = alloca_array + i;
+
+	pr_info("out-of-bounds to right on alloca\n");
+	*(volatile char *)p;
+}
+
+>>>>>>> v4.19.83
 static noinline void __init kmem_cache_double_free(void)
 {
 	char *p;
@@ -548,7 +570,19 @@ static noinline void __init kmem_cache_invalid_free(void)
 		return;
 	}
 
+<<<<<<< HEAD
 	kmem_cache_free(cache, p + 1);
+=======
+	/* Trigger invalid free, the object doesn't get freed */
+	kmem_cache_free(cache, p + 1);
+
+	/*
+	 * Properly free the object to prevent the "Objects remaining in
+	 * test_cache on __kmem_cache_shutdown" BUG failure.
+	 */
+	kmem_cache_free(cache, p);
+
+>>>>>>> v4.19.83
 	kmem_cache_destroy(cache);
 }
 
@@ -584,6 +618,8 @@ static int __init kmalloc_tests_init(void)
 	memcg_accounted_kmem_cache();
 	kasan_stack_oob();
 	kasan_global_oob();
+	kasan_alloca_oob_left();
+	kasan_alloca_oob_right();
 	ksize_unpoisons_memory();
 	copy_user_test();
 	use_after_scope_test();

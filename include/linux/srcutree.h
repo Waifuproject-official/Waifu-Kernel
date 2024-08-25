@@ -104,9 +104,13 @@ struct srcu_struct {
 #define SRCU_STATE_SCAN1	1
 #define SRCU_STATE_SCAN2	2
 
-#define __SRCU_STRUCT_INIT(name)					\
+#define __SRCU_STRUCT_INIT(name, pcpu_name)				\
 	{								\
+<<<<<<< HEAD
 		.sda = &name##_srcu_data,				\
+=======
+		.sda = &pcpu_name,					\
+>>>>>>> v4.19.83
 		.lock = __SPIN_LOCK_UNLOCKED(name.lock),		\
 		.srcu_gp_seq_needed = 0 - 1,				\
 		__SRCU_DEP_MAP_INIT(name)				\
@@ -133,7 +137,7 @@ struct srcu_struct {
  */
 #define __DEFINE_SRCU(name, is_static)					\
 	static DEFINE_PER_CPU(struct srcu_data, name##_srcu_data);\
-	is_static struct srcu_struct name = __SRCU_STRUCT_INIT(name)
+	is_static struct srcu_struct name = __SRCU_STRUCT_INIT(name, name##_srcu_data)
 #define DEFINE_SRCU(name)		__DEFINE_SRCU(name, /* not static */)
 #define DEFINE_STATIC_SRCU(name)	__DEFINE_SRCU(name, static)
 

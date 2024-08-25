@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+// SPDX-License-Identifier: GPL-2.0
+>>>>>>> v4.19.83
 #include <linux/of.h>
 #include <linux/slab.h>
 
@@ -43,7 +47,11 @@ static const char *safe_name(struct kobject *kobj, const char *orig_name)
 	int i = 0;
 
 	/* don't be a hero. After 16 tries give up */
+<<<<<<< HEAD
 	while (i < 16 && name && (kn = sysfs_get_dirent(kobj->sd, name))) {
+=======
+	while (i < 16 && (kn = sysfs_get_dirent(kobj->sd, name))) {
+>>>>>>> v4.19.83
 		sysfs_put(kn);
 		if (name != orig_name)
 			kfree(name);
@@ -132,6 +140,12 @@ int __of_attach_node_sysfs(struct device_node *np)
 	}
 	if (!name)
 		return -ENOMEM;
+<<<<<<< HEAD
+=======
+
+	of_node_get(np);
+
+>>>>>>> v4.19.83
 	rc = kobject_add(&np->kobj, parent, "%s", name);
 	kfree(name);
 	if (rc)
@@ -158,7 +172,12 @@ void __of_detach_node_sysfs(struct device_node *np)
 		kobject_del(&np->kobj);
 	}
 
+<<<<<<< HEAD
 	/* finally remove the kobj_init ref */
 	of_node_put(np);
 }
 
+=======
+	of_node_put(np);
+}
+>>>>>>> v4.19.83

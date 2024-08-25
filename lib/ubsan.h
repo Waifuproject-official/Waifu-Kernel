@@ -38,12 +38,30 @@ struct type_mismatch_data {
 };
 
 struct type_mismatch_data_v1 {
+<<<<<<< HEAD
+=======
 	struct source_location location;
 	struct type_descriptor *type;
 	unsigned char log_alignment;
 	unsigned char type_check_kind;
 };
 
+struct type_mismatch_data_common {
+	struct source_location *location;
+	struct type_descriptor *type;
+	unsigned long alignment;
+	unsigned char type_check_kind;
+};
+
+struct nonnull_arg_data {
+>>>>>>> v4.19.83
+	struct source_location location;
+	struct type_descriptor *type;
+	unsigned char log_alignment;
+	unsigned char type_check_kind;
+};
+
+<<<<<<< HEAD
 struct nonnull_arg_data {
 	struct source_location location;
 	struct type_descriptor *type;
@@ -58,6 +76,8 @@ struct type_mismatch_data_common {
 	unsigned char type_check_kind;
 };
 
+=======
+>>>>>>> v4.19.83
 struct vla_bound_data {
 	struct source_location location;
 	struct type_descriptor *type;

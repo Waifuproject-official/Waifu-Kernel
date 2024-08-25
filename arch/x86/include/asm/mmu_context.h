@@ -24,11 +24,12 @@ static inline void paravirt_activate_mm(struct mm_struct *prev,
 #endif	/* !CONFIG_PARAVIRT */
 
 #ifdef CONFIG_PERF_EVENTS
-extern struct static_key rdpmc_always_available;
+
+DECLARE_STATIC_KEY_FALSE(rdpmc_always_available_key);
 
 static inline void load_mm_cr4(struct mm_struct *mm)
 {
-	if (static_key_false(&rdpmc_always_available) ||
+	if (static_branch_unlikely(&rdpmc_always_available_key) ||
 	    atomic_read(&mm->context.perf_rdpmc_allowed))
 		cr4_set_bits(X86_CR4_PCE);
 	else
@@ -70,12 +71,16 @@ struct ldt_struct {
 
 static inline void *ldt_slot_va(int slot)
 {
+<<<<<<< HEAD
 #ifdef CONFIG_X86_64
 	return (void *)(LDT_BASE_ADDR + LDT_SLOT_STRIDE * slot);
 #else
 	BUG();
 	return (void *)fix_to_virt(FIX_HOLE);
 #endif
+=======
+	return (void *)(LDT_BASE_ADDR + LDT_SLOT_STRIDE * slot);
+>>>>>>> v4.19.83
 }
 
 /*
@@ -304,21 +309,6 @@ static inline void arch_unmap(struct mm_struct *mm, unsigned long start,
 	if (unlikely(cpu_feature_enabled(X86_FEATURE_MPX)))
 		mpx_notify_unmap(mm, start, end);
 }
-
-#ifdef CONFIG_X86_INTEL_MEMORY_PROTECTION_KEYS
-static inline int vma_pkey(struct vm_area_struct *vma)
-{
-	unsigned long vma_pkey_mask = VM_PKEY_BIT0 | VM_PKEY_BIT1 |
-				      VM_PKEY_BIT2 | VM_PKEY_BIT3;
-
-	return (vma->vm_flags & vma_pkey_mask) >> VM_PKEY_SHIFT;
-}
-#else
-static inline int vma_pkey(struct vm_area_struct *vma)
-{
-	return 0;
-}
-#endif
 
 /*
  * We only want to enforce protection keys on the current process

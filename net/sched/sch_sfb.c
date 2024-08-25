@@ -489,7 +489,8 @@ static const struct tc_sfb_qopt sfb_default_ops = {
 	.penalty_burst = 20,
 };
 
-static int sfb_change(struct Qdisc *sch, struct nlattr *opt)
+static int sfb_change(struct Qdisc *sch, struct nlattr *opt,
+		      struct netlink_ext_ack *extack)
 {
 	struct sfb_sched_data *q = qdisc_priv(sch);
 	struct Qdisc *child;
@@ -513,7 +514,7 @@ static int sfb_change(struct Qdisc *sch, struct nlattr *opt)
 	if (limit == 0)
 		limit = qdisc_dev(sch)->tx_queue_len;
 
-	child = fifo_create_dflt(sch, &pfifo_qdisc_ops, limit);
+	child = fifo_create_dflt(sch, &pfifo_qdisc_ops, limit, extack);
 	if (IS_ERR(child))
 		return PTR_ERR(child);
 
@@ -550,17 +551,22 @@ static int sfb_change(struct Qdisc *sch, struct nlattr *opt)
 	return 0;
 }
 
-static int sfb_init(struct Qdisc *sch, struct nlattr *opt)
+static int sfb_init(struct Qdisc *sch, struct nlattr *opt,
+		    struct netlink_ext_ack *extack)
 {
 	struct sfb_sched_data *q = qdisc_priv(sch);
 	int err;
 
+<<<<<<< HEAD
 	err = tcf_block_get(&q->block, &q->filter_list, sch);
+=======
+	err = tcf_block_get(&q->block, &q->filter_list, sch, extack);
+>>>>>>> v4.19.83
 	if (err)
 		return err;
 
 	q->qdisc = &noop_qdisc;
-	return sfb_change(sch, opt);
+	return sfb_change(sch, opt, extack);
 }
 
 static int sfb_dump(struct Qdisc *sch, struct sk_buff *skb)
@@ -616,7 +622,7 @@ static int sfb_dump_class(struct Qdisc *sch, unsigned long cl,
 }
 
 static int sfb_graft(struct Qdisc *sch, unsigned long arg, struct Qdisc *new,
-		     struct Qdisc **old)
+		     struct Qdisc **old, struct netlink_ext_ack *extack)
 {
 	struct sfb_sched_data *q = qdisc_priv(sch);
 
@@ -644,7 +650,8 @@ static void sfb_unbind(struct Qdisc *sch, unsigned long arg)
 }
 
 static int sfb_change_class(struct Qdisc *sch, u32 classid, u32 parentid,
-			    struct nlattr **tca, unsigned long *arg)
+			    struct nlattr **tca, unsigned long *arg,
+			    struct netlink_ext_ack *extack)
 {
 	return -ENOSYS;
 }
@@ -666,7 +673,8 @@ static void sfb_walk(struct Qdisc *sch, struct qdisc_walker *walker)
 	}
 }
 
-static struct tcf_block *sfb_tcf_block(struct Qdisc *sch, unsigned long cl)
+static struct tcf_block *sfb_tcf_block(struct Qdisc *sch, unsigned long cl,
+				       struct netlink_ext_ack *extack)
 {
 	struct sfb_sched_data *q = qdisc_priv(sch);
 

@@ -1,6 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0
+<<<<<<< HEAD
 KASAN_SANITIZE_scm.o := n
 obj-$(CONFIG_QCOM_CPUSS_DUMP) += cpuss_dump.o
+=======
+CFLAGS_rpmh-rsc.o := -I$(src)
+obj-$(CONFIG_QCOM_GENI_SE) +=	qcom-geni-se.o
+obj-$(CONFIG_QCOM_COMMAND_DB) += cmd-db.o
+>>>>>>> v4.19.83
 obj-$(CONFIG_QCOM_GLINK_SSR) +=	glink_ssr.o
 obj-$(CONFIG_QCOM_GSBI)	+=	qcom_gsbi.o
 obj-$(CONFIG_QCOM_MDT_LOADER)	+= mdt_loader.o
@@ -15,11 +21,19 @@ obj-$(CONFIG_QCOM_SDMMAGPIE_LLCC) += llcc-sdmmagpie.o
 obj-$(CONFIG_QCOM_LLCC_AMON) += llcc-amon.o
 obj-$(CONFIG_QCOM_PM)	+=	spm.o
 obj-$(CONFIG_QCOM_QMI_HELPERS)	+= qmi_helpers.o
+<<<<<<< HEAD
 qmi_helpers-y += qmi_encdec.o
 qmi_helpers-y += qmi_interface.o
 obj-$(CONFIG_QCOM_QMI_RMNET)	+= qmi_rmnet.o
 obj-$(CONFIG_QCOM_QMI_DFC)	+= dfc_qmi.o dfc_qmap.o
 obj-$(CONFIG_QCOM_QMI_POWER_COLLAPSE) += wda_qmi.o
+=======
+qmi_helpers-y	+= qmi_encdec.o qmi_interface.o
+obj-$(CONFIG_QCOM_RMTFS_MEM)	+= rmtfs_mem.o
+obj-$(CONFIG_QCOM_RPMH)		+= qcom_rpmh.o
+qcom_rpmh-y			+= rpmh-rsc.o
+qcom_rpmh-y			+= rpmh.o
+>>>>>>> v4.19.83
 obj-$(CONFIG_QCOM_SMD_RPM)	+= smd-rpm.o
 obj-$(CONFIG_QCOM_SMEM) +=	smem.o
 obj-$(CONFIG_MSM_SPM) += msm-spm.o spm_devices.o
@@ -27,6 +41,7 @@ obj-$(CONFIG_QCOM_SMEM_STATE) += smem_state.o
 obj-$(CONFIG_QCOM_SMP2P)	+= smp2p.o
 obj-$(CONFIG_QCOM_SMSM)	+= smsm.o
 obj-$(CONFIG_QCOM_WCNSS_CTRL) += wcnss_ctrl.o
+<<<<<<< HEAD
 CFLAGS_scm.o :=$(call as-instr,.arch_extension sec,-DREQUIRES_SEC=1)
 obj-$(CONFIG_QCOM_SCM)  +=      scm.o
 obj-$(CONFIG_QCOM_SCM_QCPE)  += scm_qcpe.o
@@ -105,3 +120,8 @@ obj-$(CONFIG_QCOM_HYP_CORE_CTL) += hyp_core_ctl.o
 obj-y += serial_num.o
 obj-$(CONFIG_QCOM_AOP_DDRSS_COMMANDS) += aop_ddrss_cmds.o
 obj-$(CONFIG_RMNET_CTL) += rmnet_ctl/
+=======
+obj-$(CONFIG_QCOM_APR) += apr.o
+obj-$(CONFIG_QCOM_LLCC) += llcc-slice.o
+obj-$(CONFIG_QCOM_SDM845_LLCC) += llcc-sdm845.o
+>>>>>>> v4.19.83

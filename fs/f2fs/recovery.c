@@ -195,6 +195,7 @@ out:
 	return err;
 }
 
+<<<<<<< HEAD
 static int recover_quota_data(struct inode *inode, struct page *page)
 {
 	struct f2fs_inode *raw = F2FS_INODE(page);
@@ -222,6 +223,8 @@ static int recover_quota_data(struct inode *inode, struct page *page)
 	return err;
 }
 
+=======
+>>>>>>> v4.19.83
 static void recover_inline_flags(struct inode *inode, struct f2fs_inode *ri)
 {
 	if (ri->i_inline & F2FS_PIN_FILE)
@@ -234,7 +237,11 @@ static void recover_inline_flags(struct inode *inode, struct f2fs_inode *ri)
 		clear_inode_flag(inode, FI_DATA_EXIST);
 }
 
+<<<<<<< HEAD
 static int recover_inode(struct inode *inode, struct page *page)
+=======
+static void recover_inode(struct inode *inode, struct page *page)
+>>>>>>> v4.19.83
 {
 	struct f2fs_inode *raw = F2FS_INODE(page);
 	char *name;
@@ -284,8 +291,11 @@ static int recover_inode(struct inode *inode, struct page *page)
 				le16_to_cpu(raw->i_gc_failures);
 
 	recover_inline_flags(inode, raw);
+<<<<<<< HEAD
 
 	f2fs_mark_inode_dirty_sync(inode, true);
+=======
+>>>>>>> v4.19.83
 
 	if (file_enc_name(inode))
 		name = "<encrypted>";
@@ -295,7 +305,10 @@ static int recover_inode(struct inode *inode, struct page *page)
 	f2fs_msg(inode->i_sb, KERN_NOTICE,
 		"recover_inode: ino = %x, name = %s, inline = %x",
 			ino_of_node(page), name, raw->i_inline);
+<<<<<<< HEAD
 	return 0;
+=======
+>>>>>>> v4.19.83
 }
 
 static int find_fsync_dnodes(struct f2fs_sb_info *sbi, struct list_head *head,
@@ -422,8 +435,11 @@ static int check_index_in_prev_nodes(struct f2fs_sb_info *sbi,
 	}
 
 	sum_page = f2fs_get_sum_page(sbi, segno);
+<<<<<<< HEAD
 	if (IS_ERR(sum_page))
 		return PTR_ERR(sum_page);
+=======
+>>>>>>> v4.19.83
 	sum_node = (struct f2fs_summary_block *)page_address(sum_page);
 	sum = sum_node->entries[blkoff];
 	f2fs_put_page(sum_page, 1);
@@ -545,8 +561,23 @@ retry_dn:
 	if (err)
 		goto err;
 
+<<<<<<< HEAD
+=======
+	err = f2fs_get_node_info(sbi, dn.nid, &ni);
+	if (err)
+		goto err;
+
+>>>>>>> v4.19.83
 	f2fs_bug_on(sbi, ni.ino != ino_of_node(page));
-	f2fs_bug_on(sbi, ofs_of_node(dn.node_page) != ofs_of_node(page));
+
+	if (ofs_of_node(dn.node_page) != ofs_of_node(page)) {
+		f2fs_msg(sbi->sb, KERN_WARNING,
+			"Inconsistent ofs_of_node, ino:%lu, ofs:%u, %u",
+			inode->i_ino, ofs_of_node(dn.node_page),
+			ofs_of_node(page));
+		err = -EFSCORRUPTED;
+		goto err;
+	}
 
 	for (; start < end; start++, dn.ofs_in_node++) {
 		block_t src, dest;
@@ -706,17 +737,28 @@ int f2fs_recover_fsync_data(struct f2fs_sb_info *sbi, bool check_only)
 	int quota_enabled;
 #endif
 
+<<<<<<< HEAD
 	if (s_flags & MS_RDONLY) {
 		f2fs_msg(sbi->sb, KERN_INFO,
 				"recover fsync data on readonly fs");
 		sbi->sb->s_flags &= ~MS_RDONLY;
+=======
+	if (s_flags & SB_RDONLY) {
+		f2fs_msg(sbi->sb, KERN_INFO,
+				"recover fsync data on readonly fs");
+		sbi->sb->s_flags &= ~SB_RDONLY;
+>>>>>>> v4.19.83
 	}
 
 #ifdef CONFIG_QUOTA
 	/* Needed for iput() to work correctly and not trash data */
-	sbi->sb->s_flags |= MS_ACTIVE;
+	sbi->sb->s_flags |= SB_ACTIVE;
 	/* Turn on quotas so that they are updated correctly */
+<<<<<<< HEAD
 	quota_enabled = f2fs_enable_quota_files(sbi, s_flags & MS_RDONLY);
+=======
+	quota_enabled = f2fs_enable_quota_files(sbi, s_flags & SB_RDONLY);
+>>>>>>> v4.19.83
 #endif
 
 	fsync_entry_slab = f2fs_kmem_cache_create("f2fs_fsync_inode_entry",
@@ -790,7 +832,7 @@ out:
 	if (quota_enabled)
 		f2fs_quota_off_umount(sbi->sb);
 #endif
-	sbi->sb->s_flags = s_flags; /* Restore MS_RDONLY status */
+	sbi->sb->s_flags = s_flags; /* Restore SB_RDONLY status */
 
 	return ret ? ret: err;
 }

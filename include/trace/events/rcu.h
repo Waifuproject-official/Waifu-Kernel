@@ -143,14 +143,14 @@ TRACE_EVENT(rcu_future_grace_period,
  */
 TRACE_EVENT(rcu_grace_period_init,
 
-	TP_PROTO(const char *rcuname, unsigned long gpnum, u8 level,
+	TP_PROTO(const char *rcuname, unsigned long gp_seq, u8 level,
 		 int grplo, int grphi, unsigned long qsmask),
 
-	TP_ARGS(rcuname, gpnum, level, grplo, grphi, qsmask),
+	TP_ARGS(rcuname, gp_seq, level, grplo, grphi, qsmask),
 
 	TP_STRUCT__entry(
 		__field(const char *, rcuname)
-		__field(unsigned long, gpnum)
+		__field(unsigned long, gp_seq)
 		__field(u8, level)
 		__field(int, grplo)
 		__field(int, grphi)
@@ -159,7 +159,7 @@ TRACE_EVENT(rcu_grace_period_init,
 
 	TP_fast_assign(
 		__entry->rcuname = rcuname;
-		__entry->gpnum = gpnum;
+		__entry->gp_seq = gp_seq;
 		__entry->level = level;
 		__entry->grplo = grplo;
 		__entry->grphi = grphi;
@@ -167,7 +167,7 @@ TRACE_EVENT(rcu_grace_period_init,
 	),
 
 	TP_printk("%s %lu %u %d %d %lx",
-		  __entry->rcuname, __entry->gpnum, __entry->level,
+		  __entry->rcuname, __entry->gp_seq, __entry->level,
 		  __entry->grplo, __entry->grphi, __entry->qsmask)
 );
 
@@ -246,6 +246,7 @@ TRACE_EVENT(rcu_exp_funnel_lock,
 		  __entry->grphi, __entry->gpevent)
 );
 
+#ifdef CONFIG_RCU_NOCB_CPU
 /*
  * Tracepoint for RCU no-CBs CPU callback handoffs.  This event is intended
  * to assist debugging of these handoffs.
@@ -288,6 +289,7 @@ TRACE_EVENT(rcu_nocb_wake,
 
 	TP_printk("%s %d %s", __entry->rcuname, __entry->cpu, __entry->reason)
 );
+#endif
 
 /*
  * Tracepoint for tasks blocking within preemptible-RCU read-side
@@ -458,6 +460,7 @@ TRACE_EVENT(rcu_dyntick,
 	TP_printk("%s %lx %lx %#3x", __entry->polarity,
 		  __entry->oldnesting, __entry->newnesting,
 		  __entry->dynticks & 0xfff)
+<<<<<<< HEAD
 );
 
 /*
@@ -497,6 +500,8 @@ TRACE_EVENT(rcu_prep_idle,
 	),
 
 	TP_printk("%s", __entry->reason)
+=======
+>>>>>>> v4.19.83
 );
 
 /*
@@ -792,7 +797,7 @@ TRACE_EVENT(rcu_barrier,
 #define trace_rcu_future_grace_period(rcuname, gp_seq, gp_seq_req, \
 				      level, grplo, grphi, event) \
 				      do { } while (0)
-#define trace_rcu_grace_period_init(rcuname, gpnum, level, grplo, grphi, \
+#define trace_rcu_grace_period_init(rcuname, gp_seq, level, grplo, grphi, \
 				    qsmask) do { } while (0)
 #define trace_rcu_exp_grace_period(rcuname, gqseq, gpevent) \
 	do { } while (0)
@@ -806,7 +811,10 @@ TRACE_EVENT(rcu_barrier,
 	while (0)
 #define trace_rcu_fqs(rcuname, gp_seq, cpu, qsevent) do { } while (0)
 #define trace_rcu_dyntick(polarity, oldnesting, newnesting, dyntick) do { } while (0)
+<<<<<<< HEAD
 #define trace_rcu_prep_idle(reason) do { } while (0)
+=======
+>>>>>>> v4.19.83
 #define trace_rcu_callback(rcuname, rhp, qlen_lazy, qlen) do { } while (0)
 #define trace_rcu_kfree_callback(rcuname, rhp, offset, qlen_lazy, qlen) \
 	do { } while (0)

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* Copyright (c) 2012, 2017-2019, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -8,6 +9,11 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+=======
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (c) 2012, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  */
 
 #include <linux/kernel.h>
@@ -61,8 +67,7 @@ static LIST_HEAD(cs_active_paths);
  * beginning of the data collected in a buffer.  That way the decoder knows that
  * it needs to look for another sync sequence.
  */
-const u32 barrier_pkt[5] = {0x7fffffff, 0x7fffffff,
-			    0x7fffffff, 0x7fffffff, 0x0};
+const u32 barrier_pkt[4] = {0x7fffffff, 0x7fffffff, 0x7fffffff, 0x7fffffff};
 
 static int coresight_id_match(struct device *dev, void *data)
 {
@@ -564,6 +569,42 @@ struct coresight_device *coresight_get_enabled_sink(bool deactivate)
 	return dev ? to_coresight_device(dev) : NULL;
 }
 
+/*
+ * coresight_grab_device - Power up this device and any of the helper
+ * devices connected to it for trace operation. Since the helper devices
+ * don't appear on the trace path, they should be handled along with the
+ * the master device.
+ */
+static void coresight_grab_device(struct coresight_device *csdev)
+{
+	int i;
+
+	for (i = 0; i < csdev->nr_outport; i++) {
+		struct coresight_device *child = csdev->conns[i].child_dev;
+
+		if (child && child->type == CORESIGHT_DEV_TYPE_HELPER)
+			pm_runtime_get_sync(child->dev.parent);
+	}
+	pm_runtime_get_sync(csdev->dev.parent);
+}
+
+/*
+ * coresight_drop_device - Release this device and any of the helper
+ * devices connected to it.
+ */
+static void coresight_drop_device(struct coresight_device *csdev)
+{
+	int i;
+
+	pm_runtime_put(csdev->dev.parent);
+	for (i = 0; i < csdev->nr_outport; i++) {
+		struct coresight_device *child = csdev->conns[i].child_dev;
+
+		if (child && child->type == CORESIGHT_DEV_TYPE_HELPER)
+			pm_runtime_put(child->dev.parent);
+	}
+}
+
 /**
  * coresight_source_filter - checks whether the connection matches the source
  * of path if connection is binded to specific source.
@@ -642,9 +683,9 @@ out:
 	if (!node)
 		return -ENOMEM;
 
+	coresight_grab_device(csdev);
 	node->csdev = csdev;
 	list_add(&node->link, path);
-	pm_runtime_get_sync(csdev->dev.parent);
 
 	return 0;
 }
@@ -697,7 +738,7 @@ void coresight_release_path(struct coresight_device *csdev,
 	list_for_each_entry_safe(nd, next, path, link) {
 		csdev = nd->csdev;
 
-		pm_runtime_put_sync(csdev->dev.parent);
+		coresight_drop_device(csdev);
 		list_del(&nd->link);
 		kfree(nd);
 	}
@@ -951,6 +992,9 @@ static struct device_type coresight_dev_type[] = {
 		.name = "source",
 		.groups = coresight_source_groups,
 	},
+	{
+		.name = "helper",
+	},
 };
 
 static void coresight_device_release(struct device *dev)
@@ -1019,32 +1063,17 @@ static void coresight_fixup_orphan_conns(struct coresight_device *csdev)
 }
 
 
-static int coresight_name_match(struct device *dev, void *data)
-{
-	char *to_match;
-	struct coresight_device *i_csdev;
-
-	to_match = data;
-	i_csdev = to_coresight_device(dev);
-
-	if (to_match && !strcmp(to_match, dev_name(&i_csdev->dev)))
-		return 1;
-
-	return 0;
-}
-
 static void coresight_fixup_device_conns(struct coresight_device *csdev)
 {
 	int i;
-	struct device *dev = NULL;
-	struct coresight_connection *conn;
 
 	for (i = 0; i < csdev->nr_outport; i++) {
-		conn = &csdev->conns[i];
-		dev = bus_find_device(&coresight_bustype, NULL,
-				      (void *)conn->child_name,
-				      coresight_name_match);
+		struct coresight_connection *conn = &csdev->conns[i];
+		struct device *dev = NULL;
 
+		if (conn->child_name)
+			dev = bus_find_device_by_name(&coresight_bustype, NULL,
+						      conn->child_name);
 		if (dev) {
 			conn->child_dev = to_coresight_device(dev);
 			/* and put reference from 'bus_find_device()' */
@@ -1265,8 +1294,10 @@ struct coresight_device *coresight_register(struct coresight_desc *desc)
 	dev_set_name(&csdev->dev, "%s", desc->pdata->name);
 
 	ret = device_register(&csdev->dev);
-	if (ret)
-		goto err_device_register;
+	if (ret) {
+		put_device(&csdev->dev);
+		goto err_kzalloc_csdev;
+	}
 
 	mutex_lock(&coresight_mutex);
 
@@ -1277,8 +1308,6 @@ struct coresight_device *coresight_register(struct coresight_desc *desc)
 
 	return csdev;
 
-err_device_register:
-	kfree(conns);
 err_kzalloc_conns:
 	kfree(refcnts);
 err_kzalloc_refcnts:

@@ -78,14 +78,12 @@ void synchronize_rcu(void);
 
 static inline void __rcu_read_lock(void)
 {
-	if (IS_ENABLED(CONFIG_PREEMPT_COUNT))
-		preempt_disable();
+	preempt_disable();
 }
 
 static inline void __rcu_read_unlock(void)
 {
-	if (IS_ENABLED(CONFIG_PREEMPT_COUNT))
-		preempt_enable();
+	preempt_enable();
 }
 
 static inline void synchronize_rcu(void)
@@ -212,10 +210,12 @@ do { \
 #endif
 
 /*
- * init_rcu_head_on_stack()/destroy_rcu_head_on_stack() are needed for dynamic
- * initialization and destruction of rcu_head on the stack. rcu_head structures
- * allocated dynamically in the heap or defined statically don't need any
- * initialization.
+ * The init_rcu_head_on_stack() and destroy_rcu_head_on_stack() calls
+ * are needed for dynamic initialization and destruction of rcu_head
+ * on the stack, and init_rcu_head()/destroy_rcu_head() are needed for
+ * dynamic initialization and destruction of statically allocated rcu_head
+ * structures.  However, rcu_head structures allocated dynamically in the
+ * heap don't need any initialization.
  */
 #ifdef CONFIG_DEBUG_OBJECTS_RCU_HEAD
 void init_rcu_head(struct rcu_head *head);
@@ -431,12 +431,12 @@ static inline void rcu_preempt_sleep_check(void) { }
  * @p: The pointer to read
  *
  * Return the value of the specified RCU-protected pointer, but omit the
- * smp_read_barrier_depends() and keep the READ_ONCE().  This is useful
- * when the value of this pointer is accessed, but the pointer is not
- * dereferenced, for example, when testing an RCU-protected pointer against
- * NULL.  Although rcu_access_pointer() may also be used in cases where
- * update-side locks prevent the value of the pointer from changing, you
- * should instead use rcu_dereference_protected() for this use case.
+ * lockdep checks for being in an RCU read-side critical section.  This is
+ * useful when the value of this pointer is accessed, but the pointer is
+ * not dereferenced, for example, when testing an RCU-protected pointer
+ * against NULL.  Although rcu_access_pointer() may also be used in cases
+ * where update-side locks prevent the value of the pointer from changing,
+ * you should instead use rcu_dereference_protected() for this use case.
  *
  * It is also permissible to use rcu_access_pointer() when read-side
  * access to the pointer was removed at least one grace period ago, as
@@ -519,12 +519,11 @@ static inline void rcu_preempt_sleep_check(void) { }
  * @c: The conditions under which the dereference will take place
  *
  * Return the value of the specified RCU-protected pointer, but omit
- * both the smp_read_barrier_depends() and the READ_ONCE().  This
- * is useful in cases where update-side locks prevent the value of the
- * pointer from changing.  Please note that this primitive does *not*
- * prevent the compiler from repeating this reference or combining it
- * with other references, so it should not be used without protection
- * of appropriate locks.
+ * the READ_ONCE().  This is useful in cases where update-side locks
+ * prevent the value of the pointer from changing.  Please note that this
+ * primitive does *not* prevent the compiler from repeating this reference
+ * or combining it with other references, so it should not be used without
+ * protection of appropriate locks.
  *
  * This function is only for update-side use.  Using this function
  * when protected only by rcu_read_lock() will result in infrequent
@@ -565,8 +564,8 @@ static inline void rcu_preempt_sleep_check(void) { }
  * This is simply an identity function, but it documents where a pointer
  * is handed off from RCU to some other synchronization mechanism, for
  * example, reference counting or locking.  In C11, it would map to
- * kill_dependency().  It could be used as follows:
- * ``
+ * kill_dependency().  It could be used as follows::
+ *
  *	rcu_read_lock();
  *	p = rcu_dereference(gp);
  *	long_lived = is_long_lived(p);
@@ -577,7 +576,6 @@ static inline void rcu_preempt_sleep_check(void) { }
  *			p = rcu_pointer_handoff(p);
  *	}
  *	rcu_read_unlock();
- *``
  */
 #define rcu_pointer_handoff(p) (p)
 
@@ -622,7 +620,7 @@ static inline void rcu_preempt_sleep_check(void) { }
  * read-side critical sections may be preempted and they may also block, but
  * only when acquiring spinlocks that are subject to priority inheritance.
  */
-static inline void rcu_read_lock(void)
+static __always_inline void rcu_read_lock(void)
 {
 	__rcu_read_lock();
 	__acquire(RCU);
@@ -650,9 +648,7 @@ static inline void rcu_read_lock(void)
  * Unfortunately, this function acquires the scheduler's runqueue and
  * priority-inheritance spinlocks.  This means that deadlock could result
  * if the caller of rcu_read_unlock() already holds one of these locks or
- * any lock that is ever acquired while holding them; or any lock which
- * can be taken from interrupt context because rcu_boost()->rt_mutex_lock()
- * does not disable irqs while taking ->wait_lock.
+ * any lock that is ever acquired while holding them.
  *
  * That said, RCU readers are never priority boosted unless they were
  * preempted.  Therefore, one way to avoid deadlock is to make sure

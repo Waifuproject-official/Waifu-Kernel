@@ -121,8 +121,8 @@ static int msg_empty_list_init(struct sst_generic_ipc *ipc)
 {
 	int i;
 
-	ipc->msg = kzalloc(sizeof(struct ipc_message) *
-		IPC_EMPTY_LIST_SIZE, GFP_KERNEL);
+	ipc->msg = kcalloc(IPC_EMPTY_LIST_SIZE, sizeof(struct ipc_message),
+			   GFP_KERNEL);
 	if (ipc->msg == NULL)
 		return -ENOMEM;
 
@@ -231,6 +231,8 @@ struct ipc_message *sst_ipc_reply_find_msg(struct sst_generic_ipc *ipc,
 
 	if (ipc->ops.reply_msg_match != NULL)
 		header = ipc->ops.reply_msg_match(header, &mask);
+	else
+		mask = (u64)-1;
 
 	if (list_empty(&ipc->rx_list)) {
 		dev_err(ipc->dev, "error: rx list empty but received 0x%llx\n",

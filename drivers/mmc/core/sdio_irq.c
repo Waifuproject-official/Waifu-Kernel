@@ -35,8 +35,16 @@ static int process_sdio_pending_irqs(struct mmc_host *host)
 {
 	struct mmc_card *card = host->card;
 	int i, ret, count;
+	bool sdio_irq_pending = host->sdio_irq_pending;
 	unsigned char pending;
 	struct sdio_func *func;
+
+	/* Don't process SDIO IRQs if the card is suspended. */
+	if (mmc_card_suspended(card))
+		return 0;
+
+	/* Clear the flag to indicate that we have processed the IRQ. */
+	host->sdio_irq_pending = false;
 
 	/*
 	 * Optimization, if there is only 1 function interrupt registered
@@ -44,7 +52,7 @@ static int process_sdio_pending_irqs(struct mmc_host *host)
 	 * Otherwise do the full probe.
 	 */
 	func = card->sdio_single_irq;
-	if (func && host->sdio_irq_pending) {
+	if (func && sdio_irq_pending) {
 		func->irq_handler(func);
 		return 1;
 	}
@@ -96,8 +104,11 @@ void sdio_run_irqs(struct mmc_host *host)
 {
 	mmc_claim_host(host);
 	if (host->sdio_irqs) {
+<<<<<<< HEAD
 		host->sdio_irq_pending = true;
 		mmc_host_clk_hold(host);
+=======
+>>>>>>> v4.19.83
 		process_sdio_pending_irqs(host);
 		mmc_host_clk_release(host);
 		if (host->ops->ack_sdio_irq)
@@ -117,6 +128,7 @@ void sdio_irq_work(struct work_struct *work)
 
 void sdio_signal_irq(struct mmc_host *host)
 {
+	host->sdio_irq_pending = true;
 	queue_delayed_work(system_wq, &host->sdio_irq_work, 0);
 }
 EXPORT_SYMBOL_GPL(sdio_signal_irq);
@@ -158,7 +170,8 @@ static int sdio_irq_thread(void *_host)
 		 * holding of the host lock does not cover too much work
 		 * that doesn't require that lock to be held.
 		 */
-		ret = __mmc_claim_host(host, &host->sdio_irq_thread_abort);
+		ret = __mmc_claim_host(host, NULL,
+				       &host->sdio_irq_thread_abort);
 		if (ret)
 			break;
 		ws = false;
@@ -173,7 +186,6 @@ static int sdio_irq_thread(void *_host)
 			ws = true;
 		}
 		ret = process_sdio_pending_irqs(host);
-		host->sdio_irq_pending = false;
 		mmc_release_host(host);
 
 		/*
@@ -306,8 +318,8 @@ static void sdio_single_irq_set(struct mmc_card *card)
  *
  *	Claim and activate the IRQ for the given SDIO function. The provided
  *	handler will be called when that IRQ is asserted.  The host is always
- *	claimed already when the handler is called so the handler must not
- *	call sdio_claim_host() nor sdio_release_host().
+ *	claimed already when the handler is called so the handler should not
+ *	call sdio_claim_host() or sdio_release_host().
  */
 int sdio_claim_irq(struct sdio_func *func, sdio_irq_handler_t *handler)
 {

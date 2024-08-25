@@ -95,7 +95,10 @@ struct arch_timer_mem {
 extern u32 arch_timer_get_rate(void);
 extern u64 (*arch_timer_read_counter)(void);
 extern struct arch_timer_kvm_info *arch_timer_get_kvm_info(void);
+<<<<<<< HEAD
 extern void arch_timer_mem_get_cval(u32 *lo, u32 *hi);
+=======
+>>>>>>> v4.19.83
 extern bool arch_timer_evtstrm_available(void);
 
 #else
@@ -110,11 +113,14 @@ static inline u64 arch_timer_read_counter(void)
 	return 0;
 }
 
+<<<<<<< HEAD
 static void arch_timer_mem_get_cval(u32 *lo, u32 *hi)
 {
 	*lo = *hi = ~0U;
 }
 
+=======
+>>>>>>> v4.19.83
 static inline bool arch_timer_evtstrm_available(void)
 {
 	return false;

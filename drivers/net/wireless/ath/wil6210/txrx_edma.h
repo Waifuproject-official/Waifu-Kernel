@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (c) 2012-2016,2018-2019, The Linux Foundation. All rights reserved.
+=======
+ * Copyright (c) 2012-2016,2018, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -23,9 +27,15 @@
 #define WIL_SRING_SIZE_ORDER_MIN	(WIL_RING_SIZE_ORDER_MIN)
 #define WIL_SRING_SIZE_ORDER_MAX	(WIL_RING_SIZE_ORDER_MAX)
 /* RX sring order should be bigger than RX ring order */
+<<<<<<< HEAD
 #define WIL_RX_SRING_SIZE_ORDER_DEFAULT	(12)
 #define WIL_TX_SRING_SIZE_ORDER_DEFAULT	(12)
 #define WIL_RX_BUFF_ARR_SIZE_DEFAULT (2600)
+=======
+#define WIL_RX_SRING_SIZE_ORDER_DEFAULT	(11)
+#define WIL_TX_SRING_SIZE_ORDER_DEFAULT	(12)
+#define WIL_RX_BUFF_ARR_SIZE_DEFAULT (1536)
+>>>>>>> v4.19.83
 
 #define WIL_DEFAULT_RX_STATUS_RING_ID 0
 #define WIL_RX_DESC_RING_ID 0
@@ -427,12 +437,15 @@ static inline int wil_rx_status_get_eop(void *msg) /* EoP = End of Packet */
 			    30, 30);
 }
 
+<<<<<<< HEAD
 static inline void wil_rx_status_reset_buff_id(struct wil_status_ring *s)
 {
 	((struct wil_rx_status_compressed *)
 		(s->va + (s->elem_size * s->swhead)))->buff_id = 0;
 }
 
+=======
+>>>>>>> v4.19.83
 static inline __le16 wil_rx_status_get_buff_id(void *msg)
 {
 	return ((struct wil_rx_status_compressed *)msg)->buff_id;

@@ -83,6 +83,30 @@ static inline bool is_vlan_dev(const struct net_device *dev)
 #define skb_vlan_tag_get_id(__skb)	((__skb)->vlan_tci & VLAN_VID_MASK)
 #define skb_vlan_tag_get_prio(__skb)	((__skb)->vlan_tci & VLAN_PRIO_MASK)
 
+static inline int vlan_get_rx_ctag_filter_info(struct net_device *dev)
+{
+	ASSERT_RTNL();
+	return notifier_to_errno(call_netdevice_notifiers(NETDEV_CVLAN_FILTER_PUSH_INFO, dev));
+}
+
+static inline void vlan_drop_rx_ctag_filter_info(struct net_device *dev)
+{
+	ASSERT_RTNL();
+	call_netdevice_notifiers(NETDEV_CVLAN_FILTER_DROP_INFO, dev);
+}
+
+static inline int vlan_get_rx_stag_filter_info(struct net_device *dev)
+{
+	ASSERT_RTNL();
+	return notifier_to_errno(call_netdevice_notifiers(NETDEV_SVLAN_FILTER_PUSH_INFO, dev));
+}
+
+static inline void vlan_drop_rx_stag_filter_info(struct net_device *dev)
+{
+	ASSERT_RTNL();
+	call_netdevice_notifiers(NETDEV_SVLAN_FILTER_DROP_INFO, dev);
+}
+
 /**
  *	struct vlan_pcpu_stats - VLAN percpu rx/tx stats
  *	@rx_packets: number of received packets
@@ -301,6 +325,7 @@ static inline bool vlan_hw_offload_capable(netdev_features_t features,
 
 /**
  * __vlan_insert_inner_tag - inner VLAN tag inserting
+<<<<<<< HEAD
  * @skb: skbuff to tag
  * @vlan_proto: VLAN encapsulation protocol
  * @vlan_tci: VLAN TCI to insert
@@ -350,12 +375,92 @@ static inline int __vlan_insert_inner_tag(struct sk_buff *skb,
 
 /**
  * __vlan_insert_tag - regular VLAN tag inserting
+=======
+>>>>>>> v4.19.83
+ * @skb: skbuff to tag
+ * @vlan_proto: VLAN encapsulation protocol
+ * @vlan_tci: VLAN TCI to insert
+ * @mac_len: MAC header length including outer vlan headers
+ *
+ * Inserts the VLAN tag into @skb as part of the payload at offset mac_len
+ * Returns error if skb_cow_head fails.
+ *
+ * Does not change skb->protocol so this function can be used during receive.
+ */
+static inline int __vlan_insert_inner_tag(struct sk_buff *skb,
+					  __be16 vlan_proto, u16 vlan_tci,
+					  unsigned int mac_len)
+{
+	return __vlan_insert_inner_tag(skb, vlan_proto, vlan_tci, ETH_HLEN);
+}
+
+/**
+ * vlan_insert_inner_tag - inner VLAN tag inserting
+ * @skb: skbuff to tag
+ * @vlan_proto: VLAN encapsulation protocol
+ * @vlan_tci: VLAN TCI to insert
+ * @mac_len: MAC header length including outer vlan headers
+ *
+ * Inserts the VLAN tag into @skb as part of the payload at offset mac_len
+ * Returns a VLAN tagged skb. If a new skb is created, @skb is freed.
+ *
+ * Following the skb_unshare() example, in case of error, the calling function
+ * doesn't have to worry about freeing the original skb.
+ *
+ * Does not change skb->protocol so this function can be used during receive.
+ */
+static inline struct sk_buff *vlan_insert_inner_tag(struct sk_buff *skb,
+						    __be16 vlan_proto,
+						    u16 vlan_tci,
+						    unsigned int mac_len)
+{
+	int err;
+
+<<<<<<< HEAD
+	err = __vlan_insert_inner_tag(skb, vlan_proto, vlan_tci, mac_len);
+	if (err) {
+		dev_kfree_skb_any(skb);
+		return NULL;
+	}
+	return skb;
+=======
+	skb_push(skb, VLAN_HLEN);
+
+	/* Move the mac header sans proto to the beginning of the new header. */
+	if (likely(mac_len > ETH_TLEN))
+		memmove(skb->data, skb->data + VLAN_HLEN, mac_len - ETH_TLEN);
+	skb->mac_header -= VLAN_HLEN;
+
+	veth = (struct vlan_ethhdr *)(skb->data + mac_len - ETH_HLEN);
+
+	/* first, the ethernet type */
+	if (likely(mac_len >= ETH_TLEN)) {
+		/* h_vlan_encapsulated_proto should already be populated, and
+		 * skb->data has space for h_vlan_proto
+		 */
+		veth->h_vlan_proto = vlan_proto;
+	} else {
+		/* h_vlan_encapsulated_proto should not be populated, and
+		 * skb->data has no space for h_vlan_proto
+		 */
+		veth->h_vlan_encapsulated_proto = skb->protocol;
+	}
+
+	/* now, the TCI */
+	veth->h_vlan_TCI = htons(vlan_tci);
+
+	return 0;
+>>>>>>> v4.19.83
+}
+
+/**
+ * __vlan_insert_tag - regular VLAN tag inserting
  * @skb: skbuff to tag
  * @vlan_proto: VLAN encapsulation protocol
  * @vlan_tci: VLAN TCI to insert
  *
  * Inserts the VLAN tag into @skb as part of the payload
- * Returns error if skb_cow_head failes.
+ * Returns error if skb_cow_head fails.
  *
  * Does not change skb->protocol so this function can be used during receive.
  */

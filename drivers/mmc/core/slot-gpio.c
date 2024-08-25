@@ -28,20 +28,25 @@ struct mmc_gpio {
 	bool override_cd_active_level;
 	irqreturn_t (*cd_gpio_isr)(int irq, void *dev_id);
 	char *ro_label;
-	char cd_label[0];
+	u32 cd_debounce_delay_ms;
+	char cd_label[];
 };
 
 static irqreturn_t mmc_gpio_cd_irqt(int irq, void *dev_id)
 {
 	/* Schedule a card detection after a debounce timeout */
 	struct mmc_host *host = dev_id;
+<<<<<<< HEAD
 	int present = host->ops->get_cd(host);
 
 	pr_debug("%s: cd gpio irq, gpio state %d (CARD_%s)\n",
 		mmc_hostname(host), present, present?"INSERT":"REMOVAL");
+=======
+	struct mmc_gpio *ctx = host->slot.handler_priv;
+>>>>>>> v4.19.83
 
 	host->trigger_card_event = true;
-	mmc_detect_change(host, msecs_to_jiffies(200));
+	mmc_detect_change(host, msecs_to_jiffies(ctx->cd_debounce_delay_ms));
 
 	return IRQ_HANDLED;
 }
@@ -54,6 +59,7 @@ int mmc_gpio_alloc(struct mmc_host *host)
 
 	if (ctx) {
 		ctx->ro_label = ctx->cd_label + len;
+		ctx->cd_debounce_delay_ms = 200;
 		snprintf(ctx->cd_label, len, "%s cd", dev_name(host->parent));
 		snprintf(ctx->ro_label, len, "%s ro", dev_name(host->parent));
 		host->slot.handler_priv = ctx;
@@ -81,6 +87,7 @@ EXPORT_SYMBOL(mmc_gpio_get_ro);
 int mmc_gpio_get_cd(struct mmc_host *host)
 {
 	struct mmc_gpio *ctx = host->slot.handler_priv;
+<<<<<<< HEAD
 	int ret;
 
 	if (host->extcon) {
@@ -90,15 +97,24 @@ int mmc_gpio_get_cd(struct mmc_host *host)
 					__func__, ret);
 		return ret;
 	}
+=======
+	int cansleep;
+>>>>>>> v4.19.83
 
 	if (!ctx || !ctx->cd_gpio)
 		return -ENOSYS;
 
-	if (ctx->override_cd_active_level)
-		return !gpiod_get_raw_value_cansleep(ctx->cd_gpio) ^
-			!!(host->caps2 & MMC_CAP2_CD_ACTIVE_HIGH);
+	cansleep = gpiod_cansleep(ctx->cd_gpio);
+	if (ctx->override_cd_active_level) {
+		int value = cansleep ?
+				gpiod_get_raw_value_cansleep(ctx->cd_gpio) :
+				gpiod_get_raw_value(ctx->cd_gpio);
+		return !value ^ !!(host->caps2 & MMC_CAP2_CD_ACTIVE_HIGH);
+	}
 
-	return gpiod_get_value_cansleep(ctx->cd_gpio);
+	return cansleep ?
+		gpiod_get_value_cansleep(ctx->cd_gpio) :
+		gpiod_get_value(ctx->cd_gpio);
 }
 EXPORT_SYMBOL(mmc_gpio_get_cd);
 
@@ -135,20 +151,18 @@ EXPORT_SYMBOL(mmc_gpio_request_ro);
 void mmc_gpiod_request_cd_irq(struct mmc_host *host)
 {
 	struct mmc_gpio *ctx = host->slot.handler_priv;
-	int ret, irq;
+	int irq = -EINVAL;
+	int ret;
 
 	if (host->slot.cd_irq >= 0 || !ctx || !ctx->cd_gpio)
 		return;
 
-	irq = gpiod_to_irq(ctx->cd_gpio);
-
 	/*
-	 * Even if gpiod_to_irq() returns a valid IRQ number, the platform might
-	 * still prefer to poll, e.g., because that IRQ number is already used
-	 * by another unit and cannot be shared.
+	 * Do not use IRQ if the platform prefers to poll, e.g., because that
+	 * IRQ number is already used by another unit and cannot be shared.
 	 */
-	if (irq >= 0 && host->caps & MMC_CAP_NEEDS_POLL)
-		irq = -EINVAL;
+	if (!(host->caps & MMC_CAP_NEEDS_POLL))
+		irq = gpiod_to_irq(ctx->cd_gpio);
 
 	if (irq >= 0) {
 		if (!ctx->cd_gpio_isr)
@@ -165,11 +179,10 @@ void mmc_gpiod_request_cd_irq(struct mmc_host *host)
 
 	if (irq < 0)
 		host->caps |= MMC_CAP_NEEDS_POLL;
-	else if ((host->caps & MMC_CAP_CD_WAKE) && !enable_irq_wake(irq))
-		host->slot.cd_wake_enabled = true;
 }
 EXPORT_SYMBOL(mmc_gpiod_request_cd_irq);
 
+<<<<<<< HEAD
 static int mmc_card_detect_notifier(struct notifier_block *nb,
 				       unsigned long event, void *ptr)
 {
@@ -216,6 +229,28 @@ void mmc_unregister_extcon(struct mmc_host *host)
 			__func__, err);
 }
 EXPORT_SYMBOL(mmc_unregister_extcon);
+=======
+int mmc_gpio_set_cd_wake(struct mmc_host *host, bool on)
+{
+	int ret = 0;
+
+	if (!(host->caps & MMC_CAP_CD_WAKE) ||
+	    host->slot.cd_irq < 0 ||
+	    on == host->slot.cd_wake_enabled)
+		return 0;
+
+	if (on) {
+		ret = enable_irq_wake(host->slot.cd_irq);
+		host->slot.cd_wake_enabled = !ret;
+	} else {
+		disable_irq_wake(host->slot.cd_irq);
+		host->slot.cd_wake_enabled = false;
+	}
+
+	return ret;
+}
+EXPORT_SYMBOL(mmc_gpio_set_cd_wake);
+>>>>>>> v4.19.83
 
 /* Register an alternate interrupt service routine for
  * the card-detect GPIO.
@@ -305,7 +340,7 @@ int mmc_gpiod_request_cd(struct mmc_host *host, const char *con_id,
 	if (debounce) {
 		ret = gpiod_set_debounce(desc, debounce);
 		if (ret < 0)
-			return ret;
+			ctx->cd_debounce_delay_ms = debounce / 1000;
 	}
 
 	if (gpio_invert)
@@ -368,3 +403,11 @@ int mmc_gpiod_request_ro(struct mmc_host *host, const char *con_id,
 	return 0;
 }
 EXPORT_SYMBOL(mmc_gpiod_request_ro);
+
+bool mmc_can_gpio_ro(struct mmc_host *host)
+{
+	struct mmc_gpio *ctx = host->slot.handler_priv;
+
+	return ctx->ro_gpio ? true : false;
+}
+EXPORT_SYMBOL(mmc_can_gpio_ro);

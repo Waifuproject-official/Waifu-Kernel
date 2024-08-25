@@ -13,10 +13,20 @@
  */
 #ifdef CONFIG_ARM64_SW_TTBR0_PAN
 	.macro	__uaccess_ttbr0_disable, tmp1
+<<<<<<< HEAD
 	mrs	\tmp1, ttbr1_el1		// swapper_pg_dir
 	bic	\tmp1, \tmp1, #TTBR_ASID_MASK
 	add	\tmp1, \tmp1, #SWAPPER_DIR_SIZE	// reserved_ttbr0 at the end of swapper_pg_dir
 	msr	ttbr0_el1, \tmp1		// set reserved TTBR0_EL1
+=======
+	mrs	\tmp1, ttbr1_el1			// swapper_pg_dir
+	bic	\tmp1, \tmp1, #TTBR_ASID_MASK
+	sub	\tmp1, \tmp1, #RESERVED_TTBR0_SIZE	// reserved_ttbr0 just before swapper_pg_dir
+	msr	ttbr0_el1, \tmp1			// set reserved TTBR0_EL1
+	isb
+	add	\tmp1, \tmp1, #RESERVED_TTBR0_SIZE
+	msr	ttbr1_el1, \tmp1		// set reserved ASID
+>>>>>>> v4.19.83
 	isb
 	sub	\tmp1, \tmp1, #SWAPPER_DIR_SIZE
 	msr	ttbr1_el1, \tmp1		// set reserved ASID

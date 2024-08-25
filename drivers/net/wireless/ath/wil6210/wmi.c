@@ -1,6 +1,10 @@
 /*
  * Copyright (c) 2012-2017 Qualcomm Atheros, Inc.
+<<<<<<< HEAD
  * Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
+=======
+ * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -41,7 +45,10 @@ MODULE_PARM_DESC(led_id,
 
 #define WIL_WAIT_FOR_SUSPEND_RESUME_COMP 200
 #define WIL_WMI_CALL_GENERAL_TO_MS 100
+<<<<<<< HEAD
 #define WIL_WMI_PCP_STOP_TO_MS 5000
+=======
+>>>>>>> v4.19.83
 
 /**
  * WMI event receiving - theory of operations
@@ -478,12 +485,15 @@ static const char *cmdid2name(u16 cmdid)
 		return "WMI_LINK_STATS_CMD";
 	case WMI_SW_TX_REQ_EXT_CMDID:
 		return "WMI_SW_TX_REQ_EXT_CMDID";
+<<<<<<< HEAD
 	case WMI_FT_AUTH_CMDID:
 		return "WMI_FT_AUTH_CMD";
 	case WMI_FT_REASSOC_CMDID:
 		return "WMI_FT_REASSOC_CMD";
 	case WMI_UPDATE_FT_IES_CMDID:
 		return "WMI_UPDATE_FT_IES_CMD";
+=======
+>>>>>>> v4.19.83
 	default:
 		return "Untracked CMD";
 	}
@@ -622,19 +632,26 @@ static const char *eventid2name(u16 eventid)
 		return "WMI_LINK_STATS_CONFIG_DONE_EVENT";
 	case WMI_LINK_STATS_EVENTID:
 		return "WMI_LINK_STATS_EVENT";
+<<<<<<< HEAD
 	case WMI_COMMAND_NOT_SUPPORTED_EVENTID:
 		return "WMI_COMMAND_NOT_SUPPORTED_EVENT";
 	case WMI_FT_AUTH_STATUS_EVENTID:
 		return "WMI_FT_AUTH_STATUS_EVENT";
 	case WMI_FT_REASSOC_STATUS_EVENTID:
 		return "WMI_FT_REASSOC_STATUS_EVENT";
+=======
+>>>>>>> v4.19.83
 	default:
 		return "Untracked EVENT";
 	}
 }
 
 static int __wmi_send(struct wil6210_priv *wil, u16 cmdid, u8 mid,
+<<<<<<< HEAD
 		      void *buf, u16 len, bool force_send)
+=======
+		      void *buf, u16 len)
+>>>>>>> v4.19.83
 {
 	struct {
 		struct wil6210_mbox_hdr hdr;
@@ -760,6 +777,7 @@ int wmi_send(struct wil6210_priv *wil, u16 cmdid, u8 mid, void *buf, u16 len)
 	int rc;
 
 	mutex_lock(&wil->wmi_mutex);
+<<<<<<< HEAD
 	rc = __wmi_send(wil, cmdid, mid, buf, len, false);
 	mutex_unlock(&wil->wmi_mutex);
 
@@ -773,6 +791,9 @@ int wmi_force_send(struct wil6210_priv *wil, u16 cmdid, u8 mid, void *buf,
 
 	mutex_lock(&wil->wmi_mutex);
 	rc = __wmi_send(wil, cmdid, mid, buf, len, true);
+=======
+	rc = __wmi_send(wil, cmdid, mid, buf, len);
+>>>>>>> v4.19.83
 	mutex_unlock(&wil->wmi_mutex);
 
 	return rc;
@@ -949,9 +970,14 @@ static void wmi_evt_connect(struct wil6210_vif *vif, int id, void *d, int len)
 	struct net_device *ndev = vif_to_ndev(vif);
 	struct wireless_dev *wdev = vif_to_wdev(vif);
 	struct wmi_connect_event *evt = d;
+<<<<<<< HEAD
 	int ch; /* channel number (primary) */
 	u8 spec_ch = 0; /* spec channel number */
 	struct station_info sinfo;
+=======
+	int ch; /* channel number */
+	struct station_info *sinfo;
+>>>>>>> v4.19.83
 	u8 *assoc_req_ie, *assoc_resp_ie;
 	size_t assoc_req_ielen, assoc_resp_ielen;
 	/* capinfo(u16) + listen_interval(u16) + IEs */
@@ -1046,7 +1072,11 @@ static void wmi_evt_connect(struct wil6210_vif *vif, int id, void *d, int len)
 		wil_err(wil, "config tx vring failed for CID %d, rc (%d)\n",
 			evt->cid, rc);
 		wmi_disconnect_sta(vif, wil->sta[evt->cid].addr,
+<<<<<<< HEAD
 				   WLAN_REASON_UNSPECIFIED, false);
+=======
+				   WLAN_REASON_UNSPECIFIED, false, false);
+>>>>>>> v4.19.83
 	} else {
 		wil_info(wil, "successful connection to CID %d\n", evt->cid);
 	}
@@ -1075,6 +1105,7 @@ static void wmi_evt_connect(struct wil6210_vif *vif, int id, void *d, int len)
 		vif->bss = NULL;
 	} else if ((wdev->iftype == NL80211_IFTYPE_AP) ||
 		   (wdev->iftype == NL80211_IFTYPE_P2P_GO)) {
+
 		if (rc) {
 			if (disable_ap_sme)
 				/* notify new_sta has failed */
@@ -1082,16 +1113,22 @@ static void wmi_evt_connect(struct wil6210_vif *vif, int id, void *d, int len)
 			goto out;
 		}
 
-		memset(&sinfo, 0, sizeof(sinfo));
-
-		sinfo.generation = wil->sinfo_gen++;
-
-		if (assoc_req_ie) {
-			sinfo.assoc_req_ies = assoc_req_ie;
-			sinfo.assoc_req_ies_len = assoc_req_ielen;
+		sinfo = kzalloc(sizeof(*sinfo), GFP_KERNEL);
+		if (!sinfo) {
+			rc = -ENOMEM;
+			goto out;
 		}
 
-		cfg80211_new_sta(ndev, evt->bssid, &sinfo, GFP_KERNEL);
+		sinfo->generation = wil->sinfo_gen++;
+
+		if (assoc_req_ie) {
+			sinfo->assoc_req_ies = assoc_req_ie;
+			sinfo->assoc_req_ies_len = assoc_req_ielen;
+		}
+
+		cfg80211_new_sta(ndev, evt->bssid, sinfo, GFP_KERNEL);
+
+		kfree(sinfo);
 	} else {
 		wil_err(wil, "unhandled iftype %d for CID %d\n", wdev->iftype,
 			evt->cid);
@@ -1133,6 +1170,7 @@ static void wmi_evt_disconnect(struct wil6210_vif *vif, int id,
 	}
 
 	mutex_lock(&wil->mutex);
+<<<<<<< HEAD
 	wil6210_disconnect_complete(vif, evt->bssid, reason_code);
 	if (disable_ap_sme) {
 		struct wireless_dev *wdev = vif_to_wdev(vif);
@@ -1151,6 +1189,9 @@ static void wmi_evt_disconnect(struct wil6210_vif *vif, int id,
 			break;
 		}
 	}
+=======
+	wil6210_disconnect(vif, evt->bssid, reason_code, true);
+>>>>>>> v4.19.83
 	mutex_unlock(&wil->mutex);
 }
 
@@ -1214,9 +1255,12 @@ static void wmi_evt_ring_en(struct wil6210_vif *vif, int id, void *d, int len)
 	struct wmi_ring_en_event *evt = d;
 	u8 vri = evt->ring_index;
 	struct wireless_dev *wdev = vif_to_wdev(vif);
+<<<<<<< HEAD
 	struct wil_sta_info *sta;
 	int cid;
 	struct key_params params;
+=======
+>>>>>>> v4.19.83
 
 	wil_dbg_wmi(wil, "Enable vring %d MID %d\n", vri, vif->mid);
 
@@ -1348,6 +1392,7 @@ __acquires(&sta->tid_rx_lock) __releases(&sta->tid_rx_lock)
 	spin_unlock_bh(&sta->tid_rx_lock);
 }
 
+<<<<<<< HEAD
 static void wmi_evt_aoa_meas(struct wil6210_vif *vif, int id, void *d, int len)
 {
 	struct wmi_aoa_meas_event *evt = d;
@@ -1371,6 +1416,8 @@ static void wmi_evt_per_dest_res(struct wil6210_vif *vif, int id,
 	wil_ftm_evt_per_dest_res(vif, evt);
 }
 
+=======
+>>>>>>> v4.19.83
 static void
 wmi_evt_sched_scan_result(struct wil6210_vif *vif, int id, void *d, int len)
 {
@@ -1565,6 +1612,7 @@ wmi_evt_link_stats(struct wil6210_vif *vif, int id, void *d, int len)
 			     evt->payload, payload_size);
 }
 
+<<<<<<< HEAD
 /**
  * find cid and ringid for the station vif
  *
@@ -1842,6 +1890,8 @@ fail:
 	wil6210_disconnect(vif, NULL, WLAN_REASON_PREV_AUTH_NOT_VALID);
 }
 
+=======
+>>>>>>> v4.19.83
 /**
  * Some events are ignored for purpose; and need not be interpreted as
  * "unhandled events"
@@ -1871,6 +1921,7 @@ static const struct {
 	{WMI_DELBA_EVENTID,		wmi_evt_delba},
 	{WMI_RING_EN_EVENTID,		wmi_evt_ring_en},
 	{WMI_DATA_PORT_OPEN_EVENTID,		wmi_evt_ignore},
+<<<<<<< HEAD
 	{WMI_AOA_MEAS_EVENTID,			wmi_evt_aoa_meas},
 	{WMI_TOF_SESSION_END_EVENTID,		wmi_evt_ftm_session_ended},
 	{WMI_TOF_GET_CAPABILITIES_EVENTID,	wmi_evt_ignore},
@@ -1882,6 +1933,10 @@ static const struct {
 	{WMI_LINK_STATS_EVENTID,		wmi_evt_link_stats},
 	{WMI_FT_AUTH_STATUS_EVENTID,		wmi_evt_auth_status},
 	{WMI_FT_REASSOC_STATUS_EVENTID,		wmi_evt_reassoc_status},
+=======
+	{WMI_SCHED_SCAN_RESULT_EVENTID,		wmi_evt_sched_scan_result},
+	{WMI_LINK_STATS_EVENTID,		wmi_evt_link_stats},
+>>>>>>> v4.19.83
 };
 
 /*
@@ -2042,7 +2097,11 @@ int wmi_call(struct wil6210_priv *wil, u16 cmdid, u8 mid, void *buf, u16 len,
 	reinit_completion(&wil->wmi_call);
 	spin_unlock_irqrestore(&wil->wmi_ev_lock, flags);
 
+<<<<<<< HEAD
 	rc = __wmi_send(wil, cmdid, mid, buf, len, false);
+=======
+	rc = __wmi_send(wil, cmdid, mid, buf, len);
+>>>>>>> v4.19.83
 	if (rc)
 		goto out;
 
@@ -2179,6 +2238,7 @@ int wmi_pcp_start(struct wil6210_vif *vif,
 		.evt = {.status = WMI_FW_STATUS_FAILURE},
 	};
 
+<<<<<<< HEAD
 	if (test_bit(WMI_FW_CAPABILITY_CHANNEL_BONDING, wil->fw_capabilities))
 		if (wil->force_edmg_channel) {
 			rc = wil_spec2wmi_ch(wil->force_edmg_channel,
@@ -2189,6 +2249,8 @@ int wmi_pcp_start(struct wil6210_vif *vif,
 					wil->force_edmg_channel);
 		}
 
+=======
+>>>>>>> v4.19.83
 	if (!vif->privacy)
 		cmd.disable_sec = 1;
 
@@ -2236,8 +2298,12 @@ int wmi_pcp_stop(struct wil6210_vif *vif)
 		return rc;
 
 	return wmi_call(wil, WMI_PCP_STOP_CMDID, vif->mid, NULL, 0,
+<<<<<<< HEAD
 			WMI_PCP_STOPPED_EVENTID, NULL, 0,
 			WIL_WMI_PCP_STOP_TO_MS);
+=======
+			WMI_PCP_STOPPED_EVENTID, NULL, 0, 20);
+>>>>>>> v4.19.83
 }
 
 int wmi_set_ssid(struct wil6210_vif *vif, u8 ssid_len, const void *ssid)
@@ -2653,8 +2719,13 @@ int wmi_get_temperature(struct wil6210_priv *wil, u32 *t_bb, u32 *t_rf)
 	return 0;
 }
 
+<<<<<<< HEAD
 int wmi_disconnect_sta(struct wil6210_vif *vif, const u8 *mac, u16 reason,
 		       bool del_sta)
+=======
+int wmi_disconnect_sta(struct wil6210_vif *vif, const u8 *mac,
+		       u16 reason, bool full_disconnect, bool del_sta)
+>>>>>>> v4.19.83
 {
 	struct wil6210_priv *wil = vif_to_wil(vif);
 	int rc;
@@ -2692,6 +2763,23 @@ int wmi_disconnect_sta(struct wil6210_vif *vif, const u8 *mac, u16 reason,
 	}
 	wil->sinfo_gen++;
 
+<<<<<<< HEAD
+=======
+	if (full_disconnect) {
+		/* call event handler manually after processing wmi_call,
+		 * to avoid deadlock - disconnect event handler acquires
+		 * wil->mutex while it is already held here
+		 */
+		reason_code = le16_to_cpu(reply.evt.protocol_reason_status);
+
+		wil_dbg_wmi(wil, "Disconnect %pM reason [proto %d wmi %d]\n",
+			    reply.evt.bssid, reason_code,
+			    reply.evt.disconnect_reason);
+
+		wil->sinfo_gen++;
+		wil6210_disconnect(vif, reply.evt.bssid, reason_code, true);
+	}
+>>>>>>> v4.19.83
 	return 0;
 }
 
@@ -3169,6 +3257,7 @@ int wmi_resume(struct wil6210_priv *wil)
 	return reply.evt.status;
 }
 
+<<<<<<< HEAD
 int wmi_link_maintain_cfg_write(struct wil6210_priv *wil,
 				const u8 *addr,
 				bool fst_link_loss)
@@ -3228,6 +3317,8 @@ int wmi_link_maintain_cfg_write(struct wil6210_priv *wil,
 	return rc;
 }
 
+=======
+>>>>>>> v4.19.83
 int wmi_port_allocate(struct wil6210_priv *wil, u8 mid,
 		      const u8 *mac, enum nl80211_iftype iftype)
 {
@@ -3348,7 +3439,11 @@ static void wmi_event_handle(struct wil6210_priv *wil,
 
 		if (mid == MID_BROADCAST)
 			mid = 0;
+<<<<<<< HEAD
 		if (mid >= ARRAY_SIZE(wil->vifs) || mid >= wil->max_vifs) {
+=======
+		if (mid >= wil->max_vifs) {
+>>>>>>> v4.19.83
 			wil_dbg_wmi(wil, "invalid mid %d, event skipped\n",
 				    mid);
 			return;
@@ -3363,7 +3458,22 @@ static void wmi_event_handle(struct wil6210_priv *wil,
 		/* check if someone waits for this event */
 		if (wil->reply_id && wil->reply_id == id &&
 		    wil->reply_mid == mid) {
+<<<<<<< HEAD
 			WARN_ON(wil->reply_buf);
+=======
+			if (wil->reply_buf) {
+				/* event received while wmi_call is waiting
+				 * with a buffer. Such event should be handled
+				 * in wmi_recv_cmd function. Handling the event
+				 * here means a previous wmi_call was timeout.
+				 * Drop the event and do not handle it.
+				 */
+				wil_err(wil,
+					"Old event (%d, %s) while wmi_call is waiting. Drop it and Continue waiting\n",
+					id, eventid2name(id));
+				return;
+			}
+>>>>>>> v4.19.83
 
 			wmi_evt_call_handler(vif, id, evt_data,
 					     len - sizeof(*wmi));
@@ -3457,6 +3567,7 @@ out:
 	return rc;
 }
 
+<<<<<<< HEAD
 int wmi_set_snr_thresh(struct wil6210_priv *wil, short omni, short direct)
 {
 	struct wil6210_vif *vif = ndev_to_vif(wil->main_ndev);
@@ -3488,6 +3599,8 @@ int wmi_set_snr_thresh(struct wil6210_priv *wil, short omni, short direct)
 	return 0;
 }
 
+=======
+>>>>>>> v4.19.83
 static void
 wmi_sched_scan_set_ssids(struct wil6210_priv *wil,
 			 struct wmi_start_sched_scan_cmd *cmd,
@@ -3763,12 +3876,21 @@ int wil_wmi_tx_sring_cfg(struct wil6210_priv *wil, int ring_id)
 	struct {
 		struct wmi_cmd_hdr hdr;
 		struct wmi_tx_status_ring_cfg_done_event evt;
+<<<<<<< HEAD
 	} __packed reply;
+=======
+	} __packed reply = {
+		.evt = {.status = WMI_FW_STATUS_FAILURE},
+	};
+>>>>>>> v4.19.83
 
 	cmd.ring_cfg.ring_id = ring_id;
 
 	cmd.ring_cfg.ring_mem_base = cpu_to_le64(sring->pa);
+<<<<<<< HEAD
 	reply.evt.status = WMI_FW_STATUS_FAILURE;
+=======
+>>>>>>> v4.19.83
 	rc = wmi_call(wil, WMI_TX_STATUS_RING_ADD_CMDID, vif->mid, &cmd,
 		      sizeof(cmd), WMI_TX_STATUS_RING_CFG_DONE_EVENTID,
 		      &reply, sizeof(reply), WIL_WMI_CALL_GENERAL_TO_MS);
@@ -3843,10 +3965,18 @@ int wil_wmi_rx_sring_add(struct wil6210_priv *wil, u16 ring_id)
 	struct {
 		struct wmi_cmd_hdr hdr;
 		struct wmi_rx_status_ring_cfg_done_event evt;
+<<<<<<< HEAD
 	} __packed reply;
 
 	cmd.ring_cfg.ring_mem_base = cpu_to_le64(sring->pa);
 	reply.evt.status = WMI_FW_STATUS_FAILURE;
+=======
+	} __packed reply = {
+		.evt = {.status = WMI_FW_STATUS_FAILURE},
+	};
+
+	cmd.ring_cfg.ring_mem_base = cpu_to_le64(sring->pa);
+>>>>>>> v4.19.83
 	rc = wmi_call(wil, WMI_RX_STATUS_RING_ADD_CMDID, vif->mid, &cmd,
 		      sizeof(cmd), WMI_RX_STATUS_RING_CFG_DONE_EVENTID, &reply,
 		      sizeof(reply), WIL_WMI_CALL_GENERAL_TO_MS);
@@ -3883,11 +4013,20 @@ int wil_wmi_rx_desc_ring_add(struct wil6210_priv *wil, int status_ring_id)
 	struct {
 		struct wmi_cmd_hdr hdr;
 		struct wmi_rx_desc_ring_cfg_done_event evt;
+<<<<<<< HEAD
 	} __packed reply;
 
 	cmd.ring_cfg.ring_mem_base = cpu_to_le64(ring->pa);
 	cmd.sw_tail_host_addr = cpu_to_le64(ring->edma_rx_swtail.pa);
 	reply.evt.status = WMI_FW_STATUS_FAILURE;
+=======
+	} __packed reply = {
+		.evt = {.status = WMI_FW_STATUS_FAILURE},
+	};
+
+	cmd.ring_cfg.ring_mem_base = cpu_to_le64(ring->pa);
+	cmd.sw_tail_host_addr = cpu_to_le64(ring->edma_rx_swtail.pa);
+>>>>>>> v4.19.83
 	rc = wmi_call(wil, WMI_RX_DESC_RING_ADD_CMDID, vif->mid, &cmd,
 		      sizeof(cmd), WMI_RX_DESC_RING_CFG_DONE_EVENTID, &reply,
 		      sizeof(reply), WIL_WMI_CALL_GENERAL_TO_MS);
@@ -3933,10 +4072,18 @@ int wil_wmi_tx_desc_ring_add(struct wil6210_vif *vif, int ring_id, int cid,
 	struct {
 		struct wmi_cmd_hdr hdr;
 		struct wmi_tx_desc_ring_cfg_done_event evt;
+<<<<<<< HEAD
 	} __packed reply;
 
 	cmd.ring_cfg.ring_mem_base = cpu_to_le64(ring->pa);
 	reply.evt.status = WMI_FW_STATUS_FAILURE;
+=======
+	} __packed reply = {
+		.evt = {.status = WMI_FW_STATUS_FAILURE},
+	};
+
+	cmd.ring_cfg.ring_mem_base = cpu_to_le64(ring->pa);
+>>>>>>> v4.19.83
 	rc = wmi_call(wil, WMI_TX_DESC_RING_ADD_CMDID, vif->mid, &cmd,
 		      sizeof(cmd), WMI_TX_DESC_RING_CFG_DONE_EVENTID, &reply,
 		      sizeof(reply), WIL_WMI_CALL_GENERAL_TO_MS);
@@ -3976,11 +4123,20 @@ int wil_wmi_bcast_desc_ring_add(struct wil6210_vif *vif, int ring_id)
 	struct {
 		struct wmi_cmd_hdr hdr;
 		struct wmi_rx_desc_ring_cfg_done_event evt;
+<<<<<<< HEAD
 	} __packed reply;
 	struct wil_ring_tx_data *txdata = &wil->ring_tx_data[ring_id];
 
 	cmd.ring_cfg.ring_mem_base = cpu_to_le64(ring->pa);
 	reply.evt.status = WMI_FW_STATUS_FAILURE;
+=======
+	} __packed reply = {
+		.evt = {.status = WMI_FW_STATUS_FAILURE},
+	};
+	struct wil_ring_tx_data *txdata = &wil->ring_tx_data[ring_id];
+
+	cmd.ring_cfg.ring_mem_base = cpu_to_le64(ring->pa);
+>>>>>>> v4.19.83
 	rc = wmi_call(wil, WMI_BCAST_DESC_RING_ADD_CMDID, vif->mid, &cmd,
 		      sizeof(cmd), WMI_TX_DESC_RING_CFG_DONE_EVENTID, &reply,
 		      sizeof(reply), WIL_WMI_CALL_GENERAL_TO_MS);

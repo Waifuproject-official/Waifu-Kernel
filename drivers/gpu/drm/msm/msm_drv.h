@@ -1,6 +1,11 @@
 /*
+<<<<<<< HEAD
  * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
  * Copyright (C) 2020 XiaoMi, Inc.
+=======
+ * Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2013 Red Hat
+>>>>>>> v4.19.83
  * Author: Rob Clark <robdclark@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -61,10 +66,10 @@ struct msm_rd_state;
 struct msm_perf_state;
 struct msm_gem_submit;
 struct msm_fence_context;
-struct msm_fence_cb;
 struct msm_gem_address_space;
 struct msm_gem_vma;
 
+<<<<<<< HEAD
 #define NUM_DOMAINS    4    /* one for KMS, then one per gpu core (?) */
 #define MAX_CRTCS      16
 #define MAX_PLANES     20
@@ -83,6 +88,20 @@ struct msm_file_private {
 
 	/* protects enable_refcnt */
 	struct mutex power_lock;
+=======
+#define MAX_CRTCS      8
+#define MAX_PLANES     20
+#define MAX_ENCODERS   8
+#define MAX_BRIDGES    8
+#define MAX_CONNECTORS 8
+
+#define FRAC_16_16(mult, div)    (((mult) << 16) / (div))
+
+struct msm_file_private {
+	rwlock_t queuelock;
+	struct list_head submitqueues;
+	int queueid;
+>>>>>>> v4.19.83
 };
 
 enum msm_mdp_plane_property {
@@ -138,6 +157,7 @@ enum msm_mdp_plane_property {
 	PLANE_PROP_COUNT
 };
 
+<<<<<<< HEAD
 enum msm_mdp_crtc_property {
 	CRTC_PROP_INFO,
 	CRTC_PROP_DEST_SCALER_LUT_ED,
@@ -581,6 +601,79 @@ struct msm_drm_thread {
 	struct task_struct *thread;
 	unsigned int crtc_id;
 	struct kthread_worker worker;
+=======
+struct msm_vblank_ctrl {
+	struct kthread_work work;
+	struct list_head event_list;
+	spinlock_t lock;
+>>>>>>> v4.19.83
+};
+
+#define MSM_GPU_MAX_RINGS 4
+#define MAX_H_TILES_PER_DISPLAY 2
+
+/**
+ * enum msm_display_caps - features/capabilities supported by displays
+ * @MSM_DISPLAY_CAP_VID_MODE:           Video or "active" mode supported
+ * @MSM_DISPLAY_CAP_CMD_MODE:           Command mode supported
+ * @MSM_DISPLAY_CAP_HOT_PLUG:           Hot plug detection supported
+ * @MSM_DISPLAY_CAP_EDID:               EDID supported
+ */
+enum msm_display_caps {
+	MSM_DISPLAY_CAP_VID_MODE	= BIT(0),
+	MSM_DISPLAY_CAP_CMD_MODE	= BIT(1),
+	MSM_DISPLAY_CAP_HOT_PLUG	= BIT(2),
+	MSM_DISPLAY_CAP_EDID		= BIT(3),
+};
+
+/**
+ * enum msm_event_wait - type of HW events to wait for
+ * @MSM_ENC_COMMIT_DONE - wait for the driver to flush the registers to HW
+ * @MSM_ENC_TX_COMPLETE - wait for the HW to transfer the frame to panel
+ * @MSM_ENC_VBLANK - wait for the HW VBLANK event (for driver-internal waiters)
+ */
+enum msm_event_wait {
+	MSM_ENC_COMMIT_DONE = 0,
+	MSM_ENC_TX_COMPLETE,
+	MSM_ENC_VBLANK,
+};
+
+/**
+ * struct msm_display_topology - defines a display topology pipeline
+ * @num_lm:       number of layer mixers used
+ * @num_enc:      number of compression encoder blocks used
+ * @num_intf:     number of interfaces the panel is mounted on
+ */
+struct msm_display_topology {
+	u32 num_lm;
+	u32 num_enc;
+	u32 num_intf;
+};
+
+/**
+ * struct msm_display_info - defines display properties
+ * @intf_type:          DRM_MODE_CONNECTOR_ display type
+ * @capabilities:       Bitmask of display flags
+ * @num_of_h_tiles:     Number of horizontal tiles in case of split interface
+ * @h_tile_instance:    Controller instance used per tile. Number of elements is
+ *                      based on num_of_h_tiles
+ * @is_te_using_watchdog_timer:  Boolean to indicate watchdog TE is
+ *				 used instead of panel TE in cmd mode panels
+ */
+struct msm_display_info {
+	int intf_type;
+	uint32_t capabilities;
+	uint32_t num_of_h_tiles;
+	uint32_t h_tile_instance[MAX_H_TILES_PER_DISPLAY];
+	bool is_te_using_watchdog_timer;
+};
+
+/* Commit/Event thread specific structure */
+struct msm_drm_thread {
+	struct drm_device *dev;
+	struct task_struct *thread;
+	unsigned int crtc_id;
+	struct kthread_worker worker;
 };
 
 struct msm_drm_private {
@@ -595,7 +688,7 @@ struct msm_drm_private {
 	/* subordinate devices, if present: */
 	struct platform_device *gpu_pdev;
 
-	/* top level MDSS wrapper device (for MDP5 only) */
+	/* top level MDSS wrapper device (for MDP5/DPU only) */
 	struct msm_mdss *mdss;
 
 	/* possibly this should be in the kms component, but it is
@@ -618,18 +711,22 @@ struct msm_drm_private {
 
 	struct drm_fb_helper *fbdev;
 
-	struct msm_rd_state *rd;
+	struct msm_rd_state *rd;       /* debugfs to dump all submits */
+	struct msm_rd_state *hangrd;   /* debugfs to dump hanging submits */
 	struct msm_perf_state *perf;
 
 	/* list of GEM objects: */
 	struct list_head inactive_list;
 
 	struct workqueue_struct *wq;
+<<<<<<< HEAD
 
 	/* crtcs pending async atomic updates: */
 	uint32_t pending_crtcs;
 	uint32_t pending_planes;
 	wait_queue_head_t pending_crtcs_event;
+=======
+>>>>>>> v4.19.83
 
 	unsigned int num_planes;
 	struct drm_plane *planes[MAX_PLANES];
@@ -639,9 +736,12 @@ struct msm_drm_private {
 
 	struct msm_drm_thread disp_thread[MAX_CRTCS];
 	struct msm_drm_thread event_thread[MAX_CRTCS];
+<<<<<<< HEAD
 
 	struct task_struct *pp_event_thread;
 	struct kthread_worker pp_event_worker;
+=======
+>>>>>>> v4.19.83
 
 	unsigned int num_encoders;
 	struct drm_encoder *encoders[MAX_ENCODERS];
@@ -674,6 +774,7 @@ struct msm_drm_private {
 	struct notifier_block vmap_notifier;
 	struct shrinker shrinker;
 
+<<<<<<< HEAD
 	/* task holding struct_mutex.. currently only used in submit path
 	 * to detect and reject faults from copy_from_user() for submit
 	 * ioctl.
@@ -695,6 +796,10 @@ struct msm_drm_private {
 	struct pm_qos_request pm_irq_req;
 	struct delayed_work pm_unreq_dwork;
 	atomic_t pm_req_set;
+=======
+	struct msm_vblank_ctrl vblank_ctrl;
+	struct drm_atomic_state *pm_state;
+>>>>>>> v4.19.83
 };
 
 /* get struct msm_kms * from drm_device * */
@@ -705,6 +810,7 @@ struct msm_format {
 	uint32_t pixel_format;
 };
 
+<<<<<<< HEAD
 /* callback from wq once fence has passed: */
 struct msm_fence_cb {
 	struct work_struct work;
@@ -721,6 +827,11 @@ void __msm_fence_worker(struct work_struct *work);
 
 int msm_atomic_commit(struct drm_device *dev,
 		struct drm_atomic_state *state, bool nonblock);
+=======
+int msm_atomic_prepare_fb(struct drm_plane *plane,
+			  struct drm_plane_state *new_state);
+void msm_atomic_commit_tail(struct drm_atomic_state *state);
+>>>>>>> v4.19.83
 struct drm_atomic_state *msm_atomic_state_alloc(struct drm_device *dev);
 void msm_atomic_state_clear(struct drm_atomic_state *state);
 void msm_atomic_state_free(struct drm_atomic_state *state);
@@ -740,6 +851,7 @@ struct msm_gem_address_space *
 msm_gem_address_space_create(struct device *dev, struct iommu_domain *domain,
 		const char *name);
 
+<<<<<<< HEAD
 /* For SDE  display */
 struct msm_gem_address_space *
 msm_gem_smmu_address_space_create(struct drm_device *dev, struct msm_mmu *mmu,
@@ -795,6 +907,11 @@ int msm_gem_address_space_unregister_cb(
 		void (*cb)(void *, bool),
 		void *cb_data);
 
+=======
+int msm_register_mmu(struct drm_device *dev, struct msm_mmu *mmu);
+void msm_unregister_mmu(struct drm_device *dev, struct msm_mmu *mmu);
+
+>>>>>>> v4.19.83
 void msm_gem_submit_free(struct msm_gem_submit *submit);
 int msm_ioctl_gem_submit(struct drm_device *dev, void *data,
 		struct drm_file *file);
@@ -806,7 +923,7 @@ void msm_gem_sync(struct drm_gem_object *obj);
 int msm_gem_mmap_obj(struct drm_gem_object *obj,
 			struct vm_area_struct *vma);
 int msm_gem_mmap(struct file *filp, struct vm_area_struct *vma);
-int msm_gem_fault(struct vm_fault *vmf);
+vm_fault_t msm_gem_fault(struct vm_fault *vmf);
 uint64_t msm_gem_mmap_offset(struct drm_gem_object *obj);
 int msm_gem_get_iova(struct drm_gem_object *obj,
 		struct msm_gem_address_space *aspace, uint64_t *iova);
@@ -833,6 +950,7 @@ void msm_gem_prime_unpin(struct drm_gem_object *obj);
 struct drm_gem_object *msm_gem_prime_import(struct drm_device *dev,
 					    struct dma_buf *dma_buf);
 void *msm_gem_get_vaddr(struct drm_gem_object *obj);
+void *msm_gem_get_vaddr_active(struct drm_gem_object *obj);
 void msm_gem_put_vaddr(struct drm_gem_object *obj);
 int msm_gem_madvise(struct drm_gem_object *obj, unsigned madv);
 int msm_gem_sync_object(struct drm_gem_object *obj,
@@ -944,6 +1062,8 @@ static inline int msm_dsi_modeset_init(struct msm_dsi *msm_dsi,
 
 void __init msm_mdp_register(void);
 void __exit msm_mdp_unregister(void);
+void __init msm_dpu_register(void);
+void __exit msm_dpu_unregister(void);
 
 #ifdef CONFIG_DEBUG_FS
 void msm_gem_describe(struct drm_gem_object *obj, struct seq_file *m);
@@ -952,23 +1072,41 @@ void msm_framebuffer_describe(struct drm_framebuffer *fb, struct seq_file *m);
 int msm_debugfs_late_init(struct drm_device *dev);
 int msm_rd_debugfs_init(struct drm_minor *minor);
 void msm_rd_debugfs_cleanup(struct msm_drm_private *priv);
-void msm_rd_dump_submit(struct msm_gem_submit *submit);
+void msm_rd_dump_submit(struct msm_rd_state *rd, struct msm_gem_submit *submit,
+		const char *fmt, ...);
 int msm_perf_debugfs_init(struct drm_minor *minor);
 void msm_perf_debugfs_cleanup(struct msm_drm_private *priv);
 #else
 static inline int msm_debugfs_late_init(struct drm_device *dev) { return 0; }
-static inline void msm_rd_dump_submit(struct msm_gem_submit *submit) {}
+static inline void msm_rd_dump_submit(struct msm_rd_state *rd, struct msm_gem_submit *submit,
+		const char *fmt, ...) {}
 static inline void msm_rd_debugfs_cleanup(struct msm_drm_private *priv) {}
 static inline void msm_perf_debugfs_cleanup(struct msm_drm_private *priv) {}
 #endif
 
 struct clk *msm_clk_get(struct platform_device *pdev, const char *name);
+int msm_clk_bulk_get(struct device *dev, struct clk_bulk_data **bulk);
+
+struct clk *msm_clk_bulk_get_clock(struct clk_bulk_data *bulk, int count,
+	const char *name);
 void __iomem *msm_ioremap(struct platform_device *pdev, const char *name,
 		const char *dbgname);
 unsigned long msm_iomap_size(struct platform_device *pdev, const char *name);
 void msm_iounmap(struct platform_device *dev, void __iomem *addr);
 void msm_writel(u32 data, void __iomem *addr);
 u32 msm_readl(const void __iomem *addr);
+
+struct msm_gpu_submitqueue;
+int msm_submitqueue_init(struct drm_device *drm, struct msm_file_private *ctx);
+struct msm_gpu_submitqueue *msm_submitqueue_get(struct msm_file_private *ctx,
+		u32 id);
+int msm_submitqueue_create(struct drm_device *drm, struct msm_file_private *ctx,
+		u32 prio, u32 flags, u32 *id);
+int msm_submitqueue_remove(struct msm_file_private *ctx, u32 id);
+void msm_submitqueue_close(struct msm_file_private *ctx);
+
+void msm_submitqueue_destroy(struct kref *kref);
+
 
 #define DBG(fmt, ...) DRM_DEBUG_DRIVER(fmt"\n", ##__VA_ARGS__)
 #define VERB(fmt, ...) if (0) DRM_DEBUG_DRIVER(fmt"\n", ##__VA_ARGS__)

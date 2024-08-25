@@ -85,6 +85,7 @@ int f2fs_read_inline_data(struct inode *inode, struct page *page)
 {
 	struct page *ipage;
 
+<<<<<<< HEAD
 	if (trace_android_fs_dataread_start_enabled()) {
 		char *path, pathbuf[MAX_TRACE_PATHBUF_LEN];
 
@@ -96,6 +97,8 @@ int f2fs_read_inline_data(struct inode *inode, struct page *page)
 						path, current->comm);
 	}
 
+=======
+>>>>>>> v4.19.83
 	ipage = f2fs_get_node_page(F2FS_I_SB(inode), inode->i_ino);
 	if (IS_ERR(ipage)) {
 		trace_android_fs_dataread_end(inode, page_offset(page),
@@ -164,6 +167,24 @@ int f2fs_convert_inline_page(struct dnode_of_data *dn, struct page *page)
 		return -EINVAL;
 	}
 
+	err = f2fs_get_node_info(fio.sbi, dn->nid, &ni);
+	if (err) {
+		f2fs_put_dnode(dn);
+		return err;
+	}
+
+	fio.version = ni.version;
+
+	if (unlikely(dn->data_blkaddr != NEW_ADDR)) {
+		f2fs_put_dnode(dn);
+		set_sbi_flag(fio.sbi, SBI_NEED_FSCK);
+		f2fs_msg(fio.sbi->sb, KERN_WARNING,
+			"%s: corrupted inline inode ino=%lx, i_addr[0]:0x%x, "
+			"run fsck to fix.",
+			__func__, dn->inode->i_ino, dn->data_blkaddr);
+		return -EFSCORRUPTED;
+	}
+
 	f2fs_bug_on(F2FS_P_SB(page), PageWriteback(page));
 
 	f2fs_do_read_inline_data(page, dn->inode_page);
@@ -178,7 +199,11 @@ int f2fs_convert_inline_page(struct dnode_of_data *dn, struct page *page)
 	fio.old_blkaddr = dn->data_blkaddr;
 	set_inode_flag(dn->inode, FI_HOT_DATA);
 	f2fs_outplace_write_data(dn, &fio);
+<<<<<<< HEAD
 	f2fs_wait_on_page_writeback(page, DATA, true, true);
+=======
+	f2fs_wait_on_page_writeback(page, DATA, true);
+>>>>>>> v4.19.83
 	if (dirty) {
 		inode_dec_dirty_pages(dn->inode);
 		f2fs_remove_dirty_inode(dn->inode);
@@ -404,11 +429,19 @@ static int f2fs_move_inline_dirents(struct inode *dir, struct page *ipage,
 			"%s: corrupted inline inode ino=%lx, i_addr[0]:0x%x, "
 			"run fsck to fix.",
 			__func__, dir->i_ino, dn.data_blkaddr);
+<<<<<<< HEAD
 		err = -EINVAL;
 		goto out;
 	}
 
 	f2fs_wait_on_page_writeback(page, DATA, true, true);
+=======
+		err = -EFSCORRUPTED;
+		goto out;
+	}
+
+	f2fs_wait_on_page_writeback(page, DATA, true);
+>>>>>>> v4.19.83
 
 	dentry_blk = page_address(page);
 
@@ -522,7 +555,11 @@ static int f2fs_move_rehashed_dirents(struct inode *dir, struct page *ipage,
 	return 0;
 recover:
 	lock_page(ipage);
+<<<<<<< HEAD
 	f2fs_wait_on_page_writeback(ipage, NODE, true, true);
+=======
+	f2fs_wait_on_page_writeback(ipage, NODE, true);
+>>>>>>> v4.19.83
 	memcpy(inline_dentry, backup_dentry, MAX_INLINE_DATA(dir));
 	f2fs_i_depth_write(dir, 0);
 	f2fs_i_size_write(dir, MAX_INLINE_DATA(dir));

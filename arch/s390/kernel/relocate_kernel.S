@@ -29,6 +29,7 @@
 ENTRY(relocate_kernel)
 		basr	%r13,0		# base address
 	.base:
+<<<<<<< HEAD
 		stctg	%c0,%c15,ctlregs-.base(%r13)
 		stmg	%r0,%r15,gprregs-.base(%r13)
 		lghi	%r0,3
@@ -56,6 +57,8 @@ ENTRY(relocate_kernel)
 	.back_pgm:
 		lmg	%r0,%r15,gprregs-.base(%r13)
 	.top:
+=======
+>>>>>>> v4.19.83
 		lghi	%r7,PAGE_SIZE	# load PAGE_SIZE in r7
 		lghi	%r9,PAGE_SIZE	# load PAGE_SIZE in r9
 		lg	%r5,0(%r2)	# read another word for indirection page
@@ -64,44 +67,37 @@ ENTRY(relocate_kernel)
 		je	.indir_check	# NO, goto "indir_check"
 		lgr	%r6,%r5		# r6 = r5
 		nill	%r6,0xf000	# mask it out and...
-		j	.top		# ...next iteration
+		j	.base		# ...next iteration
 	.indir_check:
 		tml	%r5,0x2		# is it a indirection page?
 		je	.done_test	# NO, goto "done_test"
 		nill	%r5,0xf000	# YES, mask out,
 		lgr	%r2,%r5		# move it into the right register,
-		j	.top		# and read next...
+		j	.base		# and read next...
 	.done_test:
 		tml	%r5,0x4		# is it the done indicator?
 		je	.source_test	# NO! Well, then it should be the source indicator...
 		j	.done		# ok, lets finish it here...
 	.source_test:
 		tml	%r5,0x8		# it should be a source indicator...
-		je	.top		# NO, ignore it...
+		je	.base		# NO, ignore it...
 		lgr	%r8,%r5		# r8 = r5
 		nill	%r8,0xf000	# masking
 	0:	mvcle	%r6,%r8,0x0	# copy PAGE_SIZE bytes from r8 to r6 - pad with 0
 		jo	0b
-		j	.top
+		j	.base
 	.done:
 		sgr	%r0,%r0		# clear register r0
 		la	%r4,load_psw-.base(%r13)	# load psw-address into the register
 		o	%r3,4(%r4)	# or load address into psw
 		st	%r3,4(%r4)
 		mvc	0(8,%r0),0(%r4)	# copy psw to absolute address 0
-		tm	have_diag308-.base(%r13),0x01
-		jno	.no_diag308
 		diag	%r0,%r0,0x308
-	.no_diag308:
-		sam31			# 31 bit mode
-		sr	%r1,%r1		# erase register r1
-		sr	%r2,%r2		# erase register r2
-		sigp	%r1,%r2,SIGP_SET_ARCHITECTURE # set cpuid to zero
-		lpsw	0		# hopefully start new kernel...
 
 		.align	8
 	load_psw:
 		.long	0x00080000,0x80000000
+<<<<<<< HEAD
 	ctlregs:
 		.rept	16
 		.quad	0
@@ -113,6 +109,8 @@ ENTRY(relocate_kernel)
 	have_diag308:
 		.byte	0
 		.align	8
+=======
+>>>>>>> v4.19.83
 	relocate_kernel_end:
 	.align 8
 	.globl	relocate_kernel_len

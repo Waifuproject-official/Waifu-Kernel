@@ -388,8 +388,33 @@ int sidtab_convert(struct sidtab *s, struct sidtab_convert_params *params)
 
 	spin_lock_irqsave(&s->lock, flags);
 
+<<<<<<< HEAD
 	/* concurrent policy loads are not allowed */
 	if (s->convert) {
+=======
+	sid  = sidtab_search_cache(s, context);
+	if (!sid)
+		sid = sidtab_search_context(s, context);
+	if (!sid) {
+		spin_lock_irqsave(&s->lock, flags);
+		/* Rescan now that we hold the lock. */
+		sid = sidtab_search_context(s, context);
+		if (sid)
+			goto unlock_out;
+		/* No SID exists for the context.  Allocate a new one. */
+		if (s->next_sid == UINT_MAX || s->shutdown) {
+			ret = -ENOMEM;
+			goto unlock_out;
+		}
+		sid = s->next_sid++;
+		if (context->len)
+			pr_info("SELinux:  Context %s is not valid (left unmapped).\n",
+			       context->str);
+		ret = sidtab_insert(s, sid, context);
+		if (ret)
+			s->next_sid--;
+unlock_out:
+>>>>>>> v4.19.83
 		spin_unlock_irqrestore(&s->lock, flags);
 		return -EBUSY;
 	}
@@ -462,6 +487,13 @@ static void sidtab_destroy_tree(union sidtab_entry_inner entry, u32 level)
 			context_destroy(&node->entries[i].context);
 		kfree(node);
 	}
+<<<<<<< HEAD
+=======
+
+	pr_debug("%s:  %d entries and %d/%d buckets used, longest "
+	       "chain length %d\n", tag, h->nel, slots_used, SIDTAB_SIZE,
+	       max_chain_len);
+>>>>>>> v4.19.83
 }
 
 void sidtab_destroy(struct sidtab *s)

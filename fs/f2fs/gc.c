@@ -83,12 +83,19 @@ static int gc_thread_func(void *data)
 			goto do_gc;
 		}
 
+<<<<<<< HEAD
 		if (!mutex_trylock(&sbi->gc_mutex)) {
 			stat_other_skip_bggc_count(sbi);
 			goto next;
 		}
 
 		if (!is_idle(sbi, GC_TIME)) {
+=======
+		if (!mutex_trylock(&sbi->gc_mutex))
+			goto next;
+
+		if (!is_idle(sbi)) {
+>>>>>>> v4.19.83
 			increase_sleep_time(gc_th, &wait_ms);
 			mutex_unlock(&sbi->gc_mutex);
 			stat_io_skip_bggc_count(sbi);
@@ -404,8 +411,11 @@ static int get_victim_by_default(struct f2fs_sb_info *sbi,
 		if (unlikely(is_sbi_flag_set(sbi, SBI_CP_DISABLED) &&
 					get_ckpt_valid_blocks(sbi, segno)))
 			goto next;
+<<<<<<< HEAD
 		if (gc_type == BG_GC && test_bit(secno, dirty_i->victim_secmap))
 			goto next;
+=======
+>>>>>>> v4.19.83
 
 		cost = get_gc_cost(sbi, segno, &p);
 
@@ -512,7 +522,10 @@ static int gc_node_segment(struct f2fs_sb_info *sbi,
 	block_t start_addr;
 	int off;
 	int phase = 0;
+<<<<<<< HEAD
 	int submitted = 0;
+=======
+>>>>>>> v4.19.83
 	bool fggc = (gc_type == FG_GC);
 
 	start_addr = START_BLOCK(sbi, segno);
@@ -568,9 +581,13 @@ next_step:
 			continue;
 		}
 
+<<<<<<< HEAD
 		err = f2fs_move_node_page(node_page, gc_type);
 		if (!err && gc_type == FG_GC)
 			submitted++;
+=======
+		f2fs_move_node_page(node_page, gc_type);
+>>>>>>> v4.19.83
 		stat_inc_node_blk_count(sbi, 1, gc_type);
 	}
 
@@ -579,7 +596,10 @@ next_step:
 
 	if (fggc)
 		atomic_dec(&sbi->wb_sync_req[NODE]);
+<<<<<<< HEAD
 	return submitted;
+=======
+>>>>>>> v4.19.83
 }
 
 /*
@@ -695,7 +715,11 @@ static int ra_data_block(struct inode *inode, pgoff_t index)
 
 	if (unlikely(!f2fs_is_valid_blkaddr(sbi, dn.data_blkaddr,
 						DATA_GENERIC))) {
+<<<<<<< HEAD
 		err = -EFAULT;
+=======
+		err = -EFSCORRUPTED;
+>>>>>>> v4.19.83
 		goto put_page;
 	}
 got_it:
@@ -703,6 +727,7 @@ got_it:
 	fio.page = page;
 	fio.new_blkaddr = fio.old_blkaddr = dn.data_blkaddr;
 
+<<<<<<< HEAD
 	/*
 	 * don't cache encrypted data into meta inode until previous dirty
 	 * data were writebacked to avoid racing between GC and flush.
@@ -711,6 +736,8 @@ got_it:
 
 	f2fs_wait_on_block_writeback(inode, dn.data_blkaddr);
 
+=======
+>>>>>>> v4.19.83
 	fio.encrypted_page = f2fs_pagecache_get_page(META_MAPPING(sbi),
 					dn.data_blkaddr,
 					FGP_LOCK | FGP_CREAT, GFP_NOFS);
@@ -736,7 +763,11 @@ put_page:
  * Move data block via META_MAPPING while keeping locked data page.
  * This can be used to move blocks, aka LBAs, directly on disk.
  */
+<<<<<<< HEAD
 static int move_data_block(struct inode *inode, block_t bidx,
+=======
+static void move_data_block(struct inode *inode, block_t bidx,
+>>>>>>> v4.19.83
 				int gc_type, unsigned int segno, int off)
 {
 	struct f2fs_io_info fio = {
@@ -755,7 +786,11 @@ static int move_data_block(struct inode *inode, block_t bidx,
 	struct node_info ni;
 	struct page *page, *mpage;
 	block_t newaddr;
+<<<<<<< HEAD
 	int err = 0;
+=======
+	int err;
+>>>>>>> v4.19.83
 	bool lfs_mode = test_opt(fio.sbi, LFS);
 
 	/* do not read out */
@@ -769,7 +804,10 @@ static int move_data_block(struct inode *inode, block_t bidx,
 	}
 
 	if (f2fs_is_atomic_file(inode)) {
+<<<<<<< HEAD
 		err = -EAGAIN;
+=======
+>>>>>>> v4.19.83
 		F2FS_I(inode)->i_gc_failures[GC_FAILURE_ATOMIC]++;
 		F2FS_I_SB(inode)->skipped_atomic_files[gc_type]++;
 		goto out;
@@ -777,7 +815,10 @@ static int move_data_block(struct inode *inode, block_t bidx,
 
 	if (f2fs_is_pinned_file(inode)) {
 		f2fs_pin_file_control(inode, true);
+<<<<<<< HEAD
 		err = -EAGAIN;
+=======
+>>>>>>> v4.19.83
 		goto out;
 	}
 
@@ -805,6 +846,13 @@ static int move_data_block(struct inode *inode, block_t bidx,
 		goto put_out;
 
 
+<<<<<<< HEAD
+=======
+	err = f2fs_get_node_info(fio.sbi, dn.nid, &ni);
+	if (err)
+		goto put_out;
+
+>>>>>>> v4.19.83
 	set_summary(&sum, dn.nid, dn.ofs_in_node, ni.version);
 
 	/* read page */
@@ -858,7 +906,10 @@ static int move_data_block(struct inode *inode, block_t bidx,
 	}
 
 write_page:
+<<<<<<< HEAD
 	f2fs_wait_on_page_writeback(fio.encrypted_page, DATA, true, true);
+=======
+>>>>>>> v4.19.83
 	set_page_dirty(fio.encrypted_page);
 	if (clear_page_dirty_for_io(fio.encrypted_page))
 		dec_page_count(fio.sbi, F2FS_DIRTY_META);
@@ -874,7 +925,10 @@ write_page:
 	fio.new_blkaddr = newaddr;
 	f2fs_submit_page_write(&fio);
 	if (fio.retry) {
+<<<<<<< HEAD
 		err = -EAGAIN;
+=======
+>>>>>>> v4.19.83
 		if (PageWriteback(fio.encrypted_page))
 			end_page_writeback(fio.encrypted_page);
 		goto put_page_out;
@@ -917,7 +971,10 @@ static int move_data_page(struct inode *inode, block_t bidx, int gc_type,
 	}
 
 	if (f2fs_is_atomic_file(inode)) {
+<<<<<<< HEAD
 		err = -EAGAIN;
+=======
+>>>>>>> v4.19.83
 		F2FS_I(inode)->i_gc_failures[GC_FAILURE_ATOMIC]++;
 		F2FS_I_SB(inode)->skipped_atomic_files[gc_type]++;
 		goto out;
@@ -925,7 +982,10 @@ static int move_data_page(struct inode *inode, block_t bidx, int gc_type,
 	if (f2fs_is_pinned_file(inode)) {
 		if (gc_type == FG_GC)
 			f2fs_pin_file_control(inode, true);
+<<<<<<< HEAD
 		err = -EAGAIN;
+=======
+>>>>>>> v4.19.83
 		goto out;
 	}
 
@@ -1103,7 +1163,11 @@ next_step:
 			start_bidx = f2fs_start_bidx_of_node(nofs, inode)
 								+ ofs_in_node;
 			if (f2fs_post_read_required(inode))
+<<<<<<< HEAD
 				err = move_data_block(inode, start_bidx, gc_type,
+=======
+				move_data_block(inode, start_bidx, gc_type,
+>>>>>>> v4.19.83
 								segno, off);
 			else
 				err = move_data_page(inode, start_bidx, gc_type,
@@ -1159,13 +1223,20 @@ static int do_garbage_collect(struct f2fs_sb_info *sbi,
 		end_segno = rounddown(end_segno, sbi->segs_per_sec);
 
 	/* readahead multi ssa blocks those have contiguous address */
+<<<<<<< HEAD
 	if (__is_large_section(sbi))
 		f2fs_ra_meta_pages(sbi, GET_SUM_BLOCK(sbi, segno),
 					end_segno - segno, META_SSA, true);
+=======
+	if (sbi->segs_per_sec > 1)
+		f2fs_ra_meta_pages(sbi, GET_SUM_BLOCK(sbi, segno),
+					sbi->segs_per_sec, META_SSA, true);
+>>>>>>> v4.19.83
 
 	/* reference all summary page */
 	while (segno < end_segno) {
 		sum_page = f2fs_get_sum_page(sbi, segno++);
+<<<<<<< HEAD
 		if (IS_ERR(sum_page)) {
 			int err = PTR_ERR(sum_page);
 
@@ -1178,6 +1249,8 @@ static int do_garbage_collect(struct f2fs_sb_info *sbi,
 			}
 			return err;
 		}
+=======
+>>>>>>> v4.19.83
 		unlock_page(sum_page);
 	}
 
@@ -1204,7 +1277,11 @@ static int do_garbage_collect(struct f2fs_sb_info *sbi,
 				"type [%d, %d] in SSA and SIT",
 				segno, type, GET_SUM_TYPE((&sum->footer)));
 			set_sbi_flag(sbi, SBI_NEED_FSCK);
+<<<<<<< HEAD
 			goto skip;
+=======
+			goto next;
+>>>>>>> v4.19.83
 		}
 
 		/*
@@ -1256,7 +1333,7 @@ int f2fs_gc(struct f2fs_sb_info *sbi, bool sync,
 	unsigned int init_segno = segno;
 	struct gc_inode_list gc_list = {
 		.ilist = LIST_HEAD_INIT(gc_list.ilist),
-		.iroot = RADIX_TREE_INIT(GFP_NOFS),
+		.iroot = RADIX_TREE_INIT(gc_list.iroot, GFP_NOFS),
 	};
 	unsigned long long last_skipped = sbi->skipped_atomic_files[FG_GC];
 	unsigned long long first_skipped;
@@ -1275,7 +1352,7 @@ int f2fs_gc(struct f2fs_sb_info *sbi, bool sync,
 	sbi->skipped_gc_rwsem = 0;
 	first_skipped = last_skipped;
 gc_more:
-	if (unlikely(!(sbi->sb->s_flags & MS_ACTIVE))) {
+	if (unlikely(!(sbi->sb->s_flags & SB_ACTIVE))) {
 		ret = -EINVAL;
 		goto stop;
 	}
@@ -1290,8 +1367,12 @@ gc_more:
 		 * threshold, we can make them free by checkpoint. Then, we
 		 * secure free segments which doesn't need fggc any more.
 		 */
+<<<<<<< HEAD
 		if (prefree_segments(sbi) &&
 				!is_sbi_flag_set(sbi, SBI_CP_DISABLED)) {
+=======
+		if (prefree_segments(sbi)) {
+>>>>>>> v4.19.83
 			ret = f2fs_write_checkpoint(sbi, &cpc);
 			if (ret)
 				goto stop;
@@ -1323,7 +1404,11 @@ gc_more:
 		round++;
 	}
 
+<<<<<<< HEAD
 	if (gc_type == FG_GC && seg_freed)
+=======
+	if (gc_type == FG_GC)
+>>>>>>> v4.19.83
 		sbi->cur_victim_sec = NULL_SEGNO;
 
 	if (sync)
@@ -1343,7 +1428,11 @@ gc_more:
 			segno = NULL_SEGNO;
 			goto gc_more;
 		}
+<<<<<<< HEAD
 		if (gc_type == FG_GC && !is_sbi_flag_set(sbi, SBI_CP_DISABLED))
+=======
+		if (gc_type == FG_GC)
+>>>>>>> v4.19.83
 			ret = f2fs_write_checkpoint(sbi, &cpc);
 	}
 stop:
@@ -1375,7 +1464,11 @@ void f2fs_build_gc_manager(struct f2fs_sb_info *sbi)
 	sbi->gc_pin_file_threshold = DEF_GC_FAILED_PINNED_FILES;
 
 	/* give warm/cold data area from slower device */
+<<<<<<< HEAD
 	if (sbi->s_ndevs && !__is_large_section(sbi))
+=======
+	if (f2fs_is_multi_device(sbi) && sbi->segs_per_sec == 1)
+>>>>>>> v4.19.83
 		SIT_I(sbi)->last_victim[ALLOC_NEXT] =
 				GET_SEGNO(sbi, FDEV(0).end_blk) + 1;
 }

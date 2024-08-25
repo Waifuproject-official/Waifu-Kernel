@@ -39,6 +39,8 @@
 #include <asm/atomic.h>
 #include <asm/barrier.h>
 #include <asm/bug.h>
+#include <asm/cpufeature.h>
+#include <asm/daifflags.h>
 #include <asm/debug-monitors.h>
 #include <asm/esr.h>
 #include <asm/insn.h>
@@ -102,9 +104,12 @@ void dump_backtrace(struct pt_regs *regs, struct task_struct *tsk)
 {
 	struct stackframe frame;
 	int skip = 0;
+<<<<<<< HEAD
 	long cur_state = 0;
 	unsigned long cur_sp = 0;
 	unsigned long cur_fp = 0;
+=======
+>>>>>>> v4.19.83
 
 	pr_debug("%s(regs = %p tsk = %p)\n", __func__, regs, tsk);
 
@@ -139,6 +144,7 @@ void dump_backtrace(struct pt_regs *regs, struct task_struct *tsk)
 
 	printk("Call trace:\n");
 	do {
+<<<<<<< HEAD
 		if (tsk != current && (cur_state != tsk->state
 			/*
 			 * We would not be printing backtrace for the task
@@ -156,6 +162,8 @@ void dump_backtrace(struct pt_regs *regs, struct task_struct *tsk)
 				tsk->comm);
 			break;
 		}
+=======
+>>>>>>> v4.19.83
 		/* skip until specified stack frame */
 		if (!skip) {
 			dump_backtrace_entry(frame.pc);
@@ -250,13 +258,46 @@ void die(const char *str, struct pt_regs *regs, int err)
 		do_exit(SIGSEGV);
 }
 
+static bool show_unhandled_signals_ratelimited(void)
+{
+	static DEFINE_RATELIMIT_STATE(rs, DEFAULT_RATELIMIT_INTERVAL,
+				      DEFAULT_RATELIMIT_BURST);
+	return show_unhandled_signals && __ratelimit(&rs);
+}
+
+void arm64_force_sig_info(struct siginfo *info, const char *str,
+			  struct task_struct *tsk)
+{
+	unsigned int esr = tsk->thread.fault_code;
+	struct pt_regs *regs = task_pt_regs(tsk);
+
+	if (!unhandled_signal(tsk, info->si_signo))
+		goto send_sig;
+
+	if (!show_unhandled_signals_ratelimited())
+		goto send_sig;
+
+	pr_info("%s[%d]: unhandled exception: ", tsk->comm, task_pid_nr(tsk));
+	if (esr)
+		pr_cont("%s, ESR 0x%08x, ", esr_get_class_string(esr), esr);
+
+	pr_cont("%s", str);
+	print_vma_addr(KERN_CONT " in ", regs->pc);
+	pr_cont("\n");
+	__show_regs(regs);
+
+send_sig:
+	force_sig_info(info->si_signo, info, tsk);
+}
+
 void arm64_notify_die(const char *str, struct pt_regs *regs,
 		      struct siginfo *info, int err)
 {
 	if (user_mode(regs)) {
+		WARN_ON(regs != current_pt_regs());
 		current->thread.fault_address = 0;
 		current->thread.fault_code = err;
-		force_sig_info(info->si_signo, info, current);
+		arm64_force_sig_info(info, str, current);
 	} else {
 		die(str, regs, err);
 	}
@@ -341,12 +382,13 @@ exit:
 	return fn ? fn(regs, instr) : 1;
 }
 
-static void force_signal_inject(int signal, int code, struct pt_regs *regs,
-				unsigned long address)
+void force_signal_inject(int signal, int code, unsigned long address)
 {
 	siginfo_t info;
-	void __user *pc = (void __user *)instruction_pointer(regs);
 	const char *desc;
+	struct pt_regs *regs = current_pt_regs();
+
+	clear_siginfo(&info);
 
 	switch (signal) {
 	case SIGILL:
@@ -356,21 +398,20 @@ static void force_signal_inject(int signal, int code, struct pt_regs *regs,
 		desc = "illegal memory access";
 		break;
 	default:
-		desc = "bad mode";
+		desc = "unknown or unrecoverable error";
 		break;
 	}
 
-	if (unhandled_signal(current, signal) &&
-	    show_unhandled_signals_ratelimited()) {
-		pr_info("%s[%d]: %s: pc=%p\n",
-			current->comm, task_pid_nr(current), desc, pc);
-		dump_instr(KERN_INFO, regs);
+	/* Force signals we don't understand to SIGKILL */
+	if (WARN_ON(signal != SIGKILL &&
+		    siginfo_layout(signal, code) != SIL_FAULT)) {
+		signal = SIGKILL;
 	}
 
 	info.si_signo = signal;
 	info.si_errno = 0;
 	info.si_code  = code;
-	info.si_addr  = pc;
+	info.si_addr  = (void __user *)address;
 
 	arm64_notify_die(desc, regs, &info, 0);
 }
@@ -378,7 +419,7 @@ static void force_signal_inject(int signal, int code, struct pt_regs *regs,
 /*
  * Set up process info to signal segmentation fault - called on access error.
  */
-void arm64_notify_segfault(struct pt_regs *regs, unsigned long addr)
+void arm64_notify_segfault(unsigned long addr)
 {
 	int code;
 
@@ -389,7 +430,7 @@ void arm64_notify_segfault(struct pt_regs *regs, unsigned long addr)
 		code = SEGV_ACCERR;
 	up_read(&current->mm->mmap_sem);
 
-	force_signal_inject(SIGSEGV, code, regs, addr);
+	force_signal_inject(SIGSEGV, code, addr);
 }
 
 asmlinkage void __exception do_undefinstr(struct pt_regs *regs)
@@ -403,16 +444,19 @@ asmlinkage void __exception do_undefinstr(struct pt_regs *regs)
 	if (call_undef_hook(regs) == 0)
 		return;
 
+<<<<<<< HEAD
 	trace_undef_instr(regs, pc);
 
 	force_signal_inject(SIGILL, ILL_ILLOPC, regs, 0);
+=======
+	force_signal_inject(SIGILL, ILL_ILLOPC, regs->pc);
+>>>>>>> v4.19.83
 	BUG_ON(!user_mode(regs));
 }
 
-int cpu_enable_cache_maint_trap(void *__unused)
+void cpu_enable_cache_maint_trap(const struct arm64_cpu_capabilities *__unused)
 {
-	config_sctlr_el1(SCTLR_EL1_UCI, 0);
-	return 0;
+	sysreg_clear_set(sctlr_el1, SCTLR_EL1_UCI, 0);
 }
 
 #define __user_cache_maint(insn, address, res)			\
@@ -461,12 +505,12 @@ static void user_cache_maint_handler(unsigned int esr, struct pt_regs *regs)
 		__user_cache_maint("ic ivau", address, ret);
 		break;
 	default:
-		force_signal_inject(SIGILL, ILL_ILLOPC, regs, 0);
+		force_signal_inject(SIGILL, ILL_ILLOPC, regs->pc);
 		return;
 	}
 
 	if (ret)
-		arm64_notify_segfault(regs, address);
+		arm64_notify_segfault(address);
 	else
 		arm64_skip_faulting_instruction(regs, AARCH64_INSN_SIZE);
 }
@@ -549,6 +593,7 @@ asmlinkage void __exception do_sysinstr(unsigned int esr, struct pt_regs *regs)
 	do_undefinstr(regs);
 }
 
+<<<<<<< HEAD
 #ifdef CONFIG_COMPAT
 static void cntfrq_cp15_32_read_handler(unsigned int esr, struct pt_regs *regs)
 {
@@ -683,6 +728,8 @@ asmlinkage long do_ni_syscall(struct pt_regs *regs)
 	return sys_ni_syscall();
 }
 
+=======
+>>>>>>> v4.19.83
 static const char *esr_class_str[] = {
 	[0 ... ESR_ELx_EC_MAX]		= "UNRECOGNIZED EC",
 	[ESR_ELx_EC_UNKNOWN]		= "Unknown/Uncategorized",
@@ -742,7 +789,7 @@ asmlinkage void bad_mode(struct pt_regs *regs, int reason, unsigned int esr)
 		esr_get_class_string(esr));
 
 	die("Oops - bad mode", regs, 0);
-	local_irq_disable();
+	local_daif_mask();
 	panic("bad mode");
 }
 
@@ -754,21 +801,17 @@ asmlinkage void bad_el0_sync(struct pt_regs *regs, int reason, unsigned int esr)
 {
 	siginfo_t info;
 	void __user *pc = (void __user *)instruction_pointer(regs);
-	console_verbose();
 
-	pr_crit("Bad EL0 synchronous exception detected on CPU%d, code 0x%08x -- %s\n",
-		smp_processor_id(), esr, esr_get_class_string(esr));
-	__show_regs(regs);
-
+	clear_siginfo(&info);
 	info.si_signo = SIGILL;
 	info.si_errno = 0;
 	info.si_code  = ILL_ILLOPC;
 	info.si_addr  = pc;
 
 	current->thread.fault_address = 0;
-	current->thread.fault_code = 0;
+	current->thread.fault_code = esr;
 
-	force_sig_info(info.si_signo, &info, current);
+	arm64_force_sig_info(&info, "Bad EL0 synchronous exception", current);
 }
 
 #ifdef CONFIG_VMAP_STACK
@@ -807,6 +850,60 @@ asmlinkage void handle_bad_stack(struct pt_regs *regs)
 	cpu_park_loop();
 }
 #endif
+
+void __noreturn arm64_serror_panic(struct pt_regs *regs, u32 esr)
+{
+	console_verbose();
+
+	pr_crit("SError Interrupt on CPU%d, code 0x%08x -- %s\n",
+		smp_processor_id(), esr, esr_get_class_string(esr));
+	if (regs)
+		__show_regs(regs);
+
+	nmi_panic(regs, "Asynchronous SError Interrupt");
+
+	cpu_park_loop();
+	unreachable();
+}
+
+bool arm64_is_fatal_ras_serror(struct pt_regs *regs, unsigned int esr)
+{
+	u32 aet = arm64_ras_serror_get_severity(esr);
+
+	switch (aet) {
+	case ESR_ELx_AET_CE:	/* corrected error */
+	case ESR_ELx_AET_UEO:	/* restartable, not yet consumed */
+		/*
+		 * The CPU can make progress. We may take UEO again as
+		 * a more severe error.
+		 */
+		return false;
+
+	case ESR_ELx_AET_UEU:	/* Uncorrected Unrecoverable */
+	case ESR_ELx_AET_UER:	/* Uncorrected Recoverable */
+		/*
+		 * The CPU can't make progress. The exception may have
+		 * been imprecise.
+		 */
+		return true;
+
+	case ESR_ELx_AET_UC:	/* Uncontainable or Uncategorized error */
+	default:
+		/* Error has been silently propagated */
+		arm64_serror_panic(regs, esr);
+	}
+}
+
+asmlinkage void do_serror(struct pt_regs *regs, unsigned int esr)
+{
+	nmi_enter();
+
+	/* non-RAS errors are not containable */
+	if (!arm64_is_ras_serror(esr) || arm64_is_fatal_ras_serror(regs, esr))
+		arm64_serror_panic(regs, esr);
+
+	nmi_exit();
+}
 
 void __pte_error(const char *file, int line, unsigned long val)
 {

@@ -205,12 +205,20 @@
 #define X86_FEATURE_RETPOLINE		( 7*32+12) /* "" Generic Retpoline mitigation for Spectre variant 2 */
 #define X86_FEATURE_RETPOLINE_AMD	( 7*32+13) /* "" AMD Retpoline mitigation for Spectre variant 2 */
 #define X86_FEATURE_INTEL_PPIN		( 7*32+14) /* Intel Processor Inventory Number */
+<<<<<<< HEAD
 
+=======
+#define X86_FEATURE_CDP_L2		( 7*32+15) /* Code and Data Prioritization L2 */
+>>>>>>> v4.19.83
 #define X86_FEATURE_MSR_SPEC_CTRL	( 7*32+16) /* "" MSR SPEC_CTRL is implemented */
 #define X86_FEATURE_SSBD		( 7*32+17) /* Speculative Store Bypass Disable */
 #define X86_FEATURE_MBA			( 7*32+18) /* Memory Bandwidth Allocation */
 #define X86_FEATURE_RSB_CTXSW		( 7*32+19) /* "" Fill RSB on context switches */
+<<<<<<< HEAD
 
+=======
+#define X86_FEATURE_SEV			( 7*32+20) /* AMD Secure Encrypted Virtualization */
+>>>>>>> v4.19.83
 #define X86_FEATURE_USE_IBPB		( 7*32+21) /* "" Indirect Branch Prediction Barrier enabled */
 #define X86_FEATURE_USE_IBRS_FW		( 7*32+22) /* "" Use IBRS during runtime firmware calls */
 #define X86_FEATURE_SPEC_STORE_BYPASS_DISABLE	( 7*32+23) /* "" Disable Speculative Store Bypass. */
@@ -231,8 +239,44 @@
 
 #define X86_FEATURE_VMMCALL		( 8*32+15) /* Prefer VMMCALL to VMCALL */
 #define X86_FEATURE_XENPV		( 8*32+16) /* "" Xen paravirtual guest */
+<<<<<<< HEAD
+=======
+#define X86_FEATURE_EPT_AD		( 8*32+17) /* Intel Extended Page Table access-dirty bit */
+>>>>>>> v4.19.83
 
+/* Intel-defined CPU features, CPUID level 0x00000007:0 (EBX), word 9 */
+#define X86_FEATURE_FSGSBASE		( 9*32+ 0) /* RDFSBASE, WRFSBASE, RDGSBASE, WRGSBASE instructions*/
+#define X86_FEATURE_TSC_ADJUST		( 9*32+ 1) /* TSC adjustment MSR 0x3B */
+#define X86_FEATURE_BMI1		( 9*32+ 3) /* 1st group bit manipulation extensions */
+#define X86_FEATURE_HLE			( 9*32+ 4) /* Hardware Lock Elision */
+#define X86_FEATURE_AVX2		( 9*32+ 5) /* AVX2 instructions */
+#define X86_FEATURE_FDP_EXCPTN_ONLY	( 9*32+ 6) /* "" FPU data pointer updated only on x87 exceptions */
+#define X86_FEATURE_SMEP		( 9*32+ 7) /* Supervisor Mode Execution Protection */
+#define X86_FEATURE_BMI2		( 9*32+ 8) /* 2nd group bit manipulation extensions */
+#define X86_FEATURE_ERMS		( 9*32+ 9) /* Enhanced REP MOVSB/STOSB instructions */
+#define X86_FEATURE_INVPCID		( 9*32+10) /* Invalidate Processor Context ID */
+#define X86_FEATURE_RTM			( 9*32+11) /* Restricted Transactional Memory */
+#define X86_FEATURE_CQM			( 9*32+12) /* Cache QoS Monitoring */
+#define X86_FEATURE_ZERO_FCS_FDS	( 9*32+13) /* "" Zero out FPU CS and FPU DS */
+#define X86_FEATURE_MPX			( 9*32+14) /* Memory Protection Extension */
+#define X86_FEATURE_RDT_A		( 9*32+15) /* Resource Director Technology Allocation */
+#define X86_FEATURE_AVX512F		( 9*32+16) /* AVX-512 Foundation */
+#define X86_FEATURE_AVX512DQ		( 9*32+17) /* AVX-512 DQ (Double/Quad granular) Instructions */
+#define X86_FEATURE_RDSEED		( 9*32+18) /* RDSEED instruction */
+#define X86_FEATURE_ADX			( 9*32+19) /* ADCX and ADOX instructions */
+#define X86_FEATURE_SMAP		( 9*32+20) /* Supervisor Mode Access Prevention */
+#define X86_FEATURE_AVX512IFMA		( 9*32+21) /* AVX-512 Integer Fused Multiply-Add instructions */
+#define X86_FEATURE_CLFLUSHOPT		( 9*32+23) /* CLFLUSHOPT instruction */
+#define X86_FEATURE_CLWB		( 9*32+24) /* CLWB instruction */
+#define X86_FEATURE_INTEL_PT		( 9*32+25) /* Intel Processor Trace */
+#define X86_FEATURE_AVX512PF		( 9*32+26) /* AVX-512 Prefetch */
+#define X86_FEATURE_AVX512ER		( 9*32+27) /* AVX-512 Exponential and Reciprocal */
+#define X86_FEATURE_AVX512CD		( 9*32+28) /* AVX-512 Conflict Detection */
+#define X86_FEATURE_SHA_NI		( 9*32+29) /* SHA1/SHA256 Instruction Extensions */
+#define X86_FEATURE_AVX512BW		( 9*32+30) /* AVX-512 BW (Byte/Word granular) Instructions */
+#define X86_FEATURE_AVX512VL		( 9*32+31) /* AVX-512 VL (128/256 Vector Length) Extensions */
 
+<<<<<<< HEAD
 /* Intel-defined CPU features, CPUID level 0x00000007:0 (EBX), word 9 */
 #define X86_FEATURE_FSGSBASE		( 9*32+ 0) /* RDFSBASE, WRFSBASE, RDGSBASE, WRGSBASE instructions*/
 #define X86_FEATURE_TSC_ADJUST		( 9*32+ 1) /* TSC adjustment MSR 0x3B */
@@ -336,10 +380,95 @@
 #define X86_FEATURE_SUCCOR		(17*32+ 1) /* Uncorrectable error containment and recovery */
 #define X86_FEATURE_SMCA		(17*32+ 3) /* Scalable MCA */
 
+=======
+/* Extended state features, CPUID level 0x0000000d:1 (EAX), word 10 */
+#define X86_FEATURE_XSAVEOPT		(10*32+ 0) /* XSAVEOPT instruction */
+#define X86_FEATURE_XSAVEC		(10*32+ 1) /* XSAVEC instruction */
+#define X86_FEATURE_XGETBV1		(10*32+ 2) /* XGETBV with ECX = 1 instruction */
+#define X86_FEATURE_XSAVES		(10*32+ 3) /* XSAVES/XRSTORS instructions */
+
+/*
+ * Extended auxiliary flags: Linux defined - for features scattered in various
+ * CPUID levels like 0xf, etc.
+ *
+ * Reuse free bits when adding new feature flags!
+ */
+#define X86_FEATURE_CQM_LLC		(11*32+ 0) /* LLC QoS if 1 */
+#define X86_FEATURE_CQM_OCCUP_LLC	(11*32+ 1) /* LLC occupancy monitoring */
+#define X86_FEATURE_CQM_MBM_TOTAL	(11*32+ 2) /* LLC Total MBM monitoring */
+#define X86_FEATURE_CQM_MBM_LOCAL	(11*32+ 3) /* LLC Local MBM monitoring */
+#define X86_FEATURE_FENCE_SWAPGS_USER	(11*32+ 4) /* "" LFENCE in user entry SWAPGS path */
+#define X86_FEATURE_FENCE_SWAPGS_KERNEL	(11*32+ 5) /* "" LFENCE in kernel entry SWAPGS path */
+
+/* AMD-defined CPU features, CPUID level 0x80000008 (EBX), word 13 */
+#define X86_FEATURE_CLZERO		(13*32+ 0) /* CLZERO instruction */
+#define X86_FEATURE_IRPERF		(13*32+ 1) /* Instructions Retired Count */
+#define X86_FEATURE_XSAVEERPTR		(13*32+ 2) /* Always save/restore FP error pointers */
+#define X86_FEATURE_AMD_IBPB		(13*32+12) /* "" Indirect Branch Prediction Barrier */
+#define X86_FEATURE_AMD_IBRS		(13*32+14) /* "" Indirect Branch Restricted Speculation */
+#define X86_FEATURE_AMD_STIBP		(13*32+15) /* "" Single Thread Indirect Branch Predictors */
+#define X86_FEATURE_AMD_SSBD		(13*32+24) /* "" Speculative Store Bypass Disable */
+#define X86_FEATURE_VIRT_SSBD		(13*32+25) /* Virtualized Speculative Store Bypass Disable */
+#define X86_FEATURE_AMD_SSB_NO		(13*32+26) /* "" Speculative Store Bypass is fixed in hardware. */
+
+/* Thermal and Power Management Leaf, CPUID level 0x00000006 (EAX), word 14 */
+#define X86_FEATURE_DTHERM		(14*32+ 0) /* Digital Thermal Sensor */
+#define X86_FEATURE_IDA			(14*32+ 1) /* Intel Dynamic Acceleration */
+#define X86_FEATURE_ARAT		(14*32+ 2) /* Always Running APIC Timer */
+#define X86_FEATURE_PLN			(14*32+ 4) /* Intel Power Limit Notification */
+#define X86_FEATURE_PTS			(14*32+ 6) /* Intel Package Thermal Status */
+#define X86_FEATURE_HWP			(14*32+ 7) /* Intel Hardware P-states */
+#define X86_FEATURE_HWP_NOTIFY		(14*32+ 8) /* HWP Notification */
+#define X86_FEATURE_HWP_ACT_WINDOW	(14*32+ 9) /* HWP Activity Window */
+#define X86_FEATURE_HWP_EPP		(14*32+10) /* HWP Energy Perf. Preference */
+#define X86_FEATURE_HWP_PKG_REQ		(14*32+11) /* HWP Package Level Request */
+
+/* AMD SVM Feature Identification, CPUID level 0x8000000a (EDX), word 15 */
+#define X86_FEATURE_NPT			(15*32+ 0) /* Nested Page Table support */
+#define X86_FEATURE_LBRV		(15*32+ 1) /* LBR Virtualization support */
+#define X86_FEATURE_SVML		(15*32+ 2) /* "svm_lock" SVM locking MSR */
+#define X86_FEATURE_NRIPS		(15*32+ 3) /* "nrip_save" SVM next_rip save */
+#define X86_FEATURE_TSCRATEMSR		(15*32+ 4) /* "tsc_scale" TSC scaling support */
+#define X86_FEATURE_VMCBCLEAN		(15*32+ 5) /* "vmcb_clean" VMCB clean bits support */
+#define X86_FEATURE_FLUSHBYASID		(15*32+ 6) /* flush-by-ASID support */
+#define X86_FEATURE_DECODEASSISTS	(15*32+ 7) /* Decode Assists support */
+#define X86_FEATURE_PAUSEFILTER		(15*32+10) /* filtered pause intercept */
+#define X86_FEATURE_PFTHRESHOLD		(15*32+12) /* pause filter threshold */
+#define X86_FEATURE_AVIC		(15*32+13) /* Virtual Interrupt Controller */
+#define X86_FEATURE_V_VMSAVE_VMLOAD	(15*32+15) /* Virtual VMSAVE VMLOAD */
+#define X86_FEATURE_VGIF		(15*32+16) /* Virtual GIF */
+
+/* Intel-defined CPU features, CPUID level 0x00000007:0 (ECX), word 16 */
+#define X86_FEATURE_AVX512VBMI		(16*32+ 1) /* AVX512 Vector Bit Manipulation instructions*/
+#define X86_FEATURE_UMIP		(16*32+ 2) /* User Mode Instruction Protection */
+#define X86_FEATURE_PKU			(16*32+ 3) /* Protection Keys for Userspace */
+#define X86_FEATURE_OSPKE		(16*32+ 4) /* OS Protection Keys Enable */
+#define X86_FEATURE_AVX512_VBMI2	(16*32+ 6) /* Additional AVX512 Vector Bit Manipulation Instructions */
+#define X86_FEATURE_GFNI		(16*32+ 8) /* Galois Field New Instructions */
+#define X86_FEATURE_VAES		(16*32+ 9) /* Vector AES */
+#define X86_FEATURE_VPCLMULQDQ		(16*32+10) /* Carry-Less Multiplication Double Quadword */
+#define X86_FEATURE_AVX512_VNNI		(16*32+11) /* Vector Neural Network Instructions */
+#define X86_FEATURE_AVX512_BITALG	(16*32+12) /* Support for VPOPCNT[B,W] and VPSHUF-BITQMB instructions */
+#define X86_FEATURE_TME			(16*32+13) /* Intel Total Memory Encryption */
+#define X86_FEATURE_AVX512_VPOPCNTDQ	(16*32+14) /* POPCNT for vectors of DW/QW */
+#define X86_FEATURE_LA57		(16*32+16) /* 5-level page tables */
+#define X86_FEATURE_RDPID		(16*32+22) /* RDPID instruction */
+#define X86_FEATURE_CLDEMOTE		(16*32+25) /* CLDEMOTE instruction */
+
+/* AMD-defined CPU features, CPUID level 0x80000007 (EBX), word 17 */
+#define X86_FEATURE_OVERFLOW_RECOV	(17*32+ 0) /* MCA overflow recovery support */
+#define X86_FEATURE_SUCCOR		(17*32+ 1) /* Uncorrectable error containment and recovery */
+#define X86_FEATURE_SMCA		(17*32+ 3) /* Scalable MCA */
+
+>>>>>>> v4.19.83
 /* Intel-defined CPU features, CPUID level 0x00000007:0 (EDX), word 18 */
 #define X86_FEATURE_AVX512_4VNNIW	(18*32+ 2) /* AVX-512 Neural Network Instructions */
 #define X86_FEATURE_AVX512_4FMAPS	(18*32+ 3) /* AVX-512 Multiply Accumulation Single precision */
 #define X86_FEATURE_TSX_FORCE_ABORT	(18*32+13) /* "" TSX_FORCE_ABORT */
+<<<<<<< HEAD
+=======
+#define X86_FEATURE_MD_CLEAR		(18*32+10) /* VERW clears CPU buffers */
+>>>>>>> v4.19.83
 #define X86_FEATURE_PCONFIG		(18*32+18) /* Intel PCONFIG */
 #define X86_FEATURE_SPEC_CTRL		(18*32+26) /* "" Speculation Control (IBRS + IBPB) */
 #define X86_FEATURE_INTEL_STIBP		(18*32+27) /* "" Single Thread Indirect Branch Predictors */
@@ -377,5 +506,11 @@
 #define X86_BUG_SPECTRE_V2		X86_BUG(16) /* CPU is affected by Spectre variant 2 attack with indirect branches */
 #define X86_BUG_SPEC_STORE_BYPASS	X86_BUG(17) /* CPU is affected by speculative store bypass attack */
 #define X86_BUG_L1TF			X86_BUG(18) /* CPU is affected by L1 Terminal Fault */
+<<<<<<< HEAD
+=======
+#define X86_BUG_MDS			X86_BUG(19) /* CPU is affected by Microarchitectural data sampling */
+#define X86_BUG_MSBDS_ONLY		X86_BUG(20) /* CPU is only affected by the  MSDBS variant of BUG_MDS */
+#define X86_BUG_SWAPGS			X86_BUG(21) /* CPU is affected by speculation through SWAPGS */
+>>>>>>> v4.19.83
 
 #endif /* _ASM_X86_CPUFEATURES_H */

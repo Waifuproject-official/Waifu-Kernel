@@ -1,15 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Arch specific cpu topology information
  *
  * Copyright (C) 2016, ARM Ltd.
  * Written by: Juri Lelli, ARM Ltd.
- *
- * This file is subject to the terms and conditions of the GNU General Public
- * License.  See the file "COPYING" in the main directory of this archive
- * for more details.
- *
- * Released under the GPLv2 only.
- * SPDX-License-Identifier: GPL-2.0
  */
 
 #include <linux/acpi.h>
@@ -61,6 +55,25 @@ void arch_set_max_freq_scale(struct cpumask *cpus,
 	for_each_cpu(cpu, cpus)
 		per_cpu(max_freq_scale, cpu) = scale;
 }
+
+<<<<<<< HEAD
+static DEFINE_MUTEX(cpu_scale_mutex);
+DEFINE_PER_CPU(unsigned long, cpu_scale) = SCHED_CAPACITY_SCALE;
+=======
+DEFINE_PER_CPU(unsigned long, freq_scale) = SCHED_CAPACITY_SCALE;
+
+void arch_set_freq_scale(struct cpumask *cpus, unsigned long cur_freq,
+			 unsigned long max_freq)
+{
+	unsigned long scale;
+	int i;
+
+	scale = (cur_freq << SCHED_CAPACITY_SHIFT) / max_freq;
+
+	for_each_cpu(i, cpus)
+		per_cpu(freq_scale, i) = scale;
+}
+>>>>>>> v4.19.83
 
 static DEFINE_MUTEX(cpu_scale_mutex);
 DEFINE_PER_CPU(unsigned long, cpu_scale) = SCHED_CAPACITY_SCALE;

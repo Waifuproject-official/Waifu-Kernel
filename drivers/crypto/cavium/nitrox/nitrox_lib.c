@@ -154,7 +154,11 @@ void *crypto_alloc_context(struct nitrox_device *ndev)
 	if (!chdr)
 		return NULL;
 
+<<<<<<< HEAD
 	vaddr = dma_pool_alloc(ndev->ctx_pool, (GFP_ATOMIC | __GFP_ZERO), &dma);
+=======
+	vaddr = dma_pool_alloc(ndev->ctx_pool, (GFP_KERNEL | __GFP_ZERO), &dma);
+>>>>>>> v4.19.83
 	if (!vaddr) {
 		kfree(chdr);
 		return NULL;

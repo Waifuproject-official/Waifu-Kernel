@@ -33,7 +33,17 @@ static void __fscrypt_decrypt_bio(struct bio *bio, bool done)
 
 	bio_for_each_segment_all(bv, bio, i) {
 		struct page *page = bv->bv_page;
+<<<<<<< HEAD
 		if (fscrypt_using_hardware_encryption(page->mapping->host)) {
+=======
+		int ret = fscrypt_decrypt_page(page->mapping->host, page,
+				PAGE_SIZE, 0, page->index);
+
+		if (ret) {
+			WARN_ON_ONCE(1);
+			SetPageError(page);
+		} else if (done) {
+>>>>>>> v4.19.83
 			SetPageUptodate(page);
 		} else {
 			int ret = fscrypt_decrypt_page(page->mapping->host,

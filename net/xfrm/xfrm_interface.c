@@ -70,6 +70,7 @@ static struct xfrm_if *xfrmi_lookup(struct net *net, struct xfrm_state *x)
 	return NULL;
 }
 
+<<<<<<< HEAD
 static struct xfrm_if *xfrmi_decode_session(struct sk_buff *skb)
 {
 	struct xfrmi_net *xfrmn;
@@ -81,6 +82,30 @@ static struct xfrm_if *xfrmi_decode_session(struct sk_buff *skb)
 
 	xfrmn = net_generic(dev_net(skb->dev), xfrmi_net_id);
 	ifindex = skb->dev->ifindex;
+=======
+static struct xfrm_if *xfrmi_decode_session(struct sk_buff *skb,
+					    unsigned short family)
+{
+	struct xfrmi_net *xfrmn;
+	struct xfrm_if *xi;
+	int ifindex = 0;
+
+	if (!secpath_exists(skb) || !skb->dev)
+		return NULL;
+
+	switch (family) {
+	case AF_INET6:
+		ifindex = inet6_sdif(skb);
+		break;
+	case AF_INET:
+		ifindex = inet_sdif(skb);
+		break;
+	}
+	if (!ifindex)
+		ifindex = skb->dev->ifindex;
+
+	xfrmn = net_generic(xs_net(xfrm_input_state(skb)), xfrmi_net_id);
+>>>>>>> v4.19.83
 
 	for_each_xfrmi_rcu(xfrmn->xfrmi[0], xi) {
 		if (ifindex == xi->dev->ifindex &&
@@ -116,6 +141,12 @@ static void xfrmi_unlink(struct xfrmi_net *xfrmn, struct xfrm_if *xi)
 
 static void xfrmi_dev_free(struct net_device *dev)
 {
+<<<<<<< HEAD
+=======
+	struct xfrm_if *xi = netdev_priv(dev);
+
+	gro_cells_destroy(&xi->gro_cells);
+>>>>>>> v4.19.83
 	free_percpu(dev->tstats);
 }
 

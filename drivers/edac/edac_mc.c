@@ -53,7 +53,7 @@ static LIST_HEAD(mc_devices);
  * Used to lock EDAC MC to just one module, avoiding two drivers e. g.
  *	apei/ghes and i7core_edac to be used at the same time.
  */
-static void const *edac_mc_owner;
+static const char *edac_mc_owner;
 
 static struct bus_type mc_bus[EDAC_MAX_MCS];
 
@@ -195,6 +195,7 @@ static void edac_mc_dump_mci(struct mem_ctl_info *mci)
 #endif				/* CONFIG_EDAC_DEBUG */
 
 const char * const edac_mem_types[] = {
+<<<<<<< HEAD
 	[MEM_EMPTY]	= "Empty csrow",
 	[MEM_RESERVED]	= "Reserved csrow type",
 	[MEM_UNKNOWN]	= "Unknown csrow type",
@@ -216,6 +217,30 @@ const char * const edac_mem_types[] = {
 	[MEM_DDR4]	= "Unbuffered DDR4 RAM",
 	[MEM_RDDR4]	= "Registered DDR4 RAM",
 	[MEM_LRDDR4]	= "Load-Reduced-DDR4-RAM",
+=======
+	[MEM_EMPTY]	= "Empty",
+	[MEM_RESERVED]	= "Reserved",
+	[MEM_UNKNOWN]	= "Unknown",
+	[MEM_FPM]	= "FPM",
+	[MEM_EDO]	= "EDO",
+	[MEM_BEDO]	= "BEDO",
+	[MEM_SDR]	= "Unbuffered-SDR",
+	[MEM_RDR]	= "Registered-SDR",
+	[MEM_DDR]	= "Unbuffered-DDR",
+	[MEM_RDDR]	= "Registered-DDR",
+	[MEM_RMBS]	= "RMBS",
+	[MEM_DDR2]	= "Unbuffered-DDR2",
+	[MEM_FB_DDR2]	= "FullyBuffered-DDR2",
+	[MEM_RDDR2]	= "Registered-DDR2",
+	[MEM_XDR]	= "XDR",
+	[MEM_DDR3]	= "Unbuffered-DDR3",
+	[MEM_RDDR3]	= "Registered-DDR3",
+	[MEM_LRDDR3]	= "Load-Reduced-DDR3-RAM",
+	[MEM_DDR4]	= "Unbuffered-DDR4",
+	[MEM_RDDR4]	= "Registered-DDR4",
+	[MEM_LRDDR4]	= "Load-Reduced-DDR4-RAM",
+	[MEM_NVDIMM]	= "Non-volatile-RAM",
+>>>>>>> v4.19.83
 };
 EXPORT_SYMBOL_GPL(edac_mem_types);
 
@@ -702,6 +727,11 @@ unlock:
 }
 EXPORT_SYMBOL(edac_mc_find);
 
+const char *edac_get_owner(void)
+{
+	return edac_mc_owner;
+}
+EXPORT_SYMBOL_GPL(edac_get_owner);
 
 /* FIXME - should a warning be printed if no error detection? correction? */
 int edac_mc_add_mc_with_groups(struct mem_ctl_info *mci,
@@ -1240,9 +1270,13 @@ void edac_mc_handle_error(const enum hw_event_mc_err_type type,
 	if (p > e->location)
 		*(p - 1) = '\0';
 
-	/* Report the error via the trace interface */
-	grain_bits = fls_long(e->grain) + 1;
+	/* Sanity-check driver-supplied grain value. */
+	if (WARN_ON_ONCE(!e->grain))
+		e->grain = 1;
 
+	grain_bits = fls_long(e->grain - 1);
+
+	/* Report the error via the trace interface */
 	if (IS_ENABLED(CONFIG_RAS))
 		trace_mc_event(type, e->msg, e->label, e->error_count,
 			       mci->mc_idx, e->top_layer, e->mid_layer,

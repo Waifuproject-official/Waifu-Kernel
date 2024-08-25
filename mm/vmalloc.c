@@ -1155,12 +1155,27 @@ retry:
 	spin_lock(&vmap_area_lock);
 	preempt_enable();
 
+<<<<<<< HEAD
 	/*
 	 * If an allocation fails, the "vend" address is
 	 * returned. Therefore trigger the overflow path.
 	 */
 	addr = __alloc_vmap_area(size, align, vstart, vend);
 	if (unlikely(addr == vend))
+=======
+		if (list_is_last(&first->list, &vmap_area_list))
+			goto found;
+
+		first = list_next_entry(first, list);
+	}
+
+found:
+	/*
+	 * Check also calculated address against the vstart,
+	 * because it can be 0 because of big align request.
+	 */
+	if (addr + size > vend || addr < vstart)
+>>>>>>> v4.19.83
 		goto overflow;
 
 	va->va_start = addr;
@@ -2242,7 +2257,11 @@ static void __vunmap(const void *addr, int deallocate_pages)
 			addr))
 		return;
 
+<<<<<<< HEAD
 	area = find_vm_area(addr);
+=======
+	area = find_vmap_area((unsigned long)addr)->vm;
+>>>>>>> v4.19.83
 	if (unlikely(!area)) {
 		WARN(1, KERN_ERR "Trying to vfree() nonexistent vm area (%p)\n",
 				addr);
@@ -2496,6 +2515,12 @@ void *__vmalloc_node_range(unsigned long size, unsigned long align,
 	addr = __vmalloc_area_node(area, gfp_mask, prot, node);
 	if (!addr)
 		return NULL;
+
+	/*
+	 * First make sure the mappings are removed from all page-tables
+	 * before they are freed.
+	 */
+	vmalloc_sync_all();
 
 	/*
 	 * In this function, newly allocated vm_struct has VM_UNINITIALIZED
@@ -3037,6 +3062,9 @@ EXPORT_SYMBOL(remap_vmalloc_range);
 /*
  * Implement a stub for vmalloc_sync_all() if the architecture chose not to
  * have one.
+ *
+ * The purpose of this function is to make sure the vmalloc area
+ * mappings are identical in all page-tables in the system.
  */
 void __weak vmalloc_sync_all(void)
 {
@@ -3494,25 +3522,14 @@ static const struct seq_operations vmalloc_op = {
 	.show = s_show,
 };
 
-static int vmalloc_open(struct inode *inode, struct file *file)
-{
-	if (IS_ENABLED(CONFIG_NUMA))
-		return seq_open_private(file, &vmalloc_op,
-					nr_node_ids * sizeof(unsigned int));
-	else
-		return seq_open(file, &vmalloc_op);
-}
-
-static const struct file_operations proc_vmalloc_operations = {
-	.open		= vmalloc_open,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= seq_release_private,
-};
-
 static int __init proc_vmalloc_init(void)
 {
-	proc_create("vmallocinfo", S_IRUSR, NULL, &proc_vmalloc_operations);
+	if (IS_ENABLED(CONFIG_NUMA))
+		proc_create_seq_private("vmallocinfo", 0400, NULL,
+				&vmalloc_op,
+				nr_node_ids * sizeof(unsigned int), NULL);
+	else
+		proc_create_seq("vmallocinfo", 0400, NULL, &vmalloc_op);
 	return 0;
 }
 module_init(proc_vmalloc_init);

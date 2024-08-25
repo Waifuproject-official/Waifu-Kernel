@@ -19,6 +19,7 @@
 #include <linux/dma-buf.h>
 #include <drm/drm_crtc.h>
 #include <drm/drm_crtc_helper.h>
+#include <drm/drm_gem_framebuffer_helper.h>
 
 #include "msm_drv.h"
 #include "msm_kms.h"
@@ -29,6 +30,7 @@
 struct msm_framebuffer {
 	struct drm_framebuffer base;
 	const struct msm_format *format;
+<<<<<<< HEAD
 	struct drm_gem_object *planes[MAX_PLANE];
 	void *vaddr[MAX_PLANE];
 	atomic_t kmap_count;
@@ -78,17 +80,28 @@ static void msm_framebuffer_destroy(struct drm_framebuffer *fb)
 
 	kfree(msm_fb);
 }
+=======
+};
+#define to_msm_framebuffer(x) container_of(x, struct msm_framebuffer, base)
+
+static struct drm_framebuffer *msm_framebuffer_init(struct drm_device *dev,
+		const struct drm_mode_fb_cmd2 *mode_cmd, struct drm_gem_object **bos);
+>>>>>>> v4.19.83
 
 static const struct drm_framebuffer_funcs msm_framebuffer_funcs = {
-	.create_handle = msm_framebuffer_create_handle,
-	.destroy = msm_framebuffer_destroy,
+	.create_handle = drm_gem_fb_create_handle,
+	.destroy = drm_gem_fb_destroy,
 };
 
 #ifdef CONFIG_DEBUG_FS
 void msm_framebuffer_describe(struct drm_framebuffer *fb, struct seq_file *m)
 {
+<<<<<<< HEAD
 	struct msm_framebuffer *msm_fb;
 	int i, n;
+=======
+	int i, n = fb->format->num_planes;
+>>>>>>> v4.19.83
 
 	if (!fb) {
 		DRM_ERROR("from:%pS null fb\n", __builtin_return_address(0));
@@ -104,7 +117,7 @@ void msm_framebuffer_describe(struct drm_framebuffer *fb, struct seq_file *m)
 	for (i = 0; i < n; i++) {
 		seq_printf(m, "   %d: offset=%d pitch=%d, obj: ",
 				i, fb->offsets[i], fb->pitches[i]);
-		msm_gem_describe(msm_fb->planes[i], m);
+		msm_gem_describe(fb->obj[i], m);
 	}
 }
 #endif
@@ -224,8 +237,12 @@ static void msm_framebuffer_kunmap(struct drm_framebuffer *fb)
 int msm_framebuffer_prepare(struct drm_framebuffer *fb,
 		struct msm_gem_address_space *aspace)
 {
+<<<<<<< HEAD
 	struct msm_framebuffer *msm_fb;
 	int ret, i, n;
+=======
+	int ret, i, n = fb->format->num_planes;
+>>>>>>> v4.19.83
 	uint64_t iova;
 
 	if (!fb) {
@@ -236,7 +253,7 @@ int msm_framebuffer_prepare(struct drm_framebuffer *fb,
 	msm_fb = to_msm_framebuffer(fb);
 	n = fb->format->num_planes;
 	for (i = 0; i < n; i++) {
-		ret = msm_gem_get_iova(msm_fb->planes[i], aspace, &iova);
+		ret = msm_gem_get_iova(fb->obj[i], aspace, &iova);
 		DBG("FB[%u]: iova[%d]: %08llx (%d)", fb->base.id, i, iova, ret);
 		if (ret)
 			return ret;
@@ -251,6 +268,7 @@ int msm_framebuffer_prepare(struct drm_framebuffer *fb,
 void msm_framebuffer_cleanup(struct drm_framebuffer *fb,
 		struct msm_gem_address_space *aspace)
 {
+<<<<<<< HEAD
 	struct msm_framebuffer *msm_fb;
 	int i, n;
 
@@ -264,14 +282,18 @@ void msm_framebuffer_cleanup(struct drm_framebuffer *fb,
 
 	if (msm_fb->flags & MSM_FRAMEBUFFER_FLAG_KMAP)
 		msm_framebuffer_kunmap(fb);
+=======
+	int i, n = fb->format->num_planes;
+>>>>>>> v4.19.83
 
 	for (i = 0; i < n; i++)
-		msm_gem_put_iova(msm_fb->planes[i], aspace);
+		msm_gem_put_iova(fb->obj[i], aspace);
 }
 
 uint32_t msm_framebuffer_iova(struct drm_framebuffer *fb,
 		struct msm_gem_address_space *aspace, int plane)
 {
+<<<<<<< HEAD
 	struct msm_framebuffer *msm_fb;
 
 	if (!fb) {
@@ -281,8 +303,11 @@ uint32_t msm_framebuffer_iova(struct drm_framebuffer *fb,
 
 	msm_fb = to_msm_framebuffer(fb);
 	if (!msm_fb->planes[plane])
+=======
+	if (!fb->obj[plane])
+>>>>>>> v4.19.83
 		return 0;
-	return msm_gem_iova(msm_fb->planes[plane], aspace) + fb->offsets[plane];
+	return msm_gem_iova(fb->obj[plane], aspace) + fb->offsets[plane];
 }
 
 uint32_t msm_framebuffer_phys(struct drm_framebuffer *fb,
@@ -309,6 +334,7 @@ uint32_t msm_framebuffer_phys(struct drm_framebuffer *fb,
 
 struct drm_gem_object *msm_framebuffer_bo(struct drm_framebuffer *fb, int plane)
 {
+<<<<<<< HEAD
 	struct msm_framebuffer *msm_fb;
 
 	if (!fb) {
@@ -318,6 +344,9 @@ struct drm_gem_object *msm_framebuffer_bo(struct drm_framebuffer *fb, int plane)
 
 	msm_fb = to_msm_framebuffer(fb);
 	return msm_fb->planes[plane];
+=======
+	return drm_gem_fb_get_obj(fb, plane);
+>>>>>>> v4.19.83
 }
 
 const struct msm_format *msm_framebuffer_format(struct drm_framebuffer *fb)
@@ -350,7 +379,7 @@ struct drm_framebuffer *msm_framebuffer_create(struct drm_device *dev,
 
 out_unref:
 	for (i = 0; i < n; i++)
-		drm_gem_object_unreference_unlocked(bos[i]);
+		drm_gem_object_put_unlocked(bos[i]);
 	return ERR_PTR(ret);
 }
 
@@ -394,6 +423,7 @@ struct drm_framebuffer *msm_framebuffer_init(struct drm_device *dev,
 	msm_fb->format = format;
 	atomic_set(&msm_fb->kmap_count, 0);
 
+<<<<<<< HEAD
 	if (mode_cmd->flags & DRM_MODE_FB_MODIFIERS) {
 		for (i = 0; i < ARRAY_SIZE(mode_cmd->modifier); i++) {
 			if (mode_cmd->modifier[i]) {
@@ -404,6 +434,9 @@ struct drm_framebuffer *msm_framebuffer_init(struct drm_device *dev,
 	}
 
 	if (num_planes > ARRAY_SIZE(msm_fb->planes) - 1) {
+=======
+	if (n > ARRAY_SIZE(fb->obj)) {
+>>>>>>> v4.19.83
 		ret = -EINVAL;
 		goto fail;
 	}
@@ -426,6 +459,7 @@ struct drm_framebuffer *msm_framebuffer_init(struct drm_device *dev,
 			unsigned int min_size;
 			unsigned int cpp;
 
+<<<<<<< HEAD
 			cpp = drm_format_plane_cpp(mode_cmd->pixel_format, i);
 
 			min_size = (height - 1) * mode_cmd->pitches[i]
@@ -437,6 +471,9 @@ struct drm_framebuffer *msm_framebuffer_init(struct drm_device *dev,
 				goto fail;
 			}
 		}
+=======
+		msm_fb->base.obj[i] = bos[i];
+>>>>>>> v4.19.83
 	}
 
 	for (i = 0; i < num_planes; i++)
@@ -493,7 +530,7 @@ msm_alloc_stolen_fb(struct drm_device *dev, int w, int h, int p, uint32_t format
 		/* note: if fb creation failed, we can't rely on fb destroy
 		 * to unref the bo:
 		 */
-		drm_gem_object_unreference_unlocked(bo);
+		drm_gem_object_put_unlocked(bo);
 		return ERR_CAST(fb);
 	}
 

@@ -1,13 +1,3 @@
-/*
- * Many of the syscalls used in this file expect some of the arguments
- * to be __user pointers not __kernel pointers.  To limit the sparse
- * noise, turn off sparse checking for this file.
- */
-#ifdef __CHECKER__
-#undef __CHECKER__
-#warning "Sparse checking disabled for this file"
-#endif
-
 #include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/ctype.h>
@@ -364,6 +354,7 @@ static void __init get_fs_names(char *page)
 static int __init do_mount_root(char *name, char *fs, int flags, void *data)
 {
 	struct super_block *s;
+<<<<<<< HEAD
 	int err;
 
 	place_marker("M - DRIVER F/S Init");
@@ -371,10 +362,13 @@ static int __init do_mount_root(char *name, char *fs, int flags, void *data)
 	err = sys_mount((char __user *)name, (char __user *)"/root",
 			(char __user *)fs, (unsigned long)flags,
 						(void __user *)data);
+=======
+	int err = ksys_mount(name, "/root", fs, flags, data);
+>>>>>>> v4.19.83
 	if (err)
 		return err;
 
-	sys_chdir("/root");
+	ksys_chdir("/root");
 	s = current->fs->pwd.dentry->d_sb;
 	ROOT_DEV = s->s_dev;
 	printk(KERN_INFO
@@ -499,21 +493,21 @@ void __init change_floppy(char *fmt, ...)
 	va_start(args, fmt);
 	vsprintf(buf, fmt, args);
 	va_end(args);
-	fd = sys_open("/dev/root", O_RDWR | O_NDELAY, 0);
+	fd = ksys_open("/dev/root", O_RDWR | O_NDELAY, 0);
 	if (fd >= 0) {
-		sys_ioctl(fd, FDEJECT, 0);
-		sys_close(fd);
+		ksys_ioctl(fd, FDEJECT, 0);
+		ksys_close(fd);
 	}
 	printk(KERN_NOTICE "VFS: Insert %s and press ENTER\n", buf);
-	fd = sys_open("/dev/console", O_RDWR, 0);
+	fd = ksys_open("/dev/console", O_RDWR, 0);
 	if (fd >= 0) {
-		sys_ioctl(fd, TCGETS, (long)&termios);
+		ksys_ioctl(fd, TCGETS, (long)&termios);
 		termios.c_lflag &= ~ICANON;
-		sys_ioctl(fd, TCSETSF, (long)&termios);
-		sys_read(fd, &c, 1);
+		ksys_ioctl(fd, TCSETSF, (long)&termios);
+		ksys_read(fd, &c, 1);
 		termios.c_lflag |= ICANON;
-		sys_ioctl(fd, TCSETSF, (long)&termios);
-		sys_close(fd);
+		ksys_ioctl(fd, TCSETSF, (long)&termios);
+		ksys_close(fd);
 	}
 }
 #endif
@@ -610,8 +604,8 @@ void __init prepare_namespace(void)
 	mount_root();
 out:
 	devtmpfs_mount("dev");
-	sys_mount(".", "/", NULL, MS_MOVE, NULL);
-	sys_chroot(".");
+	ksys_mount(".", "/", NULL, MS_MOVE, NULL);
+	ksys_chroot(".");
 }
 
 static bool is_tmpfs;

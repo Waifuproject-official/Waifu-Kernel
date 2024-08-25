@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0
+/*
+ * Auto-group scheduling implementation:
+ */
+#include <linux/nospec.h>
 #include "sched.h"
 
+<<<<<<< HEAD
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/kallsyms.h>
@@ -9,6 +14,8 @@
 #include <linux/export.h>
 #include <linux/nospec.h>
 
+=======
+>>>>>>> v4.19.83
 unsigned int __read_mostly sysctl_sched_autogroup_enabled = 1;
 static struct autogroup autogroup_default;
 static atomic_t autogroup_seq_nr;
@@ -170,18 +177,19 @@ autogroup_move_group(struct task_struct *p, struct autogroup *ag)
 	autogroup_kref_put(prev);
 }
 
-/* Allocates GFP_KERNEL, cannot be called under any spinlock */
+/* Allocates GFP_KERNEL, cannot be called under any spinlock: */
 void sched_autogroup_create_attach(struct task_struct *p)
 {
 	struct autogroup *ag = autogroup_create();
 
 	autogroup_move_group(p, ag);
-	/* drop extra reference added by autogroup_create() */
+
+	/* Drop extra reference added by autogroup_create(): */
 	autogroup_kref_put(ag);
 }
 EXPORT_SYMBOL(sched_autogroup_create_attach);
 
-/* Cannot be called under siglock.  Currently has no users */
+/* Cannot be called under siglock. Currently has no users: */
 void sched_autogroup_detach(struct task_struct *p)
 {
 	autogroup_move_group(p, &autogroup_default);
@@ -204,7 +212,6 @@ static int __init setup_autogroup(char *str)
 
 	return 1;
 }
-
 __setup("noautogroup", setup_autogroup);
 
 #ifdef CONFIG_PROC_FS
@@ -226,7 +233,7 @@ int proc_sched_autogroup_set_nice(struct task_struct *p, int nice)
 	if (nice < 0 && !can_nice(current, nice))
 		return -EPERM;
 
-	/* this is a heavy operation taking global locks.. */
+	/* This is a heavy operation, taking global locks.. */
 	if (!capable(CAP_SYS_ADMIN) && time_before(jiffies, next))
 		return -EAGAIN;
 
@@ -270,3 +277,7 @@ int autogroup_path(struct task_group *tg, char *buf, int buflen)
 
 	return snprintf(buf, buflen, "%s-%ld", "/autogroup", tg->autogroup->id);
 }
+<<<<<<< HEAD
+=======
+#endif
+>>>>>>> v4.19.83

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /* Copyright (c) 2017-2018, The Linux Foundation. All rights reserved.
+=======
+/* Copyright (c) 2017, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -212,7 +216,10 @@ static int spmi_pmic_clkdiv_probe(struct platform_device *pdev)
 	struct regmap *regmap;
 	struct device *dev = &pdev->dev;
 	struct device_node *of_node = dev->of_node;
+<<<<<<< HEAD
 	bool use_dt_name = false;
+=======
+>>>>>>> v4.19.83
 	const char *parent_name;
 	int nclks, i, ret, cxo_hz;
 	char name[20];
@@ -240,8 +247,12 @@ static int spmi_pmic_clkdiv_probe(struct platform_device *pdev)
 	if (!nclks)
 		return -EINVAL;
 
+<<<<<<< HEAD
 	cc = devm_kzalloc(dev, sizeof(*cc) + sizeof(*cc->clks) * nclks,
 			  GFP_KERNEL);
+=======
+	cc = devm_kzalloc(dev, struct_size(cc, clks, nclks), GFP_KERNEL);
+>>>>>>> v4.19.83
 	if (!cc)
 		return -ENOMEM;
 	cc->nclks = nclks;
@@ -255,10 +266,13 @@ static int spmi_pmic_clkdiv_probe(struct platform_device *pdev)
 	}
 	cxo_hz = clk_get_rate(cxo);
 	clk_put(cxo);
+<<<<<<< HEAD
 	if (cxo_hz <= 0) {
 		dev_err(dev, "invalid CXO rate: %d\n", cxo_hz);
 		return -EINVAL;
 	}
+=======
+>>>>>>> v4.19.83
 
 	parent_name = of_clk_get_parent_name(of_node, 0);
 	if (!parent_name) {
@@ -266,15 +280,19 @@ static int spmi_pmic_clkdiv_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
+<<<<<<< HEAD
 	if (of_find_property(of_node, "clock-output-names", NULL))
 		use_dt_name = true;
 
+=======
+>>>>>>> v4.19.83
 	init.name = name;
 	init.parent_names = &parent_name;
 	init.num_parents = 1;
 	init.ops = &clk_spmi_pmic_div_ops;
 
 	for (i = 0, clkdiv = cc->clks; i < nclks; i++) {
+<<<<<<< HEAD
 		if (use_dt_name) {
 			ret = of_property_read_string_index(of_node,
 				"clock-output-names", i, &init.name);
@@ -286,6 +304,9 @@ static int spmi_pmic_clkdiv_probe(struct platform_device *pdev)
 		} else {
 			snprintf(name, sizeof(name), "div_clk%d", i + 1);
 		}
+=======
+		snprintf(name, sizeof(name), "div_clk%d", i + 1);
+>>>>>>> v4.19.83
 
 		spin_lock_init(&clkdiv[i].lock);
 		clkdiv[i].base = start + i * 0x100;

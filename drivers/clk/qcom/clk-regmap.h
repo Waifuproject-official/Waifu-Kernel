@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Copyright (c) 2014, 2017, The Linux Foundation. All rights reserved.
  *
@@ -10,6 +11,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+/* Copyright (c) 2014, The Linux Foundation. All rights reserved. */
+>>>>>>> v4.19.83
 
 #ifndef __QCOM_CLK_REGMAP_H__
 #define __QCOM_CLK_REGMAP_H__

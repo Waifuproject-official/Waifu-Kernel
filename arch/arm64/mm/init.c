@@ -220,7 +220,7 @@ static void __init reserve_elfcorehdr(void)
 }
 #endif /* CONFIG_CRASH_DUMP */
 /*
- * Return the maximum physical address for ZONE_DMA (DMA_BIT_MASK(32)). It
+ * Return the maximum physical address for ZONE_DMA32 (DMA_BIT_MASK(32)). It
  * currently assumes that for memory starting above 4G, 32-bit devices will
  * use a DMA offset.
  */
@@ -236,8 +236,9 @@ static void __init zone_sizes_init(unsigned long min, unsigned long max)
 {
 	unsigned long max_zone_pfns[MAX_NR_ZONES]  = {0};
 
-	if (IS_ENABLED(CONFIG_ZONE_DMA))
-		max_zone_pfns[ZONE_DMA] = PFN_DOWN(max_zone_dma_phys());
+#ifdef CONFIG_ZONE_DMA32
+	max_zone_pfns[ZONE_DMA32] = PFN_DOWN(max_zone_dma_phys());
+#endif
 	max_zone_pfns[ZONE_NORMAL] = max;
 
 	free_area_init_nodes(max_zone_pfns);
@@ -254,9 +255,9 @@ static void __init zone_sizes_init(unsigned long min, unsigned long max)
 	memset(zone_size, 0, sizeof(zone_size));
 
 	/* 4GB maximum for 32-bit only capable devices */
-#ifdef CONFIG_ZONE_DMA
+#ifdef CONFIG_ZONE_DMA32
 	max_dma = PFN_DOWN(arm64_dma_phys_limit);
-	zone_size[ZONE_DMA] = max_dma - min;
+	zone_size[ZONE_DMA32] = max_dma - min;
 #endif
 	zone_size[ZONE_NORMAL] = max - max_dma;
 
@@ -269,10 +270,10 @@ static void __init zone_sizes_init(unsigned long min, unsigned long max)
 		if (start >= max)
 			continue;
 
-#ifdef CONFIG_ZONE_DMA
+#ifdef CONFIG_ZONE_DMA32
 		if (start < max_dma) {
 			unsigned long dma_end = min(end, max_dma);
-			zhole_size[ZONE_DMA] -= dma_end - start;
+			zhole_size[ZONE_DMA32] -= dma_end - start;
 		}
 #endif
 		if (end > max_dma) {
@@ -317,6 +318,7 @@ static void __init arm64_memory_present(void)
 }
 #endif
 
+<<<<<<< HEAD
 static phys_addr_t memory_limit = (phys_addr_t)ULLONG_MAX;
 phys_addr_t bootloader_memory_limit;
 
@@ -400,6 +402,9 @@ static void __init update_memory_limit(void)
 
 }
 #endif
+=======
+static phys_addr_t memory_limit = PHYS_ADDR_MAX;
+>>>>>>> v4.19.83
 
 /*
  * Limit the memory size that was specified via FDT.
@@ -455,6 +460,9 @@ void __init arm64_memblock_init(void)
 	/* Handle linux,usable-memory-range property */
 	fdt_enforce_memory_region();
 
+	/* Remove memory above our supported physical address size */
+	memblock_remove(1ULL << PHYS_MASK_SHIFT, ULLONG_MAX);
+
 	/*
 	 * Ensure that the linear region takes up exactly half of the kernel
 	 * virtual address space. This way, we can distinguish a linear address
@@ -494,7 +502,7 @@ void __init arm64_memblock_init(void)
 	 * high up in memory, add back the kernel region that must be accessible
 	 * via the linear mapping.
 	 */
-	if (memory_limit != (phys_addr_t)ULLONG_MAX) {
+	if (memory_limit != PHYS_ADDR_MAX) {
 		memblock_mem_limit_remove_map(memory_limit);
 		memblock_add(__pa_symbol(_text), (u64)(_end - _text));
 	}
@@ -563,7 +571,7 @@ void __init arm64_memblock_init(void)
 	early_init_fdt_scan_reserved_mem();
 
 	/* 4GB maximum for 32-bit only capable devices */
-	if (IS_ENABLED(CONFIG_ZONE_DMA))
+	if (IS_ENABLED(CONFIG_ZONE_DMA32))
 		arm64_dma_phys_limit = max_zone_dma_phys();
 	else
 		arm64_dma_phys_limit = PHYS_MASK + 1;
@@ -696,6 +704,7 @@ void __init mem_init(void)
 
 	mem_init_print_info(NULL);
 
+<<<<<<< HEAD
 #ifdef CONFIG_PRINT_VMEMLAYOUT
 #define MLK(b, t) b, t, ((t) - (b)) >> 10
 #define MLM(b, t) b, t, ((t) - (b)) >> 20
@@ -740,6 +749,8 @@ void __init mem_init(void)
 #undef MLM
 #undef MLK_ROUNDUP
 #endif
+=======
+>>>>>>> v4.19.83
 	/*
 	 * Check boundaries twice: Some fundamental inconsistencies can be
 	 * detected at build time already.
@@ -785,8 +796,10 @@ static int keep_initrd __initdata;
 
 void __init free_initrd_mem(unsigned long start, unsigned long end)
 {
-	if (!keep_initrd)
+	if (!keep_initrd) {
 		free_reserved_area((void *)start, (void *)end, 0, "initrd");
+		memblock_free(__virt_to_phys(start), end - start);
+	}
 }
 
 static int __init keepinitrd_setup(char *__unused)
@@ -803,7 +816,7 @@ __setup("keepinitrd", keepinitrd_setup);
  */
 static int dump_mem_limit(struct notifier_block *self, unsigned long v, void *p)
 {
-	if (memory_limit != (phys_addr_t)ULLONG_MAX) {
+	if (memory_limit != PHYS_ADDR_MAX) {
 		pr_emerg("Memory Limit: %llu MB\n", memory_limit >> 20);
 	} else {
 		pr_emerg("Memory Limit: none\n");

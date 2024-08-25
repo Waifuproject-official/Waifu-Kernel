@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Sample in-kernel QMI client driver
  *
@@ -14,6 +15,15 @@
  * GNU General Public License for more details.
  */
 
+=======
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Sample in-kernel QMI client driver
+ *
+ * Copyright (c) 2013-2014, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2017 Linaro Ltd.
+ */
+>>>>>>> v4.19.83
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/debugfs.h>
@@ -53,21 +63,37 @@ struct test_name_type_v01 {
 
 static struct qmi_elem_info test_name_type_v01_ei[] = {
 	{
+<<<<<<< HEAD
 		.data_type      = QMI_DATA_LEN,
 		.elem_len	= 1,
 		.elem_size      = sizeof(u8),
 		.is_array	= NO_ARRAY,
+=======
+		.data_type	= QMI_DATA_LEN,
+		.elem_len	= 1,
+		.elem_size	= sizeof(u8),
+		.array_type	= NO_ARRAY,
+>>>>>>> v4.19.83
 		.tlv_type	= QMI_COMMON_TLV_TYPE,
 		.offset		= offsetof(struct test_name_type_v01,
 					   name_len),
 	},
 	{
+<<<<<<< HEAD
 		.data_type      = QMI_UNSIGNED_1_BYTE,
 		.elem_len       = TEST_MAX_NAME_SIZE_V01,
 		.elem_size      = sizeof(char),
 		.is_array       = VAR_LEN_ARRAY,
 		.tlv_type       = QMI_COMMON_TLV_TYPE,
 		.offset         = offsetof(struct test_name_type_v01,
+=======
+		.data_type	= QMI_UNSIGNED_1_BYTE,
+		.elem_len	= TEST_MAX_NAME_SIZE_V01,
+		.elem_size	= sizeof(char),
+		.array_type	= VAR_LEN_ARRAY,
+		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.offset		= offsetof(struct test_name_type_v01,
+>>>>>>> v4.19.83
 					   name),
 	},
 	{}
@@ -80,6 +106,7 @@ struct test_ping_req_msg_v01 {
 	struct test_name_type_v01 client_name;
 };
 
+<<<<<<< HEAD
 struct qmi_elem_info test_ping_req_msg_v01_ei[] = {
 	{
 		.data_type      = QMI_UNSIGNED_1_BYTE,
@@ -108,6 +135,36 @@ struct qmi_elem_info test_ping_req_msg_v01_ei[] = {
 		.offset         = offsetof(struct test_ping_req_msg_v01,
 					   client_name),
 		.ei_array       = test_name_type_v01_ei,
+=======
+static struct qmi_elem_info test_ping_req_msg_v01_ei[] = {
+	{
+		.data_type	= QMI_UNSIGNED_1_BYTE,
+		.elem_len	= 4,
+		.elem_size	= sizeof(char),
+		.array_type	= STATIC_ARRAY,
+		.tlv_type	= PING_REQ1_TLV_TYPE,
+		.offset		= offsetof(struct test_ping_req_msg_v01,
+					   ping),
+	},
+	{
+		.data_type	= QMI_OPT_FLAG,
+		.elem_len	= 1,
+		.elem_size	= sizeof(u8),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= PING_OPT1_TLV_TYPE,
+		.offset		= offsetof(struct test_ping_req_msg_v01,
+					   client_name_valid),
+	},
+	{
+		.data_type	= QMI_STRUCT,
+		.elem_len	= 1,
+		.elem_size	= sizeof(struct test_name_type_v01),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= PING_OPT1_TLV_TYPE,
+		.offset		= offsetof(struct test_ping_req_msg_v01,
+					   client_name),
+		.ei_array	= test_name_type_v01_ei,
+>>>>>>> v4.19.83
 	},
 	{}
 };
@@ -122,6 +179,7 @@ struct test_ping_resp_msg_v01 {
 	struct test_name_type_v01 service_name;
 };
 
+<<<<<<< HEAD
 struct qmi_elem_info test_ping_resp_msg_v01_ei[] = {
 	{
 		.data_type      = QMI_STRUCT,
@@ -169,6 +227,55 @@ struct qmi_elem_info test_ping_resp_msg_v01_ei[] = {
 		.offset         = offsetof(struct test_ping_resp_msg_v01,
 					   service_name),
 		.ei_array       = test_name_type_v01_ei,
+=======
+static struct qmi_elem_info test_ping_resp_msg_v01_ei[] = {
+	{
+		.data_type	= QMI_STRUCT,
+		.elem_len	= 1,
+		.elem_size	= sizeof(struct qmi_response_type_v01),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= PING_RESP1_TLV_TYPE,
+		.offset		= offsetof(struct test_ping_resp_msg_v01,
+					   resp),
+		.ei_array	= qmi_response_type_v01_ei,
+	},
+	{
+		.data_type	= QMI_OPT_FLAG,
+		.elem_len	= 1,
+		.elem_size	= sizeof(u8),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= PING_OPT1_TLV_TYPE,
+		.offset		= offsetof(struct test_ping_resp_msg_v01,
+					   pong_valid),
+	},
+	{
+		.data_type	= QMI_UNSIGNED_1_BYTE,
+		.elem_len	= 4,
+		.elem_size	= sizeof(char),
+		.array_type	= STATIC_ARRAY,
+		.tlv_type	= PING_OPT1_TLV_TYPE,
+		.offset		= offsetof(struct test_ping_resp_msg_v01,
+					   pong),
+	},
+	{
+		.data_type	= QMI_OPT_FLAG,
+		.elem_len	= 1,
+		.elem_size	= sizeof(u8),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= PING_OPT2_TLV_TYPE,
+		.offset		= offsetof(struct test_ping_resp_msg_v01,
+					   service_name_valid),
+	},
+	{
+		.data_type	= QMI_STRUCT,
+		.elem_len	= 1,
+		.elem_size	= sizeof(struct test_name_type_v01),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= PING_OPT2_TLV_TYPE,
+		.offset		= offsetof(struct test_ping_resp_msg_v01,
+					   service_name),
+		.ei_array	= test_name_type_v01_ei,
+>>>>>>> v4.19.83
 	},
 	{}
 };
@@ -181,6 +288,7 @@ struct test_data_req_msg_v01 {
 	struct test_name_type_v01 client_name;
 };
 
+<<<<<<< HEAD
 struct qmi_elem_info test_data_req_msg_v01_ei[] = {
 	{
 		.data_type      = QMI_DATA_LEN,
@@ -218,6 +326,45 @@ struct qmi_elem_info test_data_req_msg_v01_ei[] = {
 		.offset         = offsetof(struct test_data_req_msg_v01,
 					   client_name),
 		.ei_array       = test_name_type_v01_ei,
+=======
+static struct qmi_elem_info test_data_req_msg_v01_ei[] = {
+	{
+		.data_type	= QMI_DATA_LEN,
+		.elem_len	= 1,
+		.elem_size	= sizeof(u32),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= DATA_REQ1_TLV_TYPE,
+		.offset		= offsetof(struct test_data_req_msg_v01,
+					   data_len),
+	},
+	{
+		.data_type	= QMI_UNSIGNED_1_BYTE,
+		.elem_len	= TEST_MED_DATA_SIZE_V01,
+		.elem_size	= sizeof(u8),
+		.array_type	= VAR_LEN_ARRAY,
+		.tlv_type	= DATA_REQ1_TLV_TYPE,
+		.offset		= offsetof(struct test_data_req_msg_v01,
+					   data),
+	},
+	{
+		.data_type	= QMI_OPT_FLAG,
+		.elem_len	= 1,
+		.elem_size	= sizeof(u8),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= DATA_OPT1_TLV_TYPE,
+		.offset		= offsetof(struct test_data_req_msg_v01,
+					   client_name_valid),
+	},
+	{
+		.data_type	= QMI_STRUCT,
+		.elem_len	= 1,
+		.elem_size	= sizeof(struct test_name_type_v01),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= DATA_OPT1_TLV_TYPE,
+		.offset		= offsetof(struct test_data_req_msg_v01,
+					   client_name),
+		.ei_array	= test_name_type_v01_ei,
+>>>>>>> v4.19.83
 	},
 	{}
 };
@@ -233,6 +380,7 @@ struct test_data_resp_msg_v01 {
 	struct test_name_type_v01 service_name;
 };
 
+<<<<<<< HEAD
 struct qmi_elem_info test_data_resp_msg_v01_ei[] = {
 	{
 		.data_type      = QMI_STRUCT,
@@ -289,6 +437,64 @@ struct qmi_elem_info test_data_resp_msg_v01_ei[] = {
 		.offset         = offsetof(struct test_data_resp_msg_v01,
 					   service_name),
 		.ei_array       = test_name_type_v01_ei,
+=======
+static struct qmi_elem_info test_data_resp_msg_v01_ei[] = {
+	{
+		.data_type	= QMI_STRUCT,
+		.elem_len	= 1,
+		.elem_size	= sizeof(struct qmi_response_type_v01),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= DATA_RESP1_TLV_TYPE,
+		.offset		= offsetof(struct test_data_resp_msg_v01,
+					   resp),
+		.ei_array	= qmi_response_type_v01_ei,
+	},
+	{
+		.data_type	= QMI_OPT_FLAG,
+		.elem_len	= 1,
+		.elem_size	= sizeof(u8),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= DATA_OPT1_TLV_TYPE,
+		.offset		= offsetof(struct test_data_resp_msg_v01,
+					   data_valid),
+	},
+	{
+		.data_type	= QMI_DATA_LEN,
+		.elem_len	= 1,
+		.elem_size	= sizeof(u32),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= DATA_OPT1_TLV_TYPE,
+		.offset		= offsetof(struct test_data_resp_msg_v01,
+					   data_len),
+	},
+	{
+		.data_type	= QMI_UNSIGNED_1_BYTE,
+		.elem_len	= TEST_MED_DATA_SIZE_V01,
+		.elem_size	= sizeof(u8),
+		.array_type	= VAR_LEN_ARRAY,
+		.tlv_type	= DATA_OPT1_TLV_TYPE,
+		.offset		= offsetof(struct test_data_resp_msg_v01,
+					   data),
+	},
+	{
+		.data_type	= QMI_OPT_FLAG,
+		.elem_len	= 1,
+		.elem_size	= sizeof(u8),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= DATA_OPT2_TLV_TYPE,
+		.offset		= offsetof(struct test_data_resp_msg_v01,
+					   service_name_valid),
+	},
+	{
+		.data_type	= QMI_STRUCT,
+		.elem_len	= 1,
+		.elem_size	= sizeof(struct test_name_type_v01),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= DATA_OPT2_TLV_TYPE,
+		.offset		= offsetof(struct test_data_resp_msg_v01,
+					   service_name),
+		.ei_array	= test_name_type_v01_ei,
+>>>>>>> v4.19.83
 	},
 	{}
 };
@@ -300,18 +506,30 @@ struct qmi_elem_info test_data_resp_msg_v01_ei[] = {
  * @count:	number of bytes in @user_buf
  * @ppos:	offset in @file to write
  *
+<<<<<<< HEAD
  * Returns @count, or negative errno on failure.
  *
+=======
+>>>>>>> v4.19.83
  * This function allows user space to send out a ping_pong QMI encoded message
  * to the associated remote test service and will return with the result of the
  * transaction. It serves as an example of how to provide a custom response
  * handler.
+<<<<<<< HEAD
+=======
+ *
+ * Return: @count, or negative errno on failure.
+>>>>>>> v4.19.83
  */
 static ssize_t ping_write(struct file *file, const char __user *user_buf,
 			  size_t count, loff_t *ppos)
 {
 	struct qmi_handle *qmi = file->private_data;
+<<<<<<< HEAD
 	struct test_ping_req_msg_v01 req = { {0} };
+=======
+	struct test_ping_req_msg_v01 req = {};
+>>>>>>> v4.19.83
 	struct qmi_txn txn;
 	int ret;
 
@@ -367,12 +585,20 @@ static void ping_pong_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
  * @count:	number of bytes in @user_buf
  * @ppos:	offset in @file to write
  *
+<<<<<<< HEAD
  * Returns @count, or negative errno on failure.
  *
+=======
+>>>>>>> v4.19.83
  * This function allows user space to send out a data QMI encoded message to
  * the associated remote test service and will return with the result of the
  * transaction. It serves as an example of how to have the QMI helpers decode a
  * transaction response into a provided object automatically.
+<<<<<<< HEAD
+=======
+ *
+ * Return: @count, or negative errno on failure.
+>>>>>>> v4.19.83
  */
 static ssize_t data_write(struct file *file, const char __user *user_buf,
 			  size_t count, loff_t *ppos)

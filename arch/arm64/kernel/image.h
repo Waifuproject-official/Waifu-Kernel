@@ -73,9 +73,16 @@
 
 #ifdef CONFIG_EFI
 
-__efistub_stext_offset = stext - _text;
+/*
+<<<<<<< HEAD
+=======
+ * Use ABSOLUTE() to avoid ld.lld treating this as a relative symbol:
+ * https://github.com/ClangBuiltLinux/linux/issues/561
+ */
+__efistub_stext_offset = ABSOLUTE(stext - _text);
 
 /*
+>>>>>>> v4.19.83
  * The EFI stub has its own symbol namespace prefixed by __efistub_, to
  * isolate it from the kernel proper. The following symbols are legally
  * accessed by the stub, so provide some aliases to make them accessible.
@@ -93,6 +100,10 @@ __efistub_strlen		= __pi_strlen;
 __efistub_strnlen		= __pi_strnlen;
 __efistub_strcmp		= __pi_strcmp;
 __efistub_strncmp		= __pi_strncmp;
+<<<<<<< HEAD
+=======
+__efistub_strrchr		= __pi_strrchr;
+>>>>>>> v4.19.83
 __efistub___flush_dcache_area	= __pi___flush_dcache_area;
 
 #ifdef CONFIG_KASAN

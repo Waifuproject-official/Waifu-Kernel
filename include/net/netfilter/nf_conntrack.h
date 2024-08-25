@@ -50,6 +50,11 @@ union nf_conntrack_expect_proto {
 	/* insert expect proto private data here */
 };
 
+struct nf_conntrack_net {
+	unsigned int users4;
+	unsigned int users6;
+};
+
 #include <linux/types.h>
 #include <linux/skbuff.h>
 
@@ -196,8 +201,6 @@ void nf_ct_netns_put(struct net *net, u8 nfproto);
  */
 void *nf_ct_alloc_hashtable(unsigned int *sizep, int nulls);
 
-void nf_ct_free_hashtable(void *hash, unsigned int size);
-
 int nf_conntrack_hash_check_insert(struct nf_conn *ct);
 bool nf_ct_delete(struct nf_conn *ct, u32 pid, int report);
 
@@ -237,11 +240,6 @@ static inline bool nf_ct_kill(struct nf_conn *ct)
 {
 	return nf_ct_delete(ct, 0, 0);
 }
-
-/* These are for NAT.  Icky. */
-extern s32 (*nf_ct_nat_offset)(const struct nf_conn *ct,
-			       enum ip_conntrack_dir dir,
-			       u32 seq);
 
 /* Set all unconfirmed conntrack as dying */
 void nf_ct_unconfirmed_destroy(struct net *);
@@ -340,6 +338,8 @@ struct nf_conn *nf_ct_tmpl_alloc(struct net *net,
 				 const struct nf_conntrack_zone *zone,
 				 gfp_t flags);
 void nf_ct_tmpl_free(struct nf_conn *tmpl);
+
+u32 nf_ct_get_id(const struct nf_conn *ct);
 
 static inline void
 nf_ct_set(struct sk_buff *skb, struct nf_conn *ct, enum ip_conntrack_info info)

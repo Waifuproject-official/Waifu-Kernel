@@ -17,7 +17,6 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-#include <asm/cacheflush.h>
 #include <linux/list.h>
 #include <linux/sched/mm.h>
 #include <linux/module.h>
@@ -28,8 +27,13 @@
 #include <linux/slab.h>
 #include <linux/sched.h>
 #include <linux/list_lru.h>
+<<<<<<< HEAD
 #include <linux/uaccess.h>
 #include <linux/highmem.h>
+=======
+#include <linux/ratelimit.h>
+#include <asm/cacheflush.h>
+>>>>>>> v4.19.83
 #include "binder_alloc.h"
 #include "binder_trace.h"
 
@@ -38,11 +42,12 @@ struct list_lru binder_alloc_lru;
 static DEFINE_MUTEX(binder_alloc_mmap_lock);
 
 enum {
+	BINDER_DEBUG_USER_ERROR             = 1U << 0,
 	BINDER_DEBUG_OPEN_CLOSE             = 1U << 1,
 	BINDER_DEBUG_BUFFER_ALLOC           = 1U << 2,
 	BINDER_DEBUG_BUFFER_ALLOC_ASYNC     = 1U << 3,
 };
-static uint32_t binder_alloc_debug_mask;
+static uint32_t binder_alloc_debug_mask = BINDER_DEBUG_USER_ERROR;
 
 module_param_named(debug_mask, binder_alloc_debug_mask,
 		   uint, 0644);
@@ -50,7 +55,7 @@ module_param_named(debug_mask, binder_alloc_debug_mask,
 #define binder_alloc_debug(mask, x...) \
 	do { \
 		if (binder_alloc_debug_mask & mask) \
-			pr_info(x); \
+			pr_info_ratelimited(x); \
 	} while (0)
 
 static struct binder_buffer *binder_buffer_next(struct binder_buffer *buffer)
@@ -185,7 +190,11 @@ struct binder_buffer *binder_alloc_prepare_to_free(struct binder_alloc *alloc,
 }
 
 static int binder_update_page_range(struct binder_alloc *alloc, int allocate,
+<<<<<<< HEAD
 				    void __user *start, void __user *end)
+=======
+				    void *start, void *end)
+>>>>>>> v4.19.83
 {
 	void __user *page_addr;
 	unsigned long user_page_addr;
@@ -223,8 +232,9 @@ static int binder_update_page_range(struct binder_alloc *alloc, int allocate,
 	}
 
 	if (!vma && need_mm) {
-		pr_err("%d: binder_alloc_buf failed to map pages in userspace, no vma\n",
-			alloc->pid);
+		binder_alloc_debug(BINDER_DEBUG_USER_ERROR,
+				   "%d: binder_alloc_buf failed to map pages in userspace, no vma\n",
+				   alloc->pid);
 		goto err_no_vma;
 	}
 
@@ -313,6 +323,10 @@ err_no_vma:
 	return vma ? -ENOMEM : -ESRCH;
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> v4.19.83
 static inline void binder_alloc_set_vma(struct binder_alloc *alloc,
 		struct vm_area_struct *vma)
 {
@@ -358,8 +372,14 @@ static struct binder_buffer *binder_alloc_new_buf_locked(
 	int ret;
 
 	if (!binder_alloc_get_vma(alloc)) {
+<<<<<<< HEAD
 		pr_err("%d: binder_alloc_buf, no vma\n",
 		       alloc->pid);
+=======
+		binder_alloc_debug(BINDER_DEBUG_USER_ERROR,
+				   "%d: binder_alloc_buf, no vma\n",
+				   alloc->pid);
+>>>>>>> v4.19.83
 		return ERR_PTR(-ESRCH);
 	}
 
@@ -431,11 +451,14 @@ static struct binder_buffer *binder_alloc_new_buf_locked(
 			if (buffer_size > largest_free_size)
 				largest_free_size = buffer_size;
 		}
-		pr_err("%d: binder_alloc_buf size %zd failed, no address space\n",
-			alloc->pid, size);
-		pr_err("allocated: %zd (num: %zd largest: %zd), free: %zd (num: %zd largest: %zd)\n",
-		       total_alloc_size, allocated_buffers, largest_alloc_size,
-		       total_free_size, free_buffers, largest_free_size);
+		binder_alloc_debug(BINDER_DEBUG_USER_ERROR,
+				   "%d: binder_alloc_buf size %zd failed, no address space\n",
+				   alloc->pid, size);
+		binder_alloc_debug(BINDER_DEBUG_USER_ERROR,
+				   "allocated: %zd (num: %zd largest: %zd), free: %zd (num: %zd largest: %zd)\n",
+				   total_alloc_size, allocated_buffers,
+				   largest_alloc_size, total_free_size,
+				   free_buffers, largest_free_size);
 		return ERR_PTR(-ENOSPC);
 	}
 	if (n == NULL) {
@@ -454,8 +477,13 @@ static struct binder_buffer *binder_alloc_new_buf_locked(
 		(void __user *)PAGE_ALIGN((uintptr_t)buffer->user_data + size);
 	if (end_page_addr > has_page_addr)
 		end_page_addr = has_page_addr;
+<<<<<<< HEAD
 	ret = binder_update_page_range(alloc, 1, (void __user *)
 		PAGE_ALIGN((uintptr_t)buffer->user_data), end_page_addr);
+=======
+	ret = binder_update_page_range(alloc, 1,
+	    (void *)PAGE_ALIGN((uintptr_t)buffer->data), end_page_addr);
+>>>>>>> v4.19.83
 	if (ret)
 		return ERR_PTR(ret);
 
@@ -494,8 +522,13 @@ static struct binder_buffer *binder_alloc_new_buf_locked(
 	return buffer;
 
 err_alloc_buf_struct_failed:
+<<<<<<< HEAD
 	binder_update_page_range(alloc, 0, (void __user *)
 				 PAGE_ALIGN((uintptr_t)buffer->user_data),
+=======
+	binder_update_page_range(alloc, 0,
+				 (void *)PAGE_ALIGN((uintptr_t)buffer->data),
+>>>>>>> v4.19.83
 				 end_page_addr);
 	return ERR_PTR(-ENOMEM);
 }
@@ -619,9 +652,14 @@ static void binder_free_buf_locked(struct binder_alloc *alloc,
 	}
 
 	binder_update_page_range(alloc, 0,
+<<<<<<< HEAD
 		(void __user *)PAGE_ALIGN((uintptr_t)buffer->user_data),
 		(void __user *)(((uintptr_t)
 			  buffer->user_data + buffer_size) & PAGE_MASK));
+=======
+		(void *)PAGE_ALIGN((uintptr_t)buffer->data),
+		(void *)(((uintptr_t)buffer->data + buffer_size) & PAGE_MASK));
+>>>>>>> v4.19.83
 
 	rb_erase(&buffer->rb_node, &alloc->allocated_buffers);
 	buffer->free = 1;
@@ -687,11 +725,38 @@ int binder_alloc_mmap_handler(struct binder_alloc *alloc,
 		goto err_already_mapped;
 	}
 
+<<<<<<< HEAD
 	alloc->buffer = (void __user *)vma->vm_start;
 	mutex_unlock(&binder_alloc_mmap_lock);
 
 	alloc->pages = kzalloc(sizeof(alloc->pages[0]) *
 				   ((vma->vm_end - vma->vm_start) / PAGE_SIZE),
+=======
+	area = get_vm_area(vma->vm_end - vma->vm_start, VM_ALLOC);
+	if (area == NULL) {
+		ret = -ENOMEM;
+		failure_string = "get_vm_area";
+		goto err_get_vm_area_failed;
+	}
+	alloc->buffer = area->addr;
+	alloc->user_buffer_offset =
+		vma->vm_start - (uintptr_t)alloc->buffer;
+	mutex_unlock(&binder_alloc_mmap_lock);
+
+#ifdef CONFIG_CPU_CACHE_VIPT
+	if (cache_is_vipt_aliasing()) {
+		while (CACHE_COLOUR(
+				(vma->vm_start ^ (uint32_t)alloc->buffer))) {
+			pr_info("%s: %d %lx-%lx maps %pK bad alignment\n",
+				__func__, alloc->pid, vma->vm_start,
+				vma->vm_end, alloc->buffer);
+			vma->vm_start += PAGE_SIZE;
+		}
+	}
+#endif
+	alloc->pages = kcalloc((vma->vm_end - vma->vm_start) / PAGE_SIZE,
+			       sizeof(alloc->pages[0]),
+>>>>>>> v4.19.83
 			       GFP_KERNEL);
 	if (alloc->pages == NULL) {
 		ret = -ENOMEM;
@@ -725,8 +790,10 @@ err_alloc_pages_failed:
 	alloc->buffer = NULL;
 err_already_mapped:
 	mutex_unlock(&binder_alloc_mmap_lock);
-	pr_err("%s: %d %lx-%lx %s failed %d\n", __func__,
-	       alloc->pid, vma->vm_start, vma->vm_end, failure_string, ret);
+	binder_alloc_debug(BINDER_DEBUG_USER_ERROR,
+			   "%s: %d %lx-%lx %s failed %d\n", __func__,
+			   alloc->pid, vma->vm_start, vma->vm_end,
+			   failure_string, ret);
 	return ret;
 }
 

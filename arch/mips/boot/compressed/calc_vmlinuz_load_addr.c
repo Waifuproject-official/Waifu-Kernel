@@ -13,7 +13,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+<<<<<<< HEAD
 #include "../../../../include/linux/sizes.h"
+=======
+#include <linux/sizes.h>
+>>>>>>> v4.19.83
 
 int main(int argc, char *argv[])
 {

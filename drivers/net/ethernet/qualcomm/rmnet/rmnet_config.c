@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /* Copyright (c) 2013-2020, The Linux Foundation. All rights reserved.
+=======
+/* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -47,10 +51,16 @@
 
 /* Local Definitions and Declarations */
 
+<<<<<<< HEAD
 enum {
 	IFLA_RMNET_DFC_QOS = __IFLA_RMNET_MAX,
 	IFLA_RMNET_UL_AGG_PARAMS,
 	__IFLA_RMNET_EXT_MAX,
+=======
+static const struct nla_policy rmnet_policy[IFLA_RMNET_MAX + 1] = {
+	[IFLA_RMNET_MUX_ID]	= { .type = NLA_U16 },
+	[IFLA_RMNET_FLAGS]	= { .len = sizeof(struct ifla_rmnet_flags) },
+>>>>>>> v4.19.83
 };
 
 static const struct nla_policy rmnet_policy[__IFLA_RMNET_EXT_MAX] = {
@@ -129,6 +139,7 @@ static int rmnet_register_real_device(struct net_device *real_dev)
 	for (entry = 0; entry < RMNET_MAX_LOGICAL_EP; entry++)
 		INIT_HLIST_HEAD(&port->muxed_ep[entry]);
 
+<<<<<<< HEAD
 	rc = rmnet_descriptor_init(port);
 	if (rc) {
 		rmnet_descriptor_deinit(port);
@@ -138,6 +149,8 @@ static int rmnet_register_real_device(struct net_device *real_dev)
 	rmnet_map_tx_aggregate_init(port);
 	rmnet_map_cmd_init(port);
 
+=======
+>>>>>>> v4.19.83
 	netdev_dbg(real_dev, "registered with rmnet\n");
 	return 0;
 }
@@ -170,6 +183,10 @@ static int rmnet_newlink(struct net *src_net, struct net_device *dev,
 			 struct nlattr *tb[], struct nlattr *data[],
 			 struct netlink_ext_ack *extack)
 {
+<<<<<<< HEAD
+=======
+	u32 data_format = RMNET_FLAGS_INGRESS_DEAGGREGATION;
+>>>>>>> v4.19.83
 	struct net_device *real_dev;
 	int mode = RMNET_EPMODE_VND;
 	struct rmnet_endpoint *ep;
@@ -209,6 +226,7 @@ static int rmnet_newlink(struct net *src_net, struct net_device *dev,
 
 		flags = nla_data(data[IFLA_RMNET_FLAGS]);
 		data_format = flags->flags & flags->mask;
+<<<<<<< HEAD
 		netdev_dbg(dev, "data format [0x%08X]\n", data_format);
 		port->data_format = data_format;
 	}
@@ -223,6 +241,12 @@ static int rmnet_newlink(struct net *src_net, struct net_device *dev,
 		       sizeof(port->egress_agg_params));
 		spin_unlock_irqrestore(&port->agg_lock, irq_flags);
 	}
+=======
+	}
+
+	netdev_dbg(dev, "data format [0x%08X]\n", data_format);
+	port->data_format = data_format;
+>>>>>>> v4.19.83
 
 	return 0;
 
@@ -255,6 +279,7 @@ static void rmnet_dellink(struct net_device *dev, struct list_head *head)
 		hlist_del_init_rcu(&ep->hlnode);
 		rmnet_unregister_bridge(dev, port);
 		rmnet_vnd_dellink(mux_id, port, ep);
+<<<<<<< HEAD
 		synchronize_rcu();
 		kfree(ep);
 	}
@@ -267,6 +292,13 @@ static void rmnet_dellink(struct net_device *dev, struct list_head *head)
 	qmi_rmnet_qos_exit_post();
 
 	rmnet_unregister_real_device(real_dev, port);
+=======
+		kfree(ep);
+	}
+	rmnet_unregister_real_device(real_dev, port);
+
+	unregister_netdevice_queue(dev, head);
+>>>>>>> v4.19.83
 }
 
 static void rmnet_force_unassociate_device(struct net_device *dev)
@@ -285,8 +317,13 @@ static void rmnet_force_unassociate_device(struct net_device *dev)
 	ASSERT_RTNL();
 
 	port = rmnet_get_port_rtnl(dev);
+<<<<<<< HEAD
 	qmi_rmnet_qmi_exit(port->qmi_info, port);
 
+=======
+
+	rcu_read_lock();
+>>>>>>> v4.19.83
 	rmnet_unregister_bridge(dev, port);
 
 	hash_for_each_safe(port->muxed_ep, bkt_ep, tmp_ep, ep, hlnode) {
@@ -294,6 +331,7 @@ static void rmnet_force_unassociate_device(struct net_device *dev)
 		rmnet_vnd_dellink(ep->mux_id, port, ep);
 
 		hlist_del_init_rcu(&ep->hlnode);
+<<<<<<< HEAD
 		hlist_add_head(&ep->hlnode, &cleanup_list);
 	}
 
@@ -307,6 +345,12 @@ static void rmnet_force_unassociate_device(struct net_device *dev)
 	/* Unregistering devices in context before freeing port.
 	 * If this API becomes non-context their order should switch.
 	 */
+=======
+		kfree(ep);
+	}
+
+	rcu_read_unlock();
+>>>>>>> v4.19.83
 	unregister_netdevice_many(&list);
 
 	qmi_rmnet_qos_exit_post();
@@ -345,7 +389,11 @@ static int rmnet_rtnl_validate(struct nlattr *tb[], struct nlattr *data[],
 	struct rmnet_egress_agg_params *agg_params;
 	u16 mux_id;
 
+<<<<<<< HEAD
 	if (!data) {
+=======
+	if (!data || !data[IFLA_RMNET_MUX_ID])
+>>>>>>> v4.19.83
 		return -EINVAL;
 	} else {
 		if (data[IFLA_RMNET_MUX_ID]) {
@@ -354,6 +402,7 @@ static int rmnet_rtnl_validate(struct nlattr *tb[], struct nlattr *data[],
 				return -ERANGE;
 		}
 
+<<<<<<< HEAD
 		if (data[IFLA_RMNET_UL_AGG_PARAMS]) {
 			agg_params = nla_data(data[IFLA_RMNET_UL_AGG_PARAMS]);
 			if (agg_params->agg_time < 1000000)
@@ -418,6 +467,52 @@ static int rmnet_changelink(struct net_device *dev, struct nlattr *tb[],
 					       agg_params->agg_features,
 					       agg_params->agg_time);
 	}
+=======
+	mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
+	if (mux_id > (RMNET_MAX_LOGICAL_EP - 1))
+		return -ERANGE;
+>>>>>>> v4.19.83
+
+	return 0;
+}
+
+static int rmnet_changelink(struct net_device *dev, struct nlattr *tb[],
+			    struct nlattr *data[],
+			    struct netlink_ext_ack *extack)
+{
+	struct rmnet_priv *priv = netdev_priv(dev);
+	struct net_device *real_dev;
+	struct rmnet_endpoint *ep;
+	struct rmnet_port *port;
+	u16 mux_id;
+
+	real_dev = __dev_get_by_index(dev_net(dev),
+				      nla_get_u32(tb[IFLA_LINK]));
+
+	if (!real_dev || !dev || !rmnet_is_real_dev_registered(real_dev))
+		return -ENODEV;
+
+	port = rmnet_get_port_rtnl(real_dev);
+
+	if (data[IFLA_RMNET_MUX_ID]) {
+		mux_id = nla_get_u16(data[IFLA_RMNET_MUX_ID]);
+		ep = rmnet_get_endpoint(port, priv->mux_id);
+		if (!ep)
+			return -ENODEV;
+
+		hlist_del_init_rcu(&ep->hlnode);
+		hlist_add_head_rcu(&ep->hlnode, &port->muxed_ep[mux_id]);
+
+		ep->mux_id = mux_id;
+		priv->mux_id = mux_id;
+	}
+
+	if (data[IFLA_RMNET_FLAGS]) {
+		struct ifla_rmnet_flags *flags;
+
+		flags = nla_data(data[IFLA_RMNET_FLAGS]);
+		port->data_format = flags->flags & flags->mask;
+	}
 
 	return 0;
 }
@@ -428,11 +523,15 @@ static size_t rmnet_get_size(const struct net_device *dev)
 		/* IFLA_RMNET_MUX_ID */
 		nla_total_size(2) +
 		/* IFLA_RMNET_FLAGS */
+<<<<<<< HEAD
 		nla_total_size(sizeof(struct ifla_rmnet_flags)) +
 		/* IFLA_RMNET_DFC_QOS */
 		nla_total_size(sizeof(struct tcmsg)) +
 		/* IFLA_RMNET_UL_AGG_PARAMS */
 		nla_total_size(sizeof(struct rmnet_egress_agg_params));
+=======
+		nla_total_size(sizeof(struct ifla_rmnet_flags));
+>>>>>>> v4.19.83
 }
 
 static int rmnet_fill_info(struct sk_buff *skb, const struct net_device *dev)
@@ -440,7 +539,11 @@ static int rmnet_fill_info(struct sk_buff *skb, const struct net_device *dev)
 	struct rmnet_priv *priv = netdev_priv(dev);
 	struct net_device *real_dev;
 	struct ifla_rmnet_flags f;
+<<<<<<< HEAD
 	struct rmnet_port *port = NULL;
+=======
+	struct rmnet_port *port;
+>>>>>>> v4.19.83
 
 	real_dev = priv->real_dev;
 
@@ -459,6 +562,7 @@ static int rmnet_fill_info(struct sk_buff *skb, const struct net_device *dev)
 	if (nla_put(skb, IFLA_RMNET_FLAGS, sizeof(f), &f))
 		goto nla_put_failure;
 
+<<<<<<< HEAD
 	if (port) {
 		if (nla_put(skb, IFLA_RMNET_UL_AGG_PARAMS,
 			    sizeof(port->egress_agg_params),
@@ -466,6 +570,8 @@ static int rmnet_fill_info(struct sk_buff *skb, const struct net_device *dev)
 			goto nla_put_failure;
 	}
 
+=======
+>>>>>>> v4.19.83
 	return 0;
 
 nla_put_failure:
@@ -474,7 +580,11 @@ nla_put_failure:
 
 struct rtnl_link_ops rmnet_link_ops __read_mostly = {
 	.kind		= "rmnet",
+<<<<<<< HEAD
 	.maxtype	= __IFLA_RMNET_EXT_MAX,
+=======
+	.maxtype	= __IFLA_RMNET_MAX,
+>>>>>>> v4.19.83
 	.priv_size	= sizeof(struct rmnet_priv),
 	.setup		= rmnet_vnd_setup,
 	.validate	= rmnet_rtnl_validate,
@@ -738,6 +848,71 @@ int rmnet_get_dlmarker_info(void *port)
 EXPORT_SYMBOL(rmnet_get_dlmarker_info);
 
 #endif
+
+struct rmnet_endpoint *rmnet_get_endpoint(struct rmnet_port *port, u8 mux_id)
+{
+	struct rmnet_endpoint *ep;
+
+	hlist_for_each_entry_rcu(ep, &port->muxed_ep[mux_id], hlnode) {
+		if (ep->mux_id == mux_id)
+			return ep;
+	}
+
+	return NULL;
+}
+
+int rmnet_add_bridge(struct net_device *rmnet_dev,
+		     struct net_device *slave_dev,
+		     struct netlink_ext_ack *extack)
+{
+	struct rmnet_priv *priv = netdev_priv(rmnet_dev);
+	struct net_device *real_dev = priv->real_dev;
+	struct rmnet_port *port, *slave_port;
+	int err;
+
+	port = rmnet_get_port(real_dev);
+
+	/* If there is more than one rmnet dev attached, its probably being
+	 * used for muxing. Skip the briding in that case
+	 */
+	if (port->nr_rmnet_devs > 1)
+		return -EINVAL;
+
+	if (rmnet_is_real_dev_registered(slave_dev))
+		return -EBUSY;
+
+	err = rmnet_register_real_device(slave_dev);
+	if (err)
+		return -EBUSY;
+
+	slave_port = rmnet_get_port(slave_dev);
+	slave_port->rmnet_mode = RMNET_EPMODE_BRIDGE;
+	slave_port->bridge_ep = real_dev;
+
+	port->rmnet_mode = RMNET_EPMODE_BRIDGE;
+	port->bridge_ep = slave_dev;
+
+	netdev_dbg(slave_dev, "registered with rmnet as slave\n");
+	return 0;
+}
+
+int rmnet_del_bridge(struct net_device *rmnet_dev,
+		     struct net_device *slave_dev)
+{
+	struct rmnet_priv *priv = netdev_priv(rmnet_dev);
+	struct net_device *real_dev = priv->real_dev;
+	struct rmnet_port *port, *slave_port;
+
+	port = rmnet_get_port(real_dev);
+	port->rmnet_mode = RMNET_EPMODE_VND;
+	port->bridge_ep = NULL;
+
+	slave_port = rmnet_get_port(slave_dev);
+	rmnet_unregister_real_device(slave_dev, slave_port);
+
+	netdev_dbg(slave_dev, "removed from rmnet as slave\n");
+	return 0;
+}
 
 /* Startup/Shutdown */
 

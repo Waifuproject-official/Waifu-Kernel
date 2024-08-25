@@ -149,7 +149,11 @@ void save_v86_state(struct kernel_vm86_regs *regs, int retval)
 	preempt_disable();
 	tsk->thread.sp0 = vm86->saved_sp0;
 	tsk->thread.sysenter_cs = __KERNEL_CS;
+<<<<<<< HEAD
 	update_sp0(tsk);
+=======
+	update_task_stack(tsk);
+>>>>>>> v4.19.83
 	refresh_sysenter_cs(&tsk->thread);
 	vm86->saved_sp0 = 0;
 	preempt_enable();
@@ -374,7 +378,11 @@ static long do_sys_vm86(struct vm86plus_struct __user *user_vm86, bool plus)
 		refresh_sysenter_cs(&tsk->thread);
 	}
 
+<<<<<<< HEAD
 	update_sp0(tsk);
+=======
+	update_task_stack(tsk);
+>>>>>>> v4.19.83
 	preempt_enable();
 
 	if (vm86->flags & VM86_SCREEN_BITMAP)

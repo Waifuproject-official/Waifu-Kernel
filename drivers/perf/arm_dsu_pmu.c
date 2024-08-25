@@ -536,7 +536,11 @@ static bool dsu_pmu_validate_group(struct perf_event *event)
 	memset(fake_hw.used_mask, 0, sizeof(fake_hw.used_mask));
 	if (!dsu_pmu_validate_event(event->pmu, &fake_hw, leader))
 		return false;
+<<<<<<< HEAD
 	list_for_each_entry(sibling, &leader->sibling_list, group_entry) {
+=======
+	for_each_sibling_event(sibling, leader) {
+>>>>>>> v4.19.83
 		if (!dsu_pmu_validate_event(event->pmu, &fake_hw, sibling))
 			return false;
 	}
@@ -591,7 +595,10 @@ static int dsu_pmu_event_init(struct perf_event *event)
 		return -EINVAL;
 
 	event->hw.config_base = event->attr.config;
+<<<<<<< HEAD
 	event->readable_on_cpus = CPU_MASK_ALL;
+=======
+>>>>>>> v4.19.83
 	return 0;
 }
 
@@ -659,10 +666,15 @@ static void dsu_pmu_probe_pmu(struct dsu_pmu *dsu_pmu)
 		return;
 	cpmceid[0] = __dsu_pmu_read_pmceid(0);
 	cpmceid[1] = __dsu_pmu_read_pmceid(1);
+<<<<<<< HEAD
 	bitmap_from_u32array(dsu_pmu->cpmceid_bitmap,
 				DSU_PMU_MAX_COMMON_EVENTS,
 				cpmceid,
 				ARRAY_SIZE(cpmceid));
+=======
+	bitmap_from_arr32(dsu_pmu->cpmceid_bitmap, cpmceid,
+			  DSU_PMU_MAX_COMMON_EVENTS);
+>>>>>>> v4.19.83
 }
 
 static void dsu_pmu_set_active_cpu(int cpu, struct dsu_pmu *dsu_pmu)

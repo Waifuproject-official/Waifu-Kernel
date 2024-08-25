@@ -102,8 +102,8 @@ static int ufshcd_parse_clock_info(struct ufs_hba *hba)
 		goto out;
 	}
 
-	clkfreq = devm_kzalloc(dev, sz * sizeof(*clkfreq),
-			GFP_KERNEL);
+	clkfreq = devm_kcalloc(dev, sz, sizeof(*clkfreq),
+			       GFP_KERNEL);
 	if (!clkfreq) {
 		ret = -ENOMEM;
 		goto out;
@@ -527,6 +527,7 @@ int ufshcd_pltfrm_init(struct platform_device *pdev,
 		goto dealloc_host;
 	}
 
+<<<<<<< HEAD
 	err = ufshcd_parse_reset_info(hba);
 	if (err) {
 		dev_err(&pdev->dev, "%s: reset parse failed %d\n",
@@ -553,6 +554,8 @@ int ufshcd_pltfrm_init(struct platform_device *pdev,
 	if (!dev->dma_mask)
 		dev->dma_mask = &dev->coherent_dma_mask;
 
+=======
+>>>>>>> v4.19.83
 	ufshcd_init_lanes_per_dir(hba);
 
 	err = ufshcd_init(hba, mmio_base, irq);
@@ -565,8 +568,14 @@ int ufshcd_pltfrm_init(struct platform_device *pdev,
 
 	pm_runtime_set_active(&pdev->dev);
 	pm_runtime_enable(&pdev->dev);
+<<<<<<< HEAD
 
 	return 0;
+=======
+
+	return 0;
+
+>>>>>>> v4.19.83
 dealloc_host:
 	ufshcd_dealloc_host(hba);
 out:

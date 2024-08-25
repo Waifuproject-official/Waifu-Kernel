@@ -633,6 +633,7 @@ int drm_dp_atomic_release_vcpi_slots(struct drm_atomic_state *state,
 				     int slots);
 int drm_dp_send_power_updown_phy(struct drm_dp_mst_topology_mgr *mgr,
 				 struct drm_dp_mst_port *port, bool power_up);
+<<<<<<< HEAD
 
 int drm_dp_send_dpcd_write(struct drm_dp_mst_topology_mgr *mgr,
 			   struct drm_dp_mst_port *port,
@@ -641,5 +642,7 @@ int drm_dp_send_dpcd_write(struct drm_dp_mst_topology_mgr *mgr,
 int drm_dp_send_dpcd_read(struct drm_dp_mst_topology_mgr *mgr,
 				 struct drm_dp_mst_port *port,
 				 int offset, int size, u8 *bytes);
+=======
+>>>>>>> v4.19.83
 
 #endif

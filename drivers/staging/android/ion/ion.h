@@ -1,7 +1,9 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * drivers/staging/android/ion/ion.h
  *
  * Copyright (C) 2011 Google, Inc.
+<<<<<<< HEAD
  * Copyright (c) 2011-2019, The Linux Foundation. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
@@ -13,6 +15,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
+=======
+>>>>>>> v4.19.83
  */
 
 #ifndef _ION_H
@@ -248,10 +252,12 @@ struct ion_heap {
 	struct task_struct *task;
 	atomic_long_t total_allocated;
 
-	int (*debug_show)(struct ion_heap *heap, struct seq_file *, void *);
+	int (*debug_show)(struct ion_heap *heap, struct seq_file *s,
+			  void *unused);
 };
 
 /**
+<<<<<<< HEAD
  * ion_buffer_cached - this ion buffer is cached
  * @buffer:		buffer
  *
@@ -276,6 +282,8 @@ bool ion_buffer_fault_user_mappings(struct ion_buffer *buffer);
 struct ion_device *ion_device_create(void);
 
 /**
+=======
+>>>>>>> v4.19.83
  * ion_device_add_heap - adds a heap to the ion device
  * @dev:		the device
  * @heap:		the heap to add
@@ -303,7 +311,7 @@ int ion_alloc_fd(size_t len, unsigned int heap_id_mask, unsigned int flags);
  * this function will be called to setup a shrinker to shrink the freelists
  * and call the heap's shrink op.
  */
-void ion_heap_init_shrinker(struct ion_heap *heap);
+int ion_heap_init_shrinker(struct ion_heap *heap);
 
 /**
  * ion_heap_init_deferred_free -- initialize deferred free functionality
@@ -364,6 +372,7 @@ size_t ion_heap_freelist_shrink(struct ion_heap *heap, size_t size);
  */
 size_t ion_heap_freelist_size(struct ion_heap *heap);
 
+<<<<<<< HEAD
 /**
  * functions for creating and destroying the built in ion heaps.
  * architectures can add their own custom architecture specific
@@ -406,6 +415,8 @@ struct ion_heap *ion_cma_secure_heap_create(struct ion_platform_heap *heap);
 struct ion_heap *ion_secure_carveout_heap_create(
 			struct ion_platform_heap *heap);
 
+=======
+>>>>>>> v4.19.83
 /**
  * functions for creating and destroying a heap pool -- allows you
  * to keep a pool of pre allocated memory to use from your heap.  Keeping
@@ -425,7 +436,6 @@ struct ion_heap *ion_secure_carveout_heap_create(
  * @gfp_mask:		gfp_mask to use from alloc
  * @order:		order of pages in the pool
  * @list:		plist node for list of pools
- * @cached:		it's cached pool or not
  *
  * Allows you to keep a pool of pre allocated pages to use from your heap.
  * Keeping a pool of pages that is ready for dma, ie any cached mapping have
@@ -435,7 +445,6 @@ struct ion_heap *ion_secure_carveout_heap_create(
 struct ion_page_pool {
 	int high_count;
 	int low_count;
-	bool cached;
 	struct list_head high_items;
 	struct list_head low_items;
 	/* Protect the pool */
@@ -445,8 +454,7 @@ struct ion_page_pool {
 	struct plist_node list;
 };
 
-struct ion_page_pool *ion_page_pool_create(gfp_t gfp_mask, unsigned int order,
-					   bool cached);
+struct ion_page_pool *ion_page_pool_create(gfp_t gfp_mask, unsigned int order);
 void ion_page_pool_destroy(struct ion_page_pool *pool);
 struct page *ion_page_pool_alloc(struct ion_page_pool *a, bool *from_pool);
 void ion_page_pool_free(struct ion_page_pool *pool, struct page *page);

@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * drivers/staging/android/ion/ion_cma_heap.c
  *
  * Copyright (C) Linaro 2012
  * Author: <benjamin.gaignard@linaro.org> for ST-Ericsson.
+<<<<<<< HEAD
  *
  * Copyright (c) 2016-2019, The Linux Foundation. All rights reserved.
  *
@@ -15,6 +17,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
+=======
+>>>>>>> v4.19.83
  */
 
 #include <linux/device.h>
@@ -23,8 +27,11 @@
 #include <linux/err.h>
 #include <linux/cma.h>
 #include <linux/scatterlist.h>
+<<<<<<< HEAD
 #include <linux/of.h>
 #include <soc/qcom/secure_buffer.h>
+=======
+>>>>>>> v4.19.83
 #include <linux/highmem.h>
 
 #include "ion.h"
@@ -61,7 +68,11 @@ static int ion_cma_allocate(struct ion_heap *heap, struct ion_buffer *buffer,
 {
 	struct ion_cma_heap *cma_heap = to_cma_heap(heap);
 	struct sg_table *table;
+<<<<<<< HEAD
 	struct page *pages = NULL;
+=======
+	struct page *pages;
+>>>>>>> v4.19.83
 	unsigned long size = PAGE_ALIGN(len);
 	unsigned long nr_pages = size >> PAGE_SHIFT;
 	unsigned long align = get_order(size);
@@ -69,6 +80,7 @@ static int ion_cma_allocate(struct ion_heap *heap, struct ion_buffer *buffer,
 	struct device *dev = heap->priv;
 	struct ion_cma_buffer_info *info;
 
+<<<<<<< HEAD
 	info = kzalloc(sizeof(*info), GFP_KERNEL);
 	if (!info)
 		return -ENOMEM;
@@ -117,6 +129,29 @@ static int ion_cma_allocate(struct ion_heap *heap, struct ion_buffer *buffer,
 		    !ion_buffer_cached(buffer))
 			ion_pages_sync_for_device(dev, pages, size,
 						  DMA_BIDIRECTIONAL);
+=======
+	if (align > CONFIG_CMA_ALIGNMENT)
+		align = CONFIG_CMA_ALIGNMENT;
+
+	pages = cma_alloc(cma_heap->cma, nr_pages, align, false);
+	if (!pages)
+		return -ENOMEM;
+
+	if (PageHighMem(pages)) {
+		unsigned long nr_clear_pages = nr_pages;
+		struct page *page = pages;
+
+		while (nr_clear_pages > 0) {
+			void *vaddr = kmap_atomic(page);
+
+			memset(vaddr, 0, PAGE_SIZE);
+			kunmap_atomic(vaddr);
+			page++;
+			nr_clear_pages--;
+		}
+	} else {
+		memset(page_address(pages), 0, size);
+>>>>>>> v4.19.83
 	}
 
 	table = kmalloc(sizeof(*table), GFP_KERNEL);
@@ -136,6 +171,7 @@ static int ion_cma_allocate(struct ion_heap *heap, struct ion_buffer *buffer,
 
 free_table:
 	kfree(table);
+<<<<<<< HEAD
 err_alloc:
 	if (info->cpu_addr)
 		dma_free_attrs(dev, size, info->cpu_addr, info->handle, 0);
@@ -144,12 +180,17 @@ err_alloc:
 
 free_info:
 	kfree(info);
+=======
+err:
+	cma_release(cma_heap->cma, pages, nr_pages);
+>>>>>>> v4.19.83
 	return -ENOMEM;
 }
 
 static void ion_cma_free(struct ion_buffer *buffer)
 {
 	struct ion_cma_heap *cma_heap = to_cma_heap(buffer->heap);
+<<<<<<< HEAD
 	struct ion_cma_buffer_info *info = buffer->priv_virt;
 
 	if (info->cpu_addr) {
@@ -164,6 +205,13 @@ static void ion_cma_free(struct ion_buffer *buffer)
 		/* release memory */
 		cma_release(cma_heap->cma, pages, nr_pages);
 	}
+=======
+	struct page *pages = buffer->priv_virt;
+	unsigned long nr_pages = PAGE_ALIGN(buffer->size) >> PAGE_SHIFT;
+
+	/* release memory */
+	cma_release(cma_heap->cma, pages, nr_pages);
+>>>>>>> v4.19.83
 	/* release sg table */
 	sg_free_table(buffer->sg_table);
 	kfree(buffer->sg_table);

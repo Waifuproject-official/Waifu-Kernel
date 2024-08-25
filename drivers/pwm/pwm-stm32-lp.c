@@ -1,11 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * STM32 Low-Power Timer PWM driver
  *
  * Copyright (C) STMicroelectronics 2017
  *
  * Author: Gerald Baeza <gerald.baeza@st.com>
- *
- * License terms: GNU General Public License (GPL), version 2
  *
  * Inspired by Gerald Baeza's pwm-stm32 driver
  */
@@ -59,6 +58,12 @@ static int stm32_pwm_lp_apply(struct pwm_chip *chip, struct pwm_device *pwm,
 	/* Calculate the period and prescaler value */
 	div = (unsigned long long)clk_get_rate(priv->clk) * state->period;
 	do_div(div, NSEC_PER_SEC);
+	if (!div) {
+		/* Clock is too slow to achieve requested period. */
+		dev_dbg(priv->chip.dev, "Can't reach %u ns\n",	state->period);
+		return -EINVAL;
+	}
+
 	prd = div;
 	while (div > STM32_LPTIM_MAX_ARR) {
 		presc++;
@@ -203,6 +208,8 @@ static int stm32_pwm_lp_probe(struct platform_device *pdev)
 	priv->chip.dev = &pdev->dev;
 	priv->chip.ops = &stm32_pwm_lp_ops;
 	priv->chip.npwm = 1;
+	priv->chip.of_xlate = of_pwm_xlate_with_flags;
+	priv->chip.of_pwm_n_cells = 3;
 
 	ret = pwmchip_add(&priv->chip);
 	if (ret < 0)
@@ -216,11 +223,8 @@ static int stm32_pwm_lp_probe(struct platform_device *pdev)
 static int stm32_pwm_lp_remove(struct platform_device *pdev)
 {
 	struct stm32_pwm_lp *priv = platform_get_drvdata(pdev);
-	unsigned int i;
 
-	for (i = 0; i < priv->chip.npwm; i++)
-		if (pwm_is_enabled(&priv->chip.pwms[i]))
-			pwm_disable(&priv->chip.pwms[i]);
+	pwm_disable(&priv->chip.pwms[0]);
 
 	return pwmchip_remove(&priv->chip);
 }

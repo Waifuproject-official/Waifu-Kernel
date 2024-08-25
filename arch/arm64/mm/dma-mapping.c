@@ -24,7 +24,7 @@
 #include <linux/export.h>
 #include <linux/slab.h>
 #include <linux/genalloc.h>
-#include <linux/dma-mapping.h>
+#include <linux/dma-direct.h>
 #include <linux/dma-contiguous.h>
 #include <linux/mm.h>
 #include <linux/iommu.h>
@@ -118,6 +118,7 @@ static int __free_from_pool(void *start, size_t size)
 	return 1;
 }
 
+<<<<<<< HEAD
 static int __dma_update_pte(pte_t *pte, pgtable_t token, unsigned long addr,
 			    void *data)
 {
@@ -210,6 +211,8 @@ static void __dma_free_coherent(struct device *dev, size_t size,
 		swiotlb_free_coherent(dev, size, vaddr, dma_handle);
 }
 
+=======
+>>>>>>> v4.19.83
 static void *__dma_alloc(struct device *dev, size_t size,
 			 dma_addr_t *dma_handle, gfp_t flags,
 			 unsigned long attrs)
@@ -231,7 +234,7 @@ static void *__dma_alloc(struct device *dev, size_t size,
 		return addr;
 	}
 
-	ptr = __dma_alloc_coherent(dev, size, dma_handle, flags, attrs);
+	ptr = swiotlb_alloc(dev, size, dma_handle, flags, attrs);
 	if (!ptr)
 		goto no_mem;
 
@@ -239,12 +242,24 @@ static void *__dma_alloc(struct device *dev, size_t size,
 	if (coherent)
 		return ptr;
 
+<<<<<<< HEAD
 	if (attrs & DMA_ATTR_NO_KERNEL_MAPPING) {
 		coherent_ptr = (void *)NO_KERNEL_MAPPING_DUMMY;
 	} else {
 		if (!(attrs & DMA_ATTR_STRONGLY_ORDERED))
 			/* remove any dirty cache lines on the kernel alias */
 			__dma_flush_area(ptr, size);
+=======
+	/* remove any dirty cache lines on the kernel alias */
+	__dma_flush_area(ptr, size);
+
+	/* create a coherent mapping */
+	page = virt_to_page(ptr);
+	coherent_ptr = dma_common_contiguous_remap(page, size, VM_USERMAP,
+						   prot, __builtin_return_address(0));
+	if (!coherent_ptr)
+		goto no_map;
+>>>>>>> v4.19.83
 
 		/* create a coherent mapping */
 		page = virt_to_page(ptr);
@@ -257,7 +272,7 @@ static void *__dma_alloc(struct device *dev, size_t size,
 	return coherent_ptr;
 
 no_map:
-	__dma_free_coherent(dev, size, ptr, *dma_handle, attrs);
+	swiotlb_free(dev, size, ptr, *dma_handle, attrs);
 no_mem:
 	return NULL;
 }
@@ -276,7 +291,7 @@ static void __dma_free(struct device *dev, size_t size,
 		if (!(attrs & DMA_ATTR_NO_KERNEL_MAPPING))
 			vunmap(vaddr);
 	}
-	__dma_free_coherent(dev, size, swiotlb_addr, dma_handle, attrs);
+	swiotlb_free(dev, size, swiotlb_addr, dma_handle, attrs);
 }
 
 static dma_addr_t __swiotlb_map_page(struct device *dev, struct page *page,
@@ -388,8 +403,7 @@ static int __swiotlb_mmap_pfn(struct vm_area_struct *vma,
 			      unsigned long pfn, size_t size)
 {
 	int ret = -ENXIO;
-	unsigned long nr_vma_pages = (vma->vm_end - vma->vm_start) >>
-					PAGE_SHIFT;
+	unsigned long nr_vma_pages = vma_pages(vma);
 	unsigned long nr_pages = PAGE_ALIGN(size) >> PAGE_SHIFT;
 	unsigned long off = vma->vm_pgoff;
 
@@ -504,7 +518,7 @@ static int __swiotlb_dma_mapping_error(struct device *hwdev, dma_addr_t addr)
 	return 0;
 }
 
-static const struct dma_map_ops swiotlb_dma_ops = {
+static const struct dma_map_ops arm64_swiotlb_dma_ops = {
 	.alloc = __dma_alloc,
 	.free = __dma_free,
 	.mmap = __swiotlb_mmap,
@@ -533,9 +547,9 @@ static int __init atomic_pool_init(void)
 
 	if (dev_get_cma_area(NULL))
 		page = dma_alloc_from_contiguous(NULL, nr_pages,
-						 pool_size_order, GFP_KERNEL);
+						 pool_size_order, false);
 	else
-		page = alloc_pages(GFP_DMA, pool_size_order);
+		page = alloc_pages(GFP_DMA32, pool_size_order);
 
 	if (page) {
 		int ret;
@@ -683,19 +697,14 @@ static int __init arm64_dma_init(void)
 	    max_pfn > (arm64_dma_phys_limit >> PAGE_SHIFT))
 		swiotlb = 1;
 
+	WARN_TAINT(ARCH_DMA_MINALIGN < cache_line_size(),
+		   TAINT_CPU_OUT_OF_SPEC,
+		   "ARCH_DMA_MINALIGN smaller than CTR_EL0.CWG (%d < %d)",
+		   ARCH_DMA_MINALIGN, cache_line_size());
+
 	return atomic_pool_init();
 }
 arch_initcall(arm64_dma_init);
-
-#define PREALLOC_DMA_DEBUG_ENTRIES	4096
-
-static int __init dma_debug_do_init(void)
-{
-	dma_debug_init(PREALLOC_DMA_DEBUG_ENTRIES);
-	return 0;
-}
-fs_initcall(dma_debug_do_init);
-
 
 #ifdef CONFIG_IOMMU_DMA
 #include <linux/dma-iommu.h>
@@ -761,7 +770,7 @@ static void *__iommu_alloc_attrs(struct device *dev, size_t size,
 		struct page *page;
 
 		page = dma_alloc_from_contiguous(dev, size >> PAGE_SHIFT,
-						 get_order(size), gfp);
+					get_order(size), gfp & __GFP_NOWARN);
 		if (!page)
 			return NULL;
 
@@ -852,6 +861,23 @@ static int __iommu_mmap_attrs(struct device *dev, struct vm_area_struct *vma,
 	if (dma_mmap_from_dev_coherent(dev, vma, cpu_addr, size, &ret))
 		return ret;
 
+<<<<<<< HEAD
+=======
+	if (!is_vmalloc_addr(cpu_addr)) {
+		unsigned long pfn = page_to_pfn(virt_to_page(cpu_addr));
+		return __swiotlb_mmap_pfn(vma, pfn, size);
+	}
+
+	if (attrs & DMA_ATTR_FORCE_CONTIGUOUS) {
+		/*
+		 * DMA_ATTR_FORCE_CONTIGUOUS allocations are always remapped,
+		 * hence in the vmalloc space.
+		 */
+		unsigned long pfn = vmalloc_to_pfn(cpu_addr);
+		return __swiotlb_mmap_pfn(vma, pfn, size);
+	}
+
+>>>>>>> v4.19.83
 	area = find_vm_area(cpu_addr);
 
 	if (area && area->pages)
@@ -879,12 +905,21 @@ static int __iommu_get_sgtable(struct device *dev, struct sg_table *sgt,
 	struct page *page = NULL;
 	struct vm_struct *area = find_vm_area(cpu_addr);
 
+<<<<<<< HEAD
 	if (area && area->pages)
 		return sg_alloc_table_from_pages(sgt, area->pages, count, 0,
 					size, GFP_KERNEL);
 	else if (!is_vmalloc_addr(cpu_addr))
 		page = virt_to_page(cpu_addr);
 	else if (is_vmalloc_addr(cpu_addr))
+=======
+	if (!is_vmalloc_addr(cpu_addr)) {
+		struct page *page = virt_to_page(cpu_addr);
+		return __swiotlb_get_sgtable_page(sgt, page, size);
+	}
+
+	if (attrs & DMA_ATTR_FORCE_CONTIGUOUS) {
+>>>>>>> v4.19.83
 		/*
 		 * DMA_ATTR_FORCE_CONTIGUOUS and atomic pool allocations
 		 * are always remapped, hence in the vmalloc space.
@@ -1082,12 +1117,17 @@ static void __iommu_setup_dma_ops(struct device *dev, u64 dma_base, u64 size,
 void arch_setup_dma_ops(struct device *dev, u64 dma_base, u64 size,
 			const struct iommu_ops *iommu, bool coherent)
 {
+<<<<<<< HEAD
 	if (!dev->dma_ops) {
 		if (dev->removed_mem)
 			set_dma_ops(dev, &removed_dma_ops);
 		else
 			dev->dma_ops = &swiotlb_dma_ops;
 	}
+=======
+	if (!dev->dma_ops)
+		dev->dma_ops = &arm64_swiotlb_dma_ops;
+>>>>>>> v4.19.83
 
 	dev->archdata.dma_coherent = coherent;
 	__iommu_setup_dma_ops(dev, dma_base, size, iommu);

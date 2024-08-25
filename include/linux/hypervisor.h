@@ -8,15 +8,36 @@
  */
 
 #ifdef CONFIG_X86
+<<<<<<< HEAD
 #include <asm/x86_init.h>
+=======
+
+#include <asm/jailhouse_para.h>
+#include <asm/x86_init.h>
+
+>>>>>>> v4.19.83
 static inline void hypervisor_pin_vcpu(int cpu)
 {
 	x86_platform.hyper.pin_vcpu(cpu);
 }
+<<<<<<< HEAD
 #else
+=======
+
+#else /* !CONFIG_X86 */
+
+#include <linux/of.h>
+
+>>>>>>> v4.19.83
 static inline void hypervisor_pin_vcpu(int cpu)
 {
 }
-#endif
+
+static inline bool jailhouse_paravirt(void)
+{
+	return of_find_compatible_node(NULL, NULL, "jailhouse,cell");
+}
+
+#endif /* !CONFIG_X86 */
 
 #endif /* __LINUX_HYPEVISOR_H */

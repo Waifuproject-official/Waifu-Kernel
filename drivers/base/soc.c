@@ -1,8 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (C) ST-Ericsson SA 2011
  *
  * Author: Lee Jones <lee.jones@linaro.org> for ST-Ericsson.
- * License terms:  GNU General Public License (GPL), version 2
  */
 
 #include <linux/sysfs.h>
@@ -150,11 +150,14 @@ struct soc_device *soc_device_register(struct soc_device_attribute *soc_dev_attr
 
 out3:
 	ida_simple_remove(&soc_ida, soc_dev->soc_dev_num);
+	put_device(&soc_dev->dev);
+	soc_dev = NULL;
 out2:
 	kfree(soc_dev);
 out1:
 	return ERR_PTR(ret);
 }
+EXPORT_SYMBOL_GPL(soc_device_register);
 
 /* Ensure soc_dev->attr is freed prior to calling soc_device_unregister. */
 void soc_device_unregister(struct soc_device *soc_dev)
@@ -164,6 +167,7 @@ void soc_device_unregister(struct soc_device *soc_dev)
 	device_unregister(&soc_dev->dev);
 	early_soc_dev_attr = NULL;
 }
+EXPORT_SYMBOL_GPL(soc_device_unregister);
 
 static int __init soc_bus_register(void)
 {

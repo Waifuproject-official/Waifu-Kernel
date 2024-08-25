@@ -16,21 +16,17 @@
 
 #include <linux/arm-cci.h>
 #include <linux/io.h>
-#include <linux/interrupt.h>
 #include <linux/module.h>
 #include <linux/of_address.h>
-#include <linux/of_irq.h>
 #include <linux/of_platform.h>
-#include <linux/perf_event.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
-#include <linux/spinlock.h>
 
 #include <asm/cacheflush.h>
 #include <asm/smp_plat.h>
 
-static void __iomem *cci_ctrl_base;
-static unsigned long cci_ctrl_phys;
+static void __iomem *cci_ctrl_base __ro_after_init;
+static unsigned long cci_ctrl_phys __ro_after_init;
 
 #ifdef CONFIG_ARM_CCI400_PORT_CTRL
 struct cci_nb_ports {
@@ -59,9 +55,17 @@ static const struct of_device_id arm_cci_matches[] = {
 	{},
 };
 
-#ifdef CONFIG_ARM_CCI_PMU
+static const struct of_dev_auxdata arm_cci_auxdata[] = {
+	OF_DEV_AUXDATA("arm,cci-400-pmu", 0, NULL, &cci_ctrl_base),
+	OF_DEV_AUXDATA("arm,cci-400-pmu,r0", 0, NULL, &cci_ctrl_base),
+	OF_DEV_AUXDATA("arm,cci-400-pmu,r1", 0, NULL, &cci_ctrl_base),
+	OF_DEV_AUXDATA("arm,cci-500-pmu,r0", 0, NULL, &cci_ctrl_base),
+	OF_DEV_AUXDATA("arm,cci-550-pmu,r0", 0, NULL, &cci_ctrl_base),
+	{}
+};
 
 #define DRIVER_NAME		"ARM-CCI"
+<<<<<<< HEAD
 #define DRIVER_NAME_PMU		DRIVER_NAME " PMU"
 
 #define CCI_PMCR		0x0100
@@ -1769,22 +1773,17 @@ static int cci_pmu_probe(struct platform_device *pdev)
 	pr_info("ARM %s PMU driver probed", cci_pmu->model->name);
 	return 0;
 }
+=======
+>>>>>>> v4.19.83
 
 static int cci_platform_probe(struct platform_device *pdev)
 {
 	if (!cci_probed())
 		return -ENODEV;
 
-	return of_platform_populate(pdev->dev.of_node, NULL, NULL, &pdev->dev);
+	return of_platform_populate(pdev->dev.of_node, NULL,
+				    arm_cci_auxdata, &pdev->dev);
 }
-
-static struct platform_driver cci_pmu_driver = {
-	.driver = {
-		   .name = DRIVER_NAME_PMU,
-		   .of_match_table = arm_cci_pmu_matches,
-		  },
-	.probe = cci_pmu_probe,
-};
 
 static struct platform_driver cci_platform_driver = {
 	.driver = {
@@ -1796,29 +1795,8 @@ static struct platform_driver cci_platform_driver = {
 
 static int __init cci_platform_init(void)
 {
-	int ret;
-
-	ret = cpuhp_setup_state_multi(CPUHP_AP_PERF_ARM_CCI_ONLINE,
-				      "perf/arm/cci:online", NULL,
-				      cci_pmu_offline_cpu);
-	if (ret)
-		return ret;
-
-	ret = platform_driver_register(&cci_pmu_driver);
-	if (ret)
-		return ret;
-
 	return platform_driver_register(&cci_platform_driver);
 }
-
-#else /* !CONFIG_ARM_CCI_PMU */
-
-static int __init cci_platform_init(void)
-{
-	return 0;
-}
-
-#endif /* CONFIG_ARM_CCI_PMU */
 
 #ifdef CONFIG_ARM_CCI400_PORT_CTRL
 
@@ -2187,11 +2165,8 @@ static int cci_probe_ports(struct device_node *np)
 	if (!ports)
 		return -ENOMEM;
 
-	for_each_child_of_node(np, cp) {
+	for_each_available_child_of_node(np, cp) {
 		if (!of_match_node(arm_cci_ctrl_if_matches, cp))
-			continue;
-
-		if (!of_device_is_available(cp))
 			continue;
 
 		i = nb_ace + nb_ace_lite;
@@ -2273,7 +2248,7 @@ static int cci_probe(void)
 	struct resource res;
 
 	np = of_find_matching_node(NULL, arm_cci_matches);
-	if(!np || !of_device_is_available(np))
+	if (!of_device_is_available(np))
 		return -ENODEV;
 
 	ret = of_address_to_resource(np, 0, &res);

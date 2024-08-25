@@ -53,6 +53,8 @@
 #define		OV5645_CHIP_ID_HIGH_BYTE	0x56
 #define OV5645_CHIP_ID_LOW		0x300b
 #define		OV5645_CHIP_ID_LOW_BYTE		0x45
+#define OV5645_IO_MIPI_CTRL00		0x300e
+#define OV5645_PAD_OUTPUT00		0x3019
 #define OV5645_AWB_MANUAL_CONTROL	0x3406
 #define		OV5645_AWB_MANUAL_ENABLE	BIT(0)
 #define OV5645_AEC_PK_MANUAL		0x3503
@@ -63,6 +65,7 @@
 #define		OV5645_ISP_VFLIP		BIT(2)
 #define OV5645_TIMING_TC_REG21		0x3821
 #define		OV5645_SENSOR_MIRROR		BIT(1)
+#define OV5645_MIPI_CTRL00		0x4800
 #define OV5645_PRE_ISP_TEST_SETTING_1	0x503d
 #define		OV5645_TEST_PATTERN_MASK	0x3
 #define		OV5645_SET_TEST_PATTERN(x)	((x) & OV5645_TEST_PATTERN_MASK)
@@ -129,7 +132,6 @@ static const struct reg_value ov5645_global_init_setting[] = {
 	{ 0x3503, 0x07 },
 	{ 0x3002, 0x1c },
 	{ 0x3006, 0xc3 },
-	{ 0x300e, 0x45 },
 	{ 0x3017, 0x00 },
 	{ 0x3018, 0x00 },
 	{ 0x302e, 0x0b },
@@ -358,7 +360,10 @@ static const struct reg_value ov5645_global_init_setting[] = {
 	{ 0x3a1f, 0x14 },
 	{ 0x0601, 0x02 },
 	{ 0x3008, 0x42 },
-	{ 0x3008, 0x02 }
+	{ 0x3008, 0x02 },
+	{ OV5645_IO_MIPI_CTRL00, 0x40 },
+	{ OV5645_MIPI_CTRL00, 0x24 },
+	{ OV5645_PAD_OUTPUT00, 0x70 }
 };
 
 static const struct reg_value ov5645_setting_sxga[] = {
@@ -600,11 +605,13 @@ static int ov5645_write_reg(struct ov5645 *ov5645, u16 reg, u8 val)
 	regbuf[2] = val;
 
 	ret = i2c_master_send(ov5645->i2c_client, regbuf, 3);
-	if (ret < 0)
+	if (ret < 0) {
 		dev_err(ov5645->dev, "%s: write reg error %d: reg=%x, val=%x\n",
 			__func__, ret, reg, val);
+		return ret;
+	}
 
-	return ret;
+	return 0;
 }
 
 static int ov5645_read_reg(struct ov5645 *ov5645, u16 reg, u8 *val)
@@ -743,13 +750,9 @@ static int ov5645_s_power(struct v4l2_subdev *sd, int on)
 				goto exit;
 			}
 
-			ret = ov5645_write_reg(ov5645, OV5645_SYSTEM_CTRL0,
-					       OV5645_SYSTEM_CTRL0_STOP);
-			if (ret < 0) {
-				ov5645_set_power_off(ov5645);
-				goto exit;
-			}
+			usleep_range(500, 1000);
 		} else {
+			ov5645_write_reg(ov5645, OV5645_IO_MIPI_CTRL00, 0x58);
 			ov5645_set_power_off(ov5645);
 		}
 	}
@@ -959,23 +962,6 @@ __ov5645_get_pad_crop(struct ov5645 *ov5645, struct v4l2_subdev_pad_config *cfg,
 	}
 }
 
-static const struct ov5645_mode_info *
-ov5645_find_nearest_mode(unsigned int width, unsigned int height)
-{
-	int i;
-
-	for (i = ARRAY_SIZE(ov5645_mode_info_data) - 1; i >= 0; i--) {
-		if (ov5645_mode_info_data[i].width <= width &&
-		    ov5645_mode_info_data[i].height <= height)
-			break;
-	}
-
-	if (i < 0)
-		i = 0;
-
-	return &ov5645_mode_info_data[i];
-}
-
 static int ov5645_set_format(struct v4l2_subdev *sd,
 			     struct v4l2_subdev_pad_config *cfg,
 			     struct v4l2_subdev_format *format)
@@ -989,8 +975,11 @@ static int ov5645_set_format(struct v4l2_subdev *sd,
 	__crop = __ov5645_get_pad_crop(ov5645, cfg, format->pad,
 			format->which);
 
-	new_mode = ov5645_find_nearest_mode(format->format.width,
-					    format->format.height);
+	new_mode = v4l2_find_nearest_size(ov5645_mode_info_data,
+			       ARRAY_SIZE(ov5645_mode_info_data),
+			       width, height,
+			       format->format.width, format->format.height);
+
 	__crop->width = new_mode->width;
 	__crop->height = new_mode->height;
 
@@ -1069,11 +1058,20 @@ static int ov5645_s_stream(struct v4l2_subdev *subdev, int enable)
 			dev_err(ov5645->dev, "could not sync v4l2 controls\n");
 			return ret;
 		}
+
+		ret = ov5645_write_reg(ov5645, OV5645_IO_MIPI_CTRL00, 0x45);
+		if (ret < 0)
+			return ret;
+
 		ret = ov5645_write_reg(ov5645, OV5645_SYSTEM_CTRL0,
 				       OV5645_SYSTEM_CTRL0_START);
 		if (ret < 0)
 			return ret;
 	} else {
+		ret = ov5645_write_reg(ov5645, OV5645_IO_MIPI_CTRL00, 0x40);
+		if (ret < 0)
+			return ret;
+
 		ret = ov5645_write_reg(ov5645, OV5645_SYSTEM_CTRL0,
 				       OV5645_SYSTEM_CTRL0_STOP);
 		if (ret < 0)

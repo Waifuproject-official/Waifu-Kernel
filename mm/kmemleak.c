@@ -91,7 +91,6 @@
 #include <linux/stacktrace.h>
 #include <linux/cache.h>
 #include <linux/percpu.h>
-#include <linux/hardirq.h>
 #include <linux/bootmem.h>
 #include <linux/pfn.h>
 #include <linux/mmzone.h>
@@ -588,7 +587,7 @@ static struct kmemleak_object *create_object(unsigned long ptr, size_t size,
 	if (in_irq()) {
 		object->pid = 0;
 		strncpy(object->comm, "hardirq", sizeof(object->comm));
-	} else if (in_softirq()) {
+	} else if (in_serving_softirq()) {
 		object->pid = 0;
 		strncpy(object->comm, "softirq", sizeof(object->comm));
 	} else {
@@ -1199,6 +1198,11 @@ EXPORT_SYMBOL(kmemleak_no_scan);
 /**
  * kmemleak_alloc_phys - similar to kmemleak_alloc but taking a physical
  *			 address argument
+ * @phys:	physical address of the object
+ * @size:	size of the object
+ * @min_count:	minimum number of references to this object.
+ *              See kmemleak_alloc()
+ * @gfp:	kmalloc() flags used for kmemleak internal memory allocations
  */
 void __ref kmemleak_alloc_phys(phys_addr_t phys, size_t size, int min_count,
 			       gfp_t gfp)
@@ -1211,6 +1215,9 @@ EXPORT_SYMBOL(kmemleak_alloc_phys);
 /**
  * kmemleak_free_part_phys - similar to kmemleak_free_part but taking a
  *			     physical address argument
+ * @phys:	physical address if the beginning or inside an object. This
+ *		also represents the start of the range to be freed
+ * @size:	size to be unregistered
  */
 void __ref kmemleak_free_part_phys(phys_addr_t phys, size_t size)
 {
@@ -1222,6 +1229,7 @@ EXPORT_SYMBOL(kmemleak_free_part_phys);
 /**
  * kmemleak_not_leak_phys - similar to kmemleak_not_leak but taking a physical
  *			    address argument
+ * @phys:	physical address of the object
  */
 void __ref kmemleak_not_leak_phys(phys_addr_t phys)
 {
@@ -1233,6 +1241,7 @@ EXPORT_SYMBOL(kmemleak_not_leak_phys);
 /**
  * kmemleak_ignore_phys - similar to kmemleak_ignore but taking a physical
  *			  address argument
+ * @phys:	physical address of the object
  */
 void __ref kmemleak_ignore_phys(phys_addr_t phys)
 {
@@ -1531,7 +1540,11 @@ static void kmemleak_scan(void)
 			if (page_count(page) == 0)
 				continue;
 			scan_block(page, page + 1, NULL);
+<<<<<<< HEAD
 			if (!(pfn % (MAX_SCAN_SIZE / sizeof(*page))))
+=======
+			if (!(pfn & 63))
+>>>>>>> v4.19.83
 				cond_resched();
 		}
 	}
@@ -1972,7 +1985,7 @@ static void kmemleak_disable(void)
 /*
  * Allow boot-time kmemleak disabling (enabled by default).
  */
-static int kmemleak_boot_config(char *str)
+static int __init kmemleak_boot_config(char *str)
 {
 	if (!str)
 		return -EINVAL;
@@ -2107,6 +2120,11 @@ static int __init kmemleak_late_init(void)
 
 	kmemleak_initialized = 1;
 
+	dentry = debugfs_create_file("kmemleak", 0644, NULL, NULL,
+				     &kmemleak_fops);
+	if (!dentry)
+		pr_warn("Failed to create the debugfs kmemleak file\n");
+
 	if (kmemleak_error) {
 		/*
 		 * Some error occurred and kmemleak was disabled. There is a
@@ -2118,10 +2136,6 @@ static int __init kmemleak_late_init(void)
 		return -ENOMEM;
 	}
 
-	dentry = debugfs_create_file("kmemleak", S_IRUGO, NULL, NULL,
-				     &kmemleak_fops);
-	if (!dentry)
-		pr_warn("Failed to create the debugfs kmemleak file\n");
 	mutex_lock(&scan_mutex);
 	start_scan_thread();
 	mutex_unlock(&scan_mutex);

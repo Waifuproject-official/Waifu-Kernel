@@ -38,7 +38,11 @@ static struct kmem_cache *f2fs_inode_cachep;
 
 #ifdef CONFIG_F2FS_FAULT_INJECTION
 
+<<<<<<< HEAD
 const char *f2fs_fault_name[FAULT_MAX] = {
+=======
+char *f2fs_fault_name[FAULT_MAX] = {
+>>>>>>> v4.19.83
 	[FAULT_KMALLOC]		= "kmalloc",
 	[FAULT_KVMALLOC]	= "kvmalloc",
 	[FAULT_PAGE_ALLOC]	= "page alloc",
@@ -53,7 +57,10 @@ const char *f2fs_fault_name[FAULT_MAX] = {
 	[FAULT_READ_IO]		= "read IO error",
 	[FAULT_CHECKPOINT]	= "checkpoint error",
 	[FAULT_DISCARD]		= "discard error",
+<<<<<<< HEAD
 	[FAULT_WRITE_IO]	= "write IO error",
+=======
+>>>>>>> v4.19.83
 };
 
 void f2fs_build_fault_attr(struct f2fs_sb_info *sbi, unsigned int rate,
@@ -136,7 +143,10 @@ enum {
 	Opt_alloc,
 	Opt_fsync,
 	Opt_test_dummy_encryption,
+<<<<<<< HEAD
 	Opt_checkpoint,
+=======
+>>>>>>> v4.19.83
 	Opt_err,
 };
 
@@ -195,7 +205,10 @@ static match_table_t f2fs_tokens = {
 	{Opt_alloc, "alloc_mode=%s"},
 	{Opt_fsync, "fsync_mode=%s"},
 	{Opt_test_dummy_encryption, "test_dummy_encryption"},
+<<<<<<< HEAD
 	{Opt_checkpoint, "checkpoint=%s"},
+=======
+>>>>>>> v4.19.83
 	{Opt_err, NULL},
 };
 
@@ -259,7 +272,11 @@ static int f2fs_set_qf_name(struct super_block *sb, int qtype,
 			"quota options when quota turned on");
 		return -EINVAL;
 	}
+<<<<<<< HEAD
 	if (f2fs_sb_has_quota_ino(sbi)) {
+=======
+	if (f2fs_sb_has_quota_ino(sb)) {
+>>>>>>> v4.19.83
 		f2fs_msg(sb, KERN_INFO,
 			"QUOTA feature is enabled, so ignore qf_name");
 		return 0;
@@ -302,7 +319,11 @@ static int f2fs_clear_qf_name(struct super_block *sb, int qtype)
 			" when quota turned on");
 		return -EINVAL;
 	}
+<<<<<<< HEAD
 	kvfree(F2FS_OPTION(sbi).s_qf_names[qtype]);
+=======
+	kfree(F2FS_OPTION(sbi).s_qf_names[qtype]);
+>>>>>>> v4.19.83
 	F2FS_OPTION(sbi).s_qf_names[qtype] = NULL;
 	return 0;
 }
@@ -348,7 +369,11 @@ static int f2fs_check_quota_options(struct f2fs_sb_info *sbi)
 		}
 	}
 
+<<<<<<< HEAD
 	if (f2fs_sb_has_quota_ino(sbi) && F2FS_OPTION(sbi).s_jquota_fmt) {
+=======
+	if (f2fs_sb_has_quota_ino(sbi->sb) && F2FS_OPTION(sbi).s_jquota_fmt) {
+>>>>>>> v4.19.83
 		f2fs_msg(sbi->sb, KERN_INFO,
 			"QUOTA feature is enabled, so ignore jquota_fmt");
 		F2FS_OPTION(sbi).s_jquota_fmt = 0;
@@ -417,7 +442,11 @@ static int parse_options(struct super_block *sb, char *options)
 			set_opt(sbi, DISCARD);
 			break;
 		case Opt_nodiscard:
+<<<<<<< HEAD
 			if (f2fs_sb_has_blkzoned(sbi)) {
+=======
+			if (f2fs_sb_has_blkzoned(sb)) {
+>>>>>>> v4.19.83
 				f2fs_msg(sb, KERN_WARNING,
 					"discard is required for zoned block devices");
 				return -EINVAL;
@@ -566,7 +595,11 @@ static int parse_options(struct super_block *sb, char *options)
 				return -ENOMEM;
 			if (strlen(name) == 8 &&
 					!strncmp(name, "adaptive", 8)) {
+<<<<<<< HEAD
 				if (f2fs_sb_has_blkzoned(sbi)) {
+=======
+				if (f2fs_sb_has_blkzoned(sb)) {
+>>>>>>> v4.19.83
 					f2fs_msg(sb, KERN_WARNING,
 						 "adaptive mode is not allowed with "
 						 "zoned block device feature");
@@ -598,7 +631,23 @@ static int parse_options(struct super_block *sb, char *options)
 		case Opt_fault_injection:
 			if (args->from && match_int(args, &arg))
 				return -EINVAL;
+<<<<<<< HEAD
 			f2fs_build_fault_attr(sbi, arg, F2FS_ALL_FAULT_TYPE);
+=======
+#ifdef CONFIG_F2FS_FAULT_INJECTION
+			f2fs_build_fault_attr(sbi, arg, F2FS_ALL_FAULT_TYPE);
+			set_opt(sbi, FAULT_INJECTION);
+#else
+			f2fs_msg(sb, KERN_INFO,
+				"FAULT_INJECTION was not selected");
+#endif
+			break;
+		case Opt_fault_type:
+			if (args->from && match_int(args, &arg))
+				return -EINVAL;
+#ifdef CONFIG_F2FS_FAULT_INJECTION
+			f2fs_build_fault_attr(sbi, 0, arg);
+>>>>>>> v4.19.83
 			set_opt(sbi, FAULT_INJECTION);
 			break;
 
@@ -620,10 +669,10 @@ static int parse_options(struct super_block *sb, char *options)
 			break;
 #endif
 		case Opt_lazytime:
-			sb->s_flags |= MS_LAZYTIME;
+			sb->s_flags |= SB_LAZYTIME;
 			break;
 		case Opt_nolazytime:
-			sb->s_flags &= ~MS_LAZYTIME;
+			sb->s_flags &= ~SB_LAZYTIME;
 			break;
 #ifdef CONFIG_QUOTA
 		case Opt_quota:
@@ -714,10 +763,17 @@ static int parse_options(struct super_block *sb, char *options)
 					!strncmp(name, "fs-based", 8)) {
 				F2FS_OPTION(sbi).whint_mode = WHINT_MODE_FS;
 			} else {
+<<<<<<< HEAD
 				kvfree(name);
 				return -EINVAL;
 			}
 			kvfree(name);
+=======
+				kfree(name);
+				return -EINVAL;
+			}
+			kfree(name);
+>>>>>>> v4.19.83
 			break;
 		case Opt_alloc:
 			name = match_strdup(&args[0]);
@@ -731,6 +787,7 @@ static int parse_options(struct super_block *sb, char *options)
 					!strncmp(name, "reuse", 5)) {
 				F2FS_OPTION(sbi).alloc_mode = ALLOC_MODE_REUSE;
 			} else {
+<<<<<<< HEAD
 				kvfree(name);
 				return -EINVAL;
 			}
@@ -741,6 +798,36 @@ static int parse_options(struct super_block *sb, char *options)
 		case Opt_test_dummy_encryption:
 #ifdef CONFIG_F2FS_FS_ENCRYPTION
 			if (!f2fs_sb_has_encrypt(sbi)) {
+=======
+				kfree(name);
+				return -EINVAL;
+			}
+			kfree(name);
+			break;
+		case Opt_fsync:
+			name = match_strdup(&args[0]);
+			if (!name)
+				return -ENOMEM;
+			if (strlen(name) == 5 &&
+					!strncmp(name, "posix", 5)) {
+				F2FS_OPTION(sbi).fsync_mode = FSYNC_MODE_POSIX;
+			} else if (strlen(name) == 6 &&
+					!strncmp(name, "strict", 6)) {
+				F2FS_OPTION(sbi).fsync_mode = FSYNC_MODE_STRICT;
+			} else if (strlen(name) == 9 &&
+					!strncmp(name, "nobarrier", 9)) {
+				F2FS_OPTION(sbi).fsync_mode =
+							FSYNC_MODE_NOBARRIER;
+			} else {
+				kfree(name);
+				return -EINVAL;
+			}
+			kfree(name);
+			break;
+		case Opt_test_dummy_encryption:
+#ifdef CONFIG_F2FS_FS_ENCRYPTION
+			if (!f2fs_sb_has_encrypt(sb)) {
+>>>>>>> v4.19.83
 				f2fs_msg(sb, KERN_ERR, "Encrypt feature is off");
 				return -EINVAL;
 			}
@@ -753,6 +840,7 @@ static int parse_options(struct super_block *sb, char *options)
 					"Test dummy encryption mount option ignored");
 #endif
 			break;
+<<<<<<< HEAD
 		case Opt_checkpoint:
 			name = match_strdup(&args[0]);
 			if (!name)
@@ -770,6 +858,8 @@ static int parse_options(struct super_block *sb, char *options)
 			}
 			kvfree(name);
 			break;
+=======
+>>>>>>> v4.19.83
 		default:
 			f2fs_msg(sb, KERN_ERR,
 				"Unrecognized mount option \"%s\" or missing value",
@@ -781,13 +871,21 @@ static int parse_options(struct super_block *sb, char *options)
 	if (f2fs_check_quota_options(sbi))
 		return -EINVAL;
 #else
+<<<<<<< HEAD
 	if (f2fs_sb_has_quota_ino(sbi) && !f2fs_readonly(sbi->sb)) {
+=======
+	if (f2fs_sb_has_quota_ino(sbi->sb) && !f2fs_readonly(sbi->sb)) {
+>>>>>>> v4.19.83
 		f2fs_msg(sbi->sb, KERN_INFO,
 			 "Filesystem with quota feature cannot be mounted RDWR "
 			 "without CONFIG_QUOTA");
 		return -EINVAL;
 	}
+<<<<<<< HEAD
 	if (f2fs_sb_has_project_quota(sbi) && !f2fs_readonly(sbi->sb)) {
+=======
+	if (f2fs_sb_has_project_quota(sbi->sb) && !f2fs_readonly(sbi->sb)) {
+>>>>>>> v4.19.83
 		f2fs_msg(sb, KERN_ERR,
 			"Filesystem with project quota feature cannot be "
 			"mounted RDWR without CONFIG_QUOTA");
@@ -803,10 +901,15 @@ static int parse_options(struct super_block *sb, char *options)
 	}
 
 	if (test_opt(sbi, INLINE_XATTR_SIZE)) {
+<<<<<<< HEAD
 		int min_size, max_size;
 
 		if (!f2fs_sb_has_extra_attr(sbi) ||
 			!f2fs_sb_has_flexible_inline_xattr(sbi)) {
+=======
+		if (!f2fs_sb_has_extra_attr(sb) ||
+			!f2fs_sb_has_flexible_inline_xattr(sb)) {
+>>>>>>> v4.19.83
 			f2fs_msg(sb, KERN_ERR,
 					"extra_attr or flexible_inline_xattr "
 					"feature is off");
@@ -818,6 +921,7 @@ static int parse_options(struct super_block *sb, char *options)
 					"set with inline_xattr option");
 			return -EINVAL;
 		}
+<<<<<<< HEAD
 
 		min_size = sizeof(struct f2fs_xattr_header) / sizeof(__le32);
 		max_size = MAX_INLINE_XATTR_SIZE;
@@ -827,16 +931,30 @@ static int parse_options(struct super_block *sb, char *options)
 			f2fs_msg(sb, KERN_ERR,
 				"inline xattr size is out of range: %d ~ %d",
 				min_size, max_size);
+=======
+		if (F2FS_OPTION(sbi).inline_xattr_size <
+			sizeof(struct f2fs_xattr_header) / sizeof(__le32) ||
+			F2FS_OPTION(sbi).inline_xattr_size >
+			DEF_ADDRS_PER_INODE -
+			F2FS_TOTAL_EXTRA_ATTR_SIZE / sizeof(__le32) -
+			DEF_INLINE_RESERVED_SIZE -
+			MIN_INLINE_DENTRY_SIZE / sizeof(__le32)) {
+			f2fs_msg(sb, KERN_ERR,
+					"inline xattr size is out of range");
+>>>>>>> v4.19.83
 			return -EINVAL;
 		}
 	}
 
+<<<<<<< HEAD
 	if (test_opt(sbi, DISABLE_CHECKPOINT) && test_opt(sbi, LFS)) {
 		f2fs_msg(sb, KERN_ERR,
 				"LFS not compatible with checkpoint=disable\n");
 		return -EINVAL;
 	}
 
+=======
+>>>>>>> v4.19.83
 	/* Not pass down write hints if the number of active logs is lesser
 	 * than NR_CURSEG_TYPE.
 	 */
@@ -1055,7 +1173,11 @@ static void f2fs_put_super(struct super_block *sb)
 	}
 
 	/* be sure to wait for any on-going discard commands */
+<<<<<<< HEAD
 	dropped = f2fs_issue_discard_timeout(sbi);
+=======
+	dropped = f2fs_wait_discard_bios(sbi);
+>>>>>>> v4.19.83
 
 	if ((f2fs_hw_support_discard(sbi) || f2fs_hw_should_discard(sbi)) &&
 					!sbi->discard_blks && !dropped) {
@@ -1077,7 +1199,11 @@ static void f2fs_put_super(struct super_block *sb)
 	/* our cp_error case, we can wait for any writeback page */
 	f2fs_flush_merged_writes(sbi);
 
+<<<<<<< HEAD
 	f2fs_wait_on_all_pages(sbi, F2FS_WB_CP_DATA);
+=======
+	f2fs_wait_on_all_pages_writeback(sbi);
+>>>>>>> v4.19.83
 
 	f2fs_bug_on(sbi, sbi->fsync_node_num);
 
@@ -1110,7 +1236,11 @@ static void f2fs_put_super(struct super_block *sb)
 	mempool_destroy(sbi->write_io_dummy);
 #ifdef CONFIG_QUOTA
 	for (i = 0; i < MAXQUOTAS; i++)
+<<<<<<< HEAD
 		kvfree(F2FS_OPTION(sbi).s_qf_names[i]);
+=======
+		kfree(F2FS_OPTION(sbi).s_qf_names[i]);
+>>>>>>> v4.19.83
 #endif
 	destroy_percpu_info(sbi);
 	for (i = 0; i < NR_PAGE_TYPE; i++)
@@ -1125,8 +1255,11 @@ int f2fs_sync_fs(struct super_block *sb, int sync)
 
 	if (unlikely(f2fs_cp_error(sbi)))
 		return 0;
+<<<<<<< HEAD
 	if (unlikely(is_sbi_flag_set(sbi, SBI_CP_DISABLED)))
 		return 0;
+=======
+>>>>>>> v4.19.83
 
 	trace_f2fs_sync_fs(sb, sync);
 
@@ -1226,6 +1359,7 @@ static int f2fs_statfs(struct dentry *dentry, struct kstatfs *buf)
 	buf->f_blocks = total_count - start_count;
 	buf->f_bfree = user_block_count - valid_user_blocks(sbi) -
 						sbi->current_reserved_blocks;
+<<<<<<< HEAD
 	if (unlikely(buf->f_bfree <= sbi->unusable_block_count))
 		buf->f_bfree = 0;
 	else
@@ -1237,6 +1371,14 @@ static int f2fs_statfs(struct dentry *dentry, struct kstatfs *buf)
 	else
 		buf->f_bavail = 0;
 
+=======
+	if (buf->f_bfree > F2FS_OPTION(sbi).root_reserved_blocks)
+		buf->f_bavail = buf->f_bfree -
+				F2FS_OPTION(sbi).root_reserved_blocks;
+	else
+		buf->f_bavail = 0;
+
+>>>>>>> v4.19.83
 	avail_node_count = sbi->total_node_count - sbi->nquota_files -
 						F2FS_RESERVED_NODE_NUM;
 
@@ -1410,9 +1552,12 @@ static int f2fs_show_options(struct seq_file *seq, struct dentry *root)
 	else if (F2FS_OPTION(sbi).alloc_mode == ALLOC_MODE_REUSE)
 		seq_printf(seq, ",alloc_mode=%s", "reuse");
 
+<<<<<<< HEAD
 	if (test_opt(sbi, DISABLE_CHECKPOINT))
 		seq_puts(seq, ",checkpoint=disable");
 
+=======
+>>>>>>> v4.19.83
 	if (F2FS_OPTION(sbi).fsync_mode == FSYNC_MODE_POSIX)
 		seq_printf(seq, ",fsync_mode=%s", "posix");
 	else if (F2FS_OPTION(sbi).fsync_mode == FSYNC_MODE_STRICT)
@@ -1429,7 +1574,11 @@ static void default_options(struct f2fs_sb_info *sbi)
 	F2FS_OPTION(sbi).inline_xattr_size = DEFAULT_INLINE_XATTR_ADDRS;
 	F2FS_OPTION(sbi).whint_mode = WHINT_MODE_OFF;
 	F2FS_OPTION(sbi).alloc_mode = ALLOC_MODE_DEFAULT;
+<<<<<<< HEAD
 	F2FS_OPTION(sbi).fsync_mode = FSYNC_MODE_STRICT;
+=======
+	F2FS_OPTION(sbi).fsync_mode = FSYNC_MODE_POSIX;
+>>>>>>> v4.19.83
 	F2FS_OPTION(sbi).test_dummy_encryption = false;
 	F2FS_OPTION(sbi).s_resuid = make_kuid(&init_user_ns, F2FS_DEF_RESUID);
 	F2FS_OPTION(sbi).s_resgid = make_kgid(&init_user_ns, F2FS_DEF_RESGID);
@@ -1440,11 +1589,18 @@ static void default_options(struct f2fs_sb_info *sbi)
 	set_opt(sbi, INLINE_DENTRY);
 	set_opt(sbi, EXTENT_CACHE);
 	set_opt(sbi, NOHEAP);
+<<<<<<< HEAD
 	sbi->sb->s_flags |= MS_LAZYTIME;
 	clear_opt(sbi, DISABLE_CHECKPOINT);
 	set_opt(sbi, FLUSH_MERGE);
 	set_opt(sbi, DISCARD);
 	if (f2fs_sb_has_blkzoned(sbi))
+=======
+	sbi->sb->s_flags |= SB_LAZYTIME;
+	set_opt(sbi, FLUSH_MERGE);
+	set_opt(sbi, DISCARD);
+	if (f2fs_sb_has_blkzoned(sbi->sb))
+>>>>>>> v4.19.83
 		set_opt_mode(sbi, F2FS_MOUNT_LFS);
 	else
 		set_opt_mode(sbi, F2FS_MOUNT_ADAPTIVE);
@@ -1457,6 +1613,7 @@ static void default_options(struct f2fs_sb_info *sbi)
 #endif
 
 	f2fs_build_fault_attr(sbi, 0, 0);
+<<<<<<< HEAD
 }
 
 #ifdef CONFIG_QUOTA
@@ -1523,8 +1680,13 @@ static void f2fs_enable_checkpoint(struct f2fs_sb_info *sbi)
 	mutex_unlock(&sbi->gc_mutex);
 
 	f2fs_sync_fs(sbi->sb, 1);
+=======
+>>>>>>> v4.19.83
 }
 
+#ifdef CONFIG_QUOTA
+static int f2fs_enable_quotas(struct super_block *sb);
+#endif
 static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 {
 	struct f2fs_sb_info *sbi = F2FS_SB(sb);
@@ -1534,8 +1696,11 @@ static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 	bool need_restart_gc = false;
 	bool need_stop_gc = false;
 	bool no_extent_cache = !test_opt(sbi, EXTENT_CACHE);
+<<<<<<< HEAD
 	bool disable_checkpoint = test_opt(sbi, DISABLE_CHECKPOINT);
 	bool checkpoint_changed;
+=======
+>>>>>>> v4.19.83
 #ifdef CONFIG_QUOTA
 	int i, j;
 #endif
@@ -1556,7 +1721,11 @@ static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 				GFP_KERNEL);
 			if (!org_mount_opt.s_qf_names[i]) {
 				for (j = 0; j < i; j++)
+<<<<<<< HEAD
 					kvfree(org_mount_opt.s_qf_names[j]);
+=======
+					kfree(org_mount_opt.s_qf_names[j]);
+>>>>>>> v4.19.83
 				return -ENOMEM;
 			}
 		} else {
@@ -1566,7 +1735,7 @@ static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 #endif
 
 	/* recover superblocks we couldn't write due to previous RO mount */
-	if (!(*flags & MS_RDONLY) && is_sbi_flag_set(sbi, SBI_NEED_SB_WRITE)) {
+	if (!(*flags & SB_RDONLY) && is_sbi_flag_set(sbi, SBI_NEED_SB_WRITE)) {
 		err = f2fs_commit_super(sbi, false);
 		f2fs_msg(sb, KERN_INFO,
 			"Try to recover all the superblocks, ret: %d", err);
@@ -1587,10 +1756,11 @@ static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 	 * Previous and new state of filesystem is RO,
 	 * so skip checking GC and FLUSH_MERGE conditions.
 	 */
-	if (f2fs_readonly(sb) && (*flags & MS_RDONLY))
+	if (f2fs_readonly(sb) && (*flags & SB_RDONLY))
 		goto skip;
 
 #ifdef CONFIG_QUOTA
+<<<<<<< HEAD
 	if (!f2fs_readonly(sb) && (*flags & MS_RDONLY)) {
 		err = dquot_suspend(sb, -1);
 		if (err < 0)
@@ -1601,6 +1771,18 @@ static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 		if (sb_any_quota_suspended(sb)) {
 			dquot_resume(sb, -1);
 		} else if (f2fs_sb_has_quota_ino(sbi)) {
+=======
+	if (!f2fs_readonly(sb) && (*flags & SB_RDONLY)) {
+		err = dquot_suspend(sb, -1);
+		if (err < 0)
+			goto restore_opts;
+	} else if (f2fs_readonly(sb) && !(*flags & MS_RDONLY)) {
+		/* dquot_resume needs RW */
+		sb->s_flags &= ~SB_RDONLY;
+		if (sb_any_quota_suspended(sb)) {
+			dquot_resume(sb, -1);
+		} else if (f2fs_sb_has_quota_ino(sb)) {
+>>>>>>> v4.19.83
 			err = f2fs_enable_quotas(sb);
 			if (err)
 				goto restore_opts;
@@ -1627,7 +1809,7 @@ static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 	 * or if background_gc = off is passed in mount
 	 * option. Also sync the filesystem.
 	 */
-	if ((*flags & MS_RDONLY) || !test_opt(sbi, BG_GC)) {
+	if ((*flags & SB_RDONLY) || !test_opt(sbi, BG_GC)) {
 		if (sbi->gc_thread) {
 			f2fs_stop_gc_thread(sbi);
 			need_restart_gc = true;
@@ -1639,7 +1821,11 @@ static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 		need_stop_gc = true;
 	}
 
+<<<<<<< HEAD
 	if (*flags & MS_RDONLY ||
+=======
+	if (*flags & SB_RDONLY ||
+>>>>>>> v4.19.83
 		F2FS_OPTION(sbi).whint_mode != org_mount_opt.whint_mode) {
 		writeback_inodes_sb(sb, WB_REASON_SYNC);
 		sync_inodes_sb(sb);
@@ -1664,7 +1850,7 @@ static int f2fs_remount(struct super_block *sb, int *flags, char *data)
 	 * We stop issue flush thread if FS is mounted as RO
 	 * or if flush_merge is not passed in mount option.
 	 */
-	if ((*flags & MS_RDONLY) || !test_opt(sbi, FLUSH_MERGE)) {
+	if ((*flags & SB_RDONLY) || !test_opt(sbi, FLUSH_MERGE)) {
 		clear_opt(sbi, FLUSH_MERGE);
 		f2fs_destroy_flush_cmd_control(sbi, false);
 	} else {
@@ -1676,14 +1862,21 @@ skip:
 #ifdef CONFIG_QUOTA
 	/* Release old quota file names */
 	for (i = 0; i < MAXQUOTAS; i++)
+<<<<<<< HEAD
 		kvfree(org_mount_opt.s_qf_names[i]);
+=======
+		kfree(org_mount_opt.s_qf_names[i]);
+>>>>>>> v4.19.83
 #endif
 	/* Update the POSIXACL Flag */
-	sb->s_flags = (sb->s_flags & ~MS_POSIXACL) |
-		(test_opt(sbi, POSIX_ACL) ? MS_POSIXACL : 0);
+	sb->s_flags = (sb->s_flags & ~SB_POSIXACL) |
+		(test_opt(sbi, POSIX_ACL) ? SB_POSIXACL : 0);
 
 	limit_reserve_root(sbi);
+<<<<<<< HEAD
 	*flags = (*flags & ~SB_LAZYTIME) | (sb->s_flags & SB_LAZYTIME);
+=======
+>>>>>>> v4.19.83
 	return 0;
 restore_gc:
 	if (need_restart_gc) {
@@ -1697,7 +1890,11 @@ restore_opts:
 #ifdef CONFIG_QUOTA
 	F2FS_OPTION(sbi).s_jquota_fmt = org_mount_opt.s_jquota_fmt;
 	for (i = 0; i < MAXQUOTAS; i++) {
+<<<<<<< HEAD
 		kvfree(F2FS_OPTION(sbi).s_qf_names[i]);
+=======
+		kfree(F2FS_OPTION(sbi).s_qf_names[i]);
+>>>>>>> v4.19.83
 		F2FS_OPTION(sbi).s_qf_names[i] = org_mount_opt.s_qf_names[i];
 	}
 #endif
@@ -1736,7 +1933,10 @@ repeat:
 				congestion_wait(BLK_RW_ASYNC, HZ/50);
 				goto repeat;
 			}
+<<<<<<< HEAD
 			set_sbi_flag(F2FS_SB(sb), SBI_QUOTA_NEED_REPAIR);
+=======
+>>>>>>> v4.19.83
 			return PTR_ERR(page);
 		}
 
@@ -1790,7 +1990,10 @@ retry:
 				congestion_wait(BLK_RW_ASYNC, HZ/50);
 				goto retry;
 			}
+<<<<<<< HEAD
 			set_sbi_flag(F2FS_SB(sb), SBI_QUOTA_NEED_REPAIR);
+=======
+>>>>>>> v4.19.83
 			break;
 		}
 
@@ -1827,12 +2030,15 @@ static qsize_t *f2fs_get_reserved_space(struct inode *inode)
 
 static int f2fs_quota_on_mount(struct f2fs_sb_info *sbi, int type)
 {
+<<<<<<< HEAD
 	if (is_set_ckpt_flags(sbi, CP_QUOTA_NEED_FSCK_FLAG)) {
 		f2fs_msg(sbi->sb, KERN_ERR,
 			"quota sysfile may be corrupted, skip loading it");
 		return 0;
 	}
 
+=======
+>>>>>>> v4.19.83
 	return dquot_quota_on_mount(sbi->sb, F2FS_OPTION(sbi).s_qf_names[type],
 					F2FS_OPTION(sbi).s_jquota_fmt, type);
 }
@@ -1842,7 +2048,11 @@ int f2fs_enable_quota_files(struct f2fs_sb_info *sbi, bool rdonly)
 	int enabled = 0;
 	int i, err;
 
+<<<<<<< HEAD
 	if (f2fs_sb_has_quota_ino(sbi) && rdonly) {
+=======
+	if (f2fs_sb_has_quota_ino(sbi->sb) && rdonly) {
+>>>>>>> v4.19.83
 		err = f2fs_enable_quotas(sbi->sb);
 		if (err) {
 			f2fs_msg(sbi->sb, KERN_ERR,
@@ -1864,6 +2074,67 @@ int f2fs_enable_quota_files(struct f2fs_sb_info *sbi, bool rdonly)
 		}
 	}
 	return enabled;
+<<<<<<< HEAD
+=======
+}
+
+static int f2fs_quota_enable(struct super_block *sb, int type, int format_id,
+			     unsigned int flags)
+{
+	struct inode *qf_inode;
+	unsigned long qf_inum;
+	int err;
+
+	BUG_ON(!f2fs_sb_has_quota_ino(sb));
+
+	qf_inum = f2fs_qf_ino(sb, type);
+	if (!qf_inum)
+		return -EPERM;
+
+	qf_inode = f2fs_iget(sb, qf_inum);
+	if (IS_ERR(qf_inode)) {
+		f2fs_msg(sb, KERN_ERR,
+			"Bad quota inode %u:%lu", type, qf_inum);
+		return PTR_ERR(qf_inode);
+	}
+
+	/* Don't account quota for quota files to avoid recursion */
+	qf_inode->i_flags |= S_NOQUOTA;
+	err = dquot_enable(qf_inode, type, format_id, flags);
+	iput(qf_inode);
+	return err;
+}
+
+static int f2fs_enable_quotas(struct super_block *sb)
+{
+	int type, err = 0;
+	unsigned long qf_inum;
+	bool quota_mopt[MAXQUOTAS] = {
+		test_opt(F2FS_SB(sb), USRQUOTA),
+		test_opt(F2FS_SB(sb), GRPQUOTA),
+		test_opt(F2FS_SB(sb), PRJQUOTA),
+	};
+
+	sb_dqopt(sb)->flags |= DQUOT_QUOTA_SYS_FILE | DQUOT_NOLIST_DIRTY;
+	for (type = 0; type < MAXQUOTAS; type++) {
+		qf_inum = f2fs_qf_ino(sb, type);
+		if (qf_inum) {
+			err = f2fs_quota_enable(sb, type, QFMT_VFS_V1,
+				DQUOT_USAGE_ENABLED |
+				(quota_mopt[type] ? DQUOT_LIMITS_ENABLED : 0));
+			if (err) {
+				f2fs_msg(sb, KERN_ERR,
+					"Failed to enable quota tracking "
+					"(type=%d, err=%d). Please run "
+					"fsck to fix.", type, err);
+				for (type--; type >= 0; type--)
+					dquot_quota_off(sb, type);
+				return err;
+			}
+		}
+	}
+	return 0;
+>>>>>>> v4.19.83
 }
 
 static int f2fs_quota_enable(struct super_block *sb, int type, int format_id,
@@ -1998,7 +2269,12 @@ static int f2fs_quota_on(struct super_block *sb, int type, int format_id,
 
 	inode_lock(inode);
 	F2FS_I(inode)->i_flags |= F2FS_NOATIME_FL | F2FS_IMMUTABLE_FL;
+<<<<<<< HEAD
 	f2fs_set_inode_flags(inode);
+=======
+	inode_set_flags(inode, S_NOATIME | S_IMMUTABLE,
+					S_NOATIME | S_IMMUTABLE);
+>>>>>>> v4.19.83
 	inode_unlock(inode);
 	f2fs_mark_inode_dirty_sync(inode, false);
 
@@ -2018,12 +2294,20 @@ static int f2fs_quota_off(struct super_block *sb, int type)
 		goto out_put;
 
 	err = dquot_quota_off(sb, type);
+<<<<<<< HEAD
 	if (err || f2fs_sb_has_quota_ino(F2FS_SB(sb)))
+=======
+	if (err || f2fs_sb_has_quota_ino(sb))
+>>>>>>> v4.19.83
 		goto out_put;
 
 	inode_lock(inode);
 	F2FS_I(inode)->i_flags &= ~(F2FS_NOATIME_FL | F2FS_IMMUTABLE_FL);
+<<<<<<< HEAD
 	f2fs_set_inode_flags(inode);
+=======
+	inode_set_flags(inode, 0, S_NOATIME | S_IMMUTABLE);
+>>>>>>> v4.19.83
 	inode_unlock(inode);
 	f2fs_mark_inode_dirty_sync(inode, false);
 out_put:
@@ -2045,7 +2329,11 @@ void f2fs_quota_off_umount(struct super_block *sb)
 				"Fail to turn off disk quota "
 				"(type: %d, err: %d, ret:%d), Please "
 				"run fsck to fix it.", type, err, ret);
+<<<<<<< HEAD
 			set_sbi_flag(F2FS_SB(sb), SBI_QUOTA_NEED_REPAIR);
+=======
+			set_sbi_flag(F2FS_SB(sb), SBI_NEED_FSCK);
+>>>>>>> v4.19.83
 		}
 	}
 	/*
@@ -2068,6 +2356,7 @@ static void f2fs_truncate_quota_inode_pages(struct super_block *sb)
 	}
 }
 
+<<<<<<< HEAD
 static int f2fs_dquot_commit(struct dquot *dquot)
 {
 	int ret;
@@ -2123,6 +2412,8 @@ static int f2fs_dquot_commit_info(struct super_block *sb, int type)
 		set_sbi_flag(F2FS_SB(sb), SBI_QUOTA_NEED_REPAIR);
 	return ret;
 }
+=======
+>>>>>>> v4.19.83
 
 static int f2fs_get_projid(struct inode *inode, kprojid_t *projid)
 {
@@ -2205,7 +2496,11 @@ static int f2fs_set_context(struct inode *inode, const void *ctx, size_t len,
 	 * if LOST_FOUND feature is enabled.
 	 *
 	 */
+<<<<<<< HEAD
 	if (f2fs_sb_has_lost_found(sbi) &&
+=======
+	if (f2fs_sb_has_lost_found(sbi->sb) &&
+>>>>>>> v4.19.83
 			inode->i_ino == F2FS_ROOT_INO(sbi))
 		return -EPERM;
 
@@ -2445,11 +2740,11 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 		}
 	}
 
-	if (F2FS_SUPER_MAGIC != le32_to_cpu(raw_super->magic)) {
+	if (le32_to_cpu(raw_super->magic) != F2FS_SUPER_MAGIC) {
 		f2fs_msg(sb, KERN_INFO,
 			"Magic Mismatch, valid(0x%x) - read(0x%x)",
 			F2FS_SUPER_MAGIC, le32_to_cpu(raw_super->magic));
-		return 1;
+		return -EINVAL;
 	}
 
 	/* Currently, support only 4KB page cache size */
@@ -2457,7 +2752,7 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 		f2fs_msg(sb, KERN_INFO,
 			"Invalid page_cache_size (%lu), supports only 4KB\n",
 			PAGE_SIZE);
-		return 1;
+		return -EFSCORRUPTED;
 	}
 
 	/* Currently, support only 4KB block size */
@@ -2466,7 +2761,7 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 		f2fs_msg(sb, KERN_INFO,
 			"Invalid blocksize (%u), supports only 4KB\n",
 			blocksize);
-		return 1;
+		return -EFSCORRUPTED;
 	}
 
 	/* check log blocks per segment */
@@ -2474,7 +2769,7 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 		f2fs_msg(sb, KERN_INFO,
 			"Invalid log blocks per segment (%u)\n",
 			le32_to_cpu(raw_super->log_blocks_per_seg));
-		return 1;
+		return -EFSCORRUPTED;
 	}
 
 	/* Currently, support 512/1024/2048/4096 bytes sector size */
@@ -2484,7 +2779,7 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 				F2FS_MIN_LOG_SECTOR_SIZE) {
 		f2fs_msg(sb, KERN_INFO, "Invalid log sectorsize (%u)",
 			le32_to_cpu(raw_super->log_sectorsize));
-		return 1;
+		return -EFSCORRUPTED;
 	}
 	if (le32_to_cpu(raw_super->log_sectors_per_block) +
 		le32_to_cpu(raw_super->log_sectorsize) !=
@@ -2493,7 +2788,73 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 			"Invalid log sectors per block(%u) log sectorsize(%u)",
 			le32_to_cpu(raw_super->log_sectors_per_block),
 			le32_to_cpu(raw_super->log_sectorsize));
-		return 1;
+		return -EFSCORRUPTED;
+	}
+
+	segment_count = le32_to_cpu(raw_super->segment_count);
+	segs_per_sec = le32_to_cpu(raw_super->segs_per_sec);
+	secs_per_zone = le32_to_cpu(raw_super->secs_per_zone);
+	total_sections = le32_to_cpu(raw_super->section_count);
+
+	/* blocks_per_seg should be 512, given the above check */
+	blocks_per_seg = 1 << le32_to_cpu(raw_super->log_blocks_per_seg);
+
+	if (segment_count > F2FS_MAX_SEGMENT ||
+				segment_count < F2FS_MIN_SEGMENTS) {
+		f2fs_msg(sb, KERN_INFO,
+			"Invalid segment count (%u)",
+			segment_count);
+		return -EFSCORRUPTED;
+	}
+
+	if (total_sections > segment_count ||
+			total_sections < F2FS_MIN_SEGMENTS ||
+			segs_per_sec > segment_count || !segs_per_sec) {
+		f2fs_msg(sb, KERN_INFO,
+			"Invalid segment/section count (%u, %u x %u)",
+			segment_count, total_sections, segs_per_sec);
+		return -EFSCORRUPTED;
+	}
+
+	if ((segment_count / segs_per_sec) < total_sections) {
+		f2fs_msg(sb, KERN_INFO,
+			"Small segment_count (%u < %u * %u)",
+			segment_count, segs_per_sec, total_sections);
+		return -EFSCORRUPTED;
+	}
+
+	if (segment_count > (le64_to_cpu(raw_super->block_count) >> 9)) {
+		f2fs_msg(sb, KERN_INFO,
+			"Wrong segment_count / block_count (%u > %llu)",
+			segment_count, le64_to_cpu(raw_super->block_count));
+		return -EFSCORRUPTED;
+	}
+
+	if (secs_per_zone > total_sections || !secs_per_zone) {
+		f2fs_msg(sb, KERN_INFO,
+			"Wrong secs_per_zone / total_sections (%u, %u)",
+			secs_per_zone, total_sections);
+		return -EFSCORRUPTED;
+	}
+	if (le32_to_cpu(raw_super->extension_count) > F2FS_MAX_EXTENSION ||
+			raw_super->hot_ext_count > F2FS_MAX_EXTENSION ||
+			(le32_to_cpu(raw_super->extension_count) +
+			raw_super->hot_ext_count) > F2FS_MAX_EXTENSION) {
+		f2fs_msg(sb, KERN_INFO,
+			"Corrupted extension count (%u + %u > %u)",
+			le32_to_cpu(raw_super->extension_count),
+			raw_super->hot_ext_count,
+			F2FS_MAX_EXTENSION);
+		return -EFSCORRUPTED;
+	}
+
+	if (le32_to_cpu(raw_super->cp_payload) >
+				(blocks_per_seg - F2FS_CP_PACKS)) {
+		f2fs_msg(sb, KERN_INFO,
+			"Insane cp_payload (%u > %u)",
+			le32_to_cpu(raw_super->cp_payload),
+			blocks_per_seg - F2FS_CP_PACKS);
+		return -EFSCORRUPTED;
 	}
 
 	segment_count = le32_to_cpu(raw_super->segment_count);
@@ -2571,12 +2932,16 @@ static int sanity_check_raw_super(struct f2fs_sb_info *sbi,
 			le32_to_cpu(raw_super->node_ino),
 			le32_to_cpu(raw_super->meta_ino),
 			le32_to_cpu(raw_super->root_ino));
+<<<<<<< HEAD
 		return 1;
+=======
+		return -EFSCORRUPTED;
+>>>>>>> v4.19.83
 	}
 
 	/* check CP/SIT/NAT/SSA/MAIN_AREA area boundary */
 	if (sanity_check_area_boundary(sbi, bh))
-		return 1;
+		return -EFSCORRUPTED;
 
 	return 0;
 }
@@ -2662,11 +3027,19 @@ int f2fs_sanity_check_ckpt(struct f2fs_sb_info *sbi)
 		}
 	}
 	for (i = 0; i < NR_CURSEG_NODE_TYPE; i++) {
+<<<<<<< HEAD
 		for (j = i; j < NR_CURSEG_DATA_TYPE; j++) {
 			if (le32_to_cpu(ckpt->cur_node_segno[i]) ==
 				le32_to_cpu(ckpt->cur_data_segno[j])) {
 				f2fs_msg(sbi->sb, KERN_ERR,
 					"Data segment (%u) and Data segment (%u)"
+=======
+		for (j = 0; j < NR_CURSEG_DATA_TYPE; j++) {
+			if (le32_to_cpu(ckpt->cur_node_segno[i]) ==
+				le32_to_cpu(ckpt->cur_data_segno[j])) {
+				f2fs_msg(sbi->sb, KERN_ERR,
+					"Node segment (%u) and Data segment (%u)"
+>>>>>>> v4.19.83
 					" has the same segno: %u", i, j,
 					le32_to_cpu(ckpt->cur_node_segno[i]));
 				return 1;
@@ -2747,6 +3120,12 @@ static void init_sb_info(struct f2fs_sb_info *sbi)
 
 	INIT_LIST_HEAD(&sbi->s_list);
 	mutex_init(&sbi->umount_mutex);
+<<<<<<< HEAD
+=======
+	for (i = 0; i < NR_PAGE_TYPE - 1; i++)
+		for (j = HOT; j < NR_TEMP_TYPE; j++)
+			mutex_init(&sbi->wio_mutex[i][j]);
+>>>>>>> v4.19.83
 	init_rwsem(&sbi->io_order_lock);
 	spin_lock_init(&sbi->cp_lock);
 
@@ -2783,7 +3162,11 @@ static int init_blkz_info(struct f2fs_sb_info *sbi, int devi)
 	unsigned int n = 0;
 	int err = -EIO;
 
+<<<<<<< HEAD
 	if (!f2fs_sb_has_blkzoned(sbi))
+=======
+	if (!f2fs_sb_has_blkzoned(sbi->sb))
+>>>>>>> v4.19.83
 		return 0;
 
 	if (sbi->blocks_per_blkz && sbi->blocks_per_blkz !=
@@ -2870,11 +3253,11 @@ static int read_raw_super_block(struct f2fs_sb_info *sbi,
 		}
 
 		/* sanity checking of raw super */
-		if (sanity_check_raw_super(sbi, bh)) {
+		err = sanity_check_raw_super(sbi, bh);
+		if (err) {
 			f2fs_msg(sb, KERN_ERR,
 				"Can't find valid F2FS filesystem in %dth superblock",
 				block + 1);
-			err = -EINVAL;
 			brelse(bh);
 			continue;
 		}
@@ -3002,7 +3385,11 @@ static int f2fs_scan_devices(struct f2fs_sb_info *sbi)
 
 #ifdef CONFIG_BLK_DEV_ZONED
 		if (bdev_zoned_model(FDEV(i).bdev) == BLK_ZONED_HM &&
+<<<<<<< HEAD
 				!f2fs_sb_has_blkzoned(sbi)) {
+=======
+				!f2fs_sb_has_blkzoned(sbi->sb)) {
+>>>>>>> v4.19.83
 			f2fs_msg(sbi->sb, KERN_ERR,
 				"Zoned block device feature not enabled\n");
 			return -EINVAL;
@@ -3109,7 +3496,11 @@ try_onemore:
 	 * devices, but mandatory for host-managed zoned block devices.
 	 */
 #ifndef CONFIG_BLK_DEV_ZONED
+<<<<<<< HEAD
 	if (f2fs_sb_has_blkzoned(sbi)) {
+=======
+	if (f2fs_sb_has_blkzoned(sb)) {
+>>>>>>> v4.19.83
 		f2fs_msg(sb, KERN_ERR,
 			 "Zoned block device support is not enabled\n");
 		err = -EOPNOTSUPP;
@@ -3135,13 +3526,21 @@ try_onemore:
 
 #ifdef CONFIG_QUOTA
 	sb->dq_op = &f2fs_quota_operations;
+<<<<<<< HEAD
 	if (f2fs_sb_has_quota_ino(sbi))
+=======
+	if (f2fs_sb_has_quota_ino(sb))
+>>>>>>> v4.19.83
 		sb->s_qcop = &dquot_quotactl_sysfile_ops;
 	else
 		sb->s_qcop = &f2fs_quotactl_ops;
 	sb->s_quota_types = QTYPE_MASK_USR | QTYPE_MASK_GRP | QTYPE_MASK_PRJ;
 
+<<<<<<< HEAD
 	if (f2fs_sb_has_quota_ino(sbi)) {
+=======
+	if (f2fs_sb_has_quota_ino(sbi->sb)) {
+>>>>>>> v4.19.83
 		for (i = 0; i < MAXQUOTAS; i++) {
 			if (f2fs_qf_ino(sbi->sb, i))
 				sbi->nquota_files++;
@@ -3157,8 +3556,8 @@ try_onemore:
 	sb->s_export_op = &f2fs_export_ops;
 	sb->s_magic = F2FS_SUPER_MAGIC;
 	sb->s_time_gran = 1;
-	sb->s_flags = (sb->s_flags & ~MS_POSIXACL) |
-		(test_opt(sbi, POSIX_ACL) ? MS_POSIXACL : 0);
+	sb->s_flags = (sb->s_flags & ~SB_POSIXACL) |
+		(test_opt(sbi, POSIX_ACL) ? SB_POSIXACL : 0);
 	memcpy(&sb->s_uuid, raw_super->uuid, sizeof(raw_super->uuid));
 	sb->s_iflags |= SB_I_CGROUPWB;
 
@@ -3286,7 +3685,8 @@ try_onemore:
 	/* For write statistics */
 	if (sb->s_bdev->bd_part)
 		sbi->sectors_written_start =
-			(u64)part_stat_read(sb->s_bdev->bd_part, sectors[1]);
+			(u64)part_stat_read(sb->s_bdev->bd_part,
+					    sectors[STAT_WRITE]);
 
 	/* Read accumulated write IO statistics if exists */
 	seg_i = CURSEG_I(sbi, CURSEG_HOT_NODE);
@@ -3334,20 +3734,33 @@ try_onemore:
 
 #ifdef CONFIG_QUOTA
 	/* Enable quota usage during mount */
+<<<<<<< HEAD
 	if (f2fs_sb_has_quota_ino(sbi) && !f2fs_readonly(sb)) {
 		err = f2fs_enable_quotas(sb);
 		if (err)
 			f2fs_msg(sb, KERN_ERR,
 				"Cannot turn on quotas: error %d", err);
+=======
+	if (f2fs_sb_has_quota_ino(sb) && !f2fs_readonly(sb)) {
+		err = f2fs_enable_quotas(sb);
+		if (err) {
+			f2fs_msg(sb, KERN_ERR,
+				"Cannot turn on quotas: error %d", err);
+			goto free_sysfs;
+		}
+>>>>>>> v4.19.83
 	}
 #endif
 	/* if there are nt orphan nodes free them */
 	err = f2fs_recover_orphan_inodes(sbi);
 	if (err)
 		goto free_meta;
+<<<<<<< HEAD
 
 	if (unlikely(is_set_ckpt_flags(sbi, CP_DISABLED_FLAG)))
 		goto reset_checkpoint;
+=======
+>>>>>>> v4.19.83
 
 	/* recover fsynced data */
 	if (!test_opt(sbi, DISABLE_ROLL_FORWARD)) {
@@ -3386,7 +3799,11 @@ try_onemore:
 			goto free_meta;
 		}
 	}
+<<<<<<< HEAD
 reset_checkpoint:
+=======
+skip_recovery:
+>>>>>>> v4.19.83
 	/* f2fs_recover_fsync_data() cleared this already */
 	clear_sbi_flag(sbi, SBI_POR_DOING);
 
@@ -3437,7 +3854,11 @@ sync_free_meta:
 free_meta:
 #ifdef CONFIG_QUOTA
 	f2fs_truncate_quota_inode_pages(sb);
+<<<<<<< HEAD
 	if (f2fs_sb_has_quota_ino(sbi) && !f2fs_readonly(sb))
+=======
+	if (f2fs_sb_has_quota_ino(sb) && !f2fs_readonly(sb))
+>>>>>>> v4.19.83
 		f2fs_quota_off_umount(sbi->sb);
 #endif
 	/*
@@ -3447,8 +3868,14 @@ free_meta:
 	 * falls into an infinite loop in f2fs_sync_meta_pages().
 	 */
 	truncate_inode_pages_final(META_MAPPING(sbi));
+<<<<<<< HEAD
 	/* evict some inodes being cached by GC */
 	evict_inodes(sb);
+=======
+#ifdef CONFIG_QUOTA
+free_sysfs:
+#endif
+>>>>>>> v4.19.83
 	f2fs_unregister_sysfs(sbi);
 free_root_inode:
 	dput(sb->s_root);
@@ -3477,11 +3904,19 @@ free_percpu:
 	destroy_percpu_info(sbi);
 free_bio_info:
 	for (i = 0; i < NR_PAGE_TYPE; i++)
+<<<<<<< HEAD
 		kvfree(sbi->write_io[i]);
 free_options:
 #ifdef CONFIG_QUOTA
 	for (i = 0; i < MAXQUOTAS; i++)
 		kvfree(F2FS_OPTION(sbi).s_qf_names[i]);
+=======
+		kfree(sbi->write_io[i]);
+free_options:
+#ifdef CONFIG_QUOTA
+	for (i = 0; i < MAXQUOTAS; i++)
+		kfree(F2FS_OPTION(sbi).s_qf_names[i]);
+>>>>>>> v4.19.83
 #endif
 	kvfree(options);
 free_sb_buf:
@@ -3597,11 +4032,21 @@ static int __init init_f2fs_fs(void)
 	f2fs_create_root_stats();
 	err = f2fs_init_post_read_processing();
 	if (err)
+<<<<<<< HEAD
+=======
+		goto free_filesystem;
+	err = f2fs_init_post_read_processing();
+	if (err)
+>>>>>>> v4.19.83
 		goto free_root_stats;
 	return 0;
 
 free_root_stats:
 	f2fs_destroy_root_stats();
+<<<<<<< HEAD
+=======
+free_filesystem:
+>>>>>>> v4.19.83
 	unregister_filesystem(&f2fs_fs_type);
 free_shrinker:
 	unregister_shrinker(&f2fs_shrinker_info);

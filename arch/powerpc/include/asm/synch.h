@@ -3,8 +3,11 @@
 #define _ASM_POWERPC_SYNCH_H 
 #ifdef __KERNEL__
 
-#include <linux/stringify.h>
 #include <asm/feature-fixups.h>
+<<<<<<< HEAD
+=======
+#include <asm/asm-const.h>
+>>>>>>> v4.19.83
 
 #ifndef __ASSEMBLY__
 extern unsigned int __start___lwsync_fixup, __stop___lwsync_fixup;

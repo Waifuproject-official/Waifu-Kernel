@@ -1,12 +1,16 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * composite.c - infrastructure for Composite USB Gadgets
  *
  * Copyright (C) 2006-2008 David Brownell
+<<<<<<< HEAD
  * Copyright (C) 2020 XiaoMi, Inc.
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
+=======
+>>>>>>> v4.19.83
  */
 
 /* #define VERBOSE_DEBUG */
@@ -150,7 +154,10 @@ int config_ep_by_speed(struct usb_gadget *g,
 			struct usb_function *f,
 			struct usb_ep *_ep)
 {
+<<<<<<< HEAD
 	struct usb_composite_dev *cdev;
+=======
+>>>>>>> v4.19.83
 	struct usb_endpoint_descriptor *chosen_desc = NULL;
 	struct usb_descriptor_header **speed_desc = NULL;
 
@@ -172,20 +179,20 @@ int config_ep_by_speed(struct usb_gadget *g,
 			want_comp_desc = 1;
 			break;
 		}
-		/* else: Fall trough */
+		/* fall through */
 	case USB_SPEED_SUPER:
 		if (gadget_is_superspeed(g)) {
 			speed_desc = f->ss_descriptors;
 			want_comp_desc = 1;
 			break;
 		}
-		/* else: Fall trough */
+		/* fall through */
 	case USB_SPEED_HIGH:
 		if (gadget_is_dualspeed(g)) {
 			speed_desc = f->hs_descriptors;
 			break;
 		}
-		/* else: fall through */
+		/* fall through */
 	default:
 		speed_desc = f->fs_descriptors;
 	}
@@ -233,14 +240,22 @@ ep_found:
 		case USB_ENDPOINT_XFER_ISOC:
 			/* mult: bits 1:0 of bmAttributes */
 			_ep->mult = (comp_desc->bmAttributes & 0x3) + 1;
+			/* fall through */
 		case USB_ENDPOINT_XFER_BULK:
 		case USB_ENDPOINT_XFER_INT:
 			_ep->maxburst = comp_desc->bMaxBurst + 1;
 			break;
 		default:
-			if (comp_desc->bMaxBurst != 0)
-				ERROR(cdev, "ep0 bMaxBurst must be 0\n");
+			if (comp_desc->bMaxBurst != 0) {
+				struct usb_composite_dev *cdev;
 
+				cdev = get_gadget_data(g);
+				ERROR(cdev, "ep0 bMaxBurst must be 0\n");
+<<<<<<< HEAD
+
+=======
+			}
+>>>>>>> v4.19.83
 			_ep->maxburst = 1;
 			break;
 		}
@@ -1964,7 +1979,13 @@ unknown:
 		/*
 		 * OS descriptors handling
 		 */
+<<<<<<< HEAD
 		if ((ctrl->bRequestType & USB_TYPE_VENDOR)) {
+=======
+		if (cdev->use_os_string && cdev->os_desc_config &&
+		    (ctrl->bRequestType & USB_TYPE_VENDOR) &&
+		    ctrl->bRequest == cdev->b_vendor_code) {
+>>>>>>> v4.19.83
 			struct usb_configuration	*os_desc_cfg;
 			u8				*buf;
 			int				interface;
@@ -1993,12 +2014,15 @@ unknown:
 				buf[6] = w_index;
 				/* Number of ext compat interfaces */
 				count = count_ext_compat(os_desc_cfg);
+<<<<<<< HEAD
 				/*
 				 * Bailout if device does not
 				 * have ext_compat interfaces.
 				 */
 				if (count == 0)
 					break;
+=======
+>>>>>>> v4.19.83
 				buf[8] = count;
 				count *= 24; /* 24 B/ext compat desc */
 				count += 16; /* header */
@@ -2016,8 +2040,11 @@ unknown:
 				buf[6] = w_index;
 				count = count_ext_prop(os_desc_cfg,
 					interface);
+<<<<<<< HEAD
 				if (count < 0)
 					return count;
+=======
+>>>>>>> v4.19.83
 				put_unaligned_le16(count, buf + 8);
 				count = len_ext_prop(os_desc_cfg,
 					interface);
@@ -2027,11 +2054,19 @@ unknown:
 					value = fill_ext_prop(os_desc_cfg,
 							      interface, buf);
 					if (value >= 0)
+<<<<<<< HEAD
 						value = min_t(u16, w_length,
 								value);
 				}
 				break;
 			}
+=======
+						value = min_t(u16, w_length, value);
+				}
+				break;
+			}
+
+>>>>>>> v4.19.83
 			goto check_value;
 		}
 
@@ -2145,6 +2180,7 @@ void composite_disconnect(struct usb_gadget *gadget)
 	 * disconnect callbacks?
 	 */
 	spin_lock_irqsave(&cdev->lock, flags);
+	cdev->suspended = 0;
 	if (cdev->config)
 		reset_config(cdev);
 	if (cdev->driver->disconnect)
@@ -2313,6 +2349,7 @@ end:
 void composite_dev_cleanup(struct usb_composite_dev *cdev)
 {
 	struct usb_gadget_string_container *uc, *tmp;
+	struct usb_ep			   *ep, *tmp_ep;
 
 	list_for_each_entry_safe(uc, tmp, &cdev->gstrings, list) {
 		list_del(&uc->list);
@@ -2338,6 +2375,21 @@ void composite_dev_cleanup(struct usb_composite_dev *cdev)
 	}
 	cdev->next_string_id = 0;
 	device_remove_file(&cdev->gadget->dev, &dev_attr_suspended);
+
+	/*
+	 * Some UDC backends have a dynamic EP allocation scheme.
+	 *
+	 * In that case, the dispose() callback is used to notify the
+	 * backend that the EPs are no longer in use.
+	 *
+	 * Note: The UDC backend can remove the EP from the ep_list as
+	 *	 a result, so we need to use the _safe list iterator.
+	 */
+	list_for_each_entry_safe(ep, tmp_ep,
+				 &cdev->gadget->ep_list, ep_list) {
+		if (ep->ops->dispose)
+			ep->ops->dispose(ep);
+	}
 }
 
 static int composite_bind(struct usb_gadget *gadget,

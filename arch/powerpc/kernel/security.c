@@ -4,13 +4,23 @@
 //
 // Copyright 2018, Michael Ellerman, IBM Corporation.
 
+<<<<<<< HEAD
+=======
+#include <linux/cpu.h>
+>>>>>>> v4.19.83
 #include <linux/kernel.h>
 #include <linux/device.h>
 #include <linux/seq_buf.h>
 
+<<<<<<< HEAD
 #include <asm/debugfs.h>
 #include <asm/asm-prototypes.h>
 #include <asm/code-patching.h>
+=======
+#include <asm/asm-prototypes.h>
+#include <asm/code-patching.h>
+#include <asm/debugfs.h>
+>>>>>>> v4.19.83
 #include <asm/security_features.h>
 #include <asm/setup.h>
 
@@ -56,7 +66,11 @@ void setup_barrier_nospec(void)
 	enable = security_ftr_enabled(SEC_FTR_FAVOUR_SECURITY) &&
 		 security_ftr_enabled(SEC_FTR_BNDS_CHK_SPEC_BAR);
 
+<<<<<<< HEAD
 	if (!no_nospec)
+=======
+	if (!no_nospec && !cpu_mitigations_off())
+>>>>>>> v4.19.83
 		enable_barrier_nospec(enable);
 }
 
@@ -115,7 +129,11 @@ static int __init handle_nospectre_v2(char *p)
 early_param("nospectre_v2", handle_nospectre_v2);
 void setup_spectre_v2(void)
 {
+<<<<<<< HEAD
 	if (no_spectrev2)
+=======
+	if (no_spectrev2 || cpu_mitigations_off())
+>>>>>>> v4.19.83
 		do_btb_flush_fixups();
 	else
 		btb_flush_enabled = true;
@@ -299,7 +317,11 @@ void setup_stf_barrier(void)
 
 	stf_enabled_flush_types = type;
 
+<<<<<<< HEAD
 	if (!no_stf_barrier)
+=======
+	if (!no_stf_barrier && !cpu_mitigations_off())
+>>>>>>> v4.19.83
 		stf_barrier_enable(enable);
 }
 

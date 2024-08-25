@@ -217,7 +217,11 @@
 	.endm
 
 ENTRY(__aes_arm_encrypt)
+<<<<<<< HEAD
 	do_crypt	fround, crypto_ft_tab,, 2
+=======
+	do_crypt	fround, crypto_ft_tab, crypto_ft_tab + 1, 2
+>>>>>>> v4.19.83
 ENDPROC(__aes_arm_encrypt)
 
 	.align		5

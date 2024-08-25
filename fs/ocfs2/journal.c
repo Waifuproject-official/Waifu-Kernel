@@ -231,7 +231,8 @@ void ocfs2_recovery_exit(struct ocfs2_super *osb)
 	/* At this point, we know that no more recovery threads can be
 	 * launched, so wait for any recovery completion work to
 	 * complete. */
-	flush_workqueue(osb->ocfs2_wq);
+	if (osb->ocfs2_wq)
+		flush_workqueue(osb->ocfs2_wq);
 
 	/*
 	 * Now that recovery is shut down, and the osb is about to be
@@ -1383,7 +1384,7 @@ static int __ocfs2_recovery_thread(void *arg)
 		goto bail;
 	}
 
-	rm_quota = kzalloc(osb->max_slots * sizeof(int), GFP_NOFS);
+	rm_quota = kcalloc(osb->max_slots, sizeof(int), GFP_NOFS);
 	if (!rm_quota) {
 		status = -ENOMEM;
 		goto bail;

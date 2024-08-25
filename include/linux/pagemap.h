@@ -16,6 +16,8 @@
 #include <linux/hardirq.h> /* for in_interrupt() */
 #include <linux/hugetlb_inline.h>
 
+struct pagevec;
+
 /*
  * Bits in mapping->flags.
  */
@@ -116,7 +118,7 @@ static inline void mapping_set_gfp_mask(struct address_space *m, gfp_t mask)
 	m->gfp_mask = mask;
 }
 
-void release_pages(struct page **pages, int nr, bool cold);
+void release_pages(struct page **pages, int nr);
 
 /*
  * speculatively take a reference to a page.
@@ -142,7 +144,7 @@ void release_pages(struct page **pages, int nr, bool cold);
  * 3. check the page is still in pagecache (if no, goto 1)
  *
  * Remove-side that cares about stability of _refcount (eg. reclaim) has the
- * following (with tree_lock held for write):
+ * following (with the i_pages lock held):
  * A. atomically check refcount is correct and set it to 0 (atomic_cmpxchg)
  * B. remove page from pagecache
  * C. free the page
@@ -155,7 +157,7 @@ void release_pages(struct page **pages, int nr, bool cold);
  *
  * It is possible that between 1 and 2, the page is removed then the exact same
  * page is inserted into the same position in pagecache. That's OK: the
- * old find_get_page using tree_lock could equally have run before or after
+ * old find_get_page using a lock could equally have run before or after
  * such a re-insertion, depending on order that locks are granted.
  *
  * Lookups racing against pagecache insertion isn't a big problem: either 1
@@ -232,15 +234,9 @@ static inline struct page *page_cache_alloc(struct address_space *x)
 	return __page_cache_alloc(mapping_gfp_mask(x));
 }
 
-static inline struct page *page_cache_alloc_cold(struct address_space *x)
-{
-	return __page_cache_alloc(mapping_gfp_mask(x)|__GFP_COLD);
-}
-
 static inline gfp_t readahead_gfp_mask(struct address_space *x)
 {
-	return mapping_gfp_mask(x) |
-				  __GFP_COLD | __GFP_NORETRY | __GFP_NOWARN;
+	return mapping_gfp_mask(x) | __GFP_NORETRY | __GFP_NOWARN;
 }
 
 typedef int filler_t(struct file *, struct page *);
@@ -625,6 +621,8 @@ int add_to_page_cache_lru(struct page *page, struct address_space *mapping,
 extern void delete_from_page_cache(struct page *page);
 extern void __delete_from_page_cache(struct page *page, void *shadow);
 int replace_page_cache_page(struct page *old, struct page *new, gfp_t gfp_mask);
+void delete_from_page_cache_batch(struct address_space *mapping,
+				  struct pagevec *pvec);
 
 /*
  * Like add_to_page_cache_locked, but used to add newly allocated pages:

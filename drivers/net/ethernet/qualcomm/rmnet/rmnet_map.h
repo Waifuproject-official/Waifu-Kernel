@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 /* Copyright (c) 2013-2019, The Linux Foundation. All rights reserved.
+=======
+/* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -76,6 +80,7 @@ struct rmnet_map_header {
 	__be16 pkt_len;
 }  __aligned(1);
 
+<<<<<<< HEAD
 /* QMAP v5 headers */
 struct rmnet_map_v5_csum_header {
 	u8  next_hdr:1;
@@ -112,6 +117,8 @@ struct rmnet_map_v5_coal_header {
 } __aligned(1);
 
 /* QMAP v4 headers */
+=======
+>>>>>>> v4.19.83
 struct rmnet_map_dl_csum_trailer {
 	u8  reserved1;
 	u8  valid:1;
@@ -128,6 +135,7 @@ struct rmnet_map_ul_csum_header {
 	u16 csum_enabled:1;
 } __aligned(1);
 
+<<<<<<< HEAD
 struct rmnet_map_control_command_header {
 	u8 command_name;
 	u8 cmd_type:2;
@@ -195,6 +203,8 @@ struct rmnet_map_dl_ind {
 	struct list_head list;
 };
 
+=======
+>>>>>>> v4.19.83
 #define RMNET_MAP_GET_MUX_ID(Y) (((struct rmnet_map_header *) \
 				 (Y)->data)->mux_id)
 #define RMNET_MAP_GET_CD_BIT(Y) (((struct rmnet_map_header *) \
@@ -218,11 +228,22 @@ struct rmnet_map_dl_ind {
 #define RMNET_MAP_NO_PAD_BYTES        0
 #define RMNET_MAP_ADD_PAD_BYTES       1
 
+<<<<<<< HEAD
 static inline unsigned char *rmnet_map_data_ptr(struct sk_buff *skb)
 {
 	/* Nonlinear packets we receive are entirely within frag 0 */
 	if (skb_is_nonlinear(skb) && skb->len == skb->data_len)
 		return skb_frag_address(skb_shinfo(skb)->frags);
+=======
+struct sk_buff *rmnet_map_deaggregate(struct sk_buff *skb,
+				      struct rmnet_port *port);
+struct rmnet_map_header *rmnet_map_add_map_header(struct sk_buff *skb,
+						  int hdrlen, int pad);
+void rmnet_map_command(struct sk_buff *skb, struct rmnet_port *port);
+int rmnet_map_checksum_downlink_packet(struct sk_buff *skb, u16 len);
+void rmnet_map_checksum_uplink_packet(struct sk_buff *skb,
+				      struct net_device *orig_dev);
+>>>>>>> v4.19.83
 
 	return skb->data;
 }

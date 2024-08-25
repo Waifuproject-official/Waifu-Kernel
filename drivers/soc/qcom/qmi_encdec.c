@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Copyright (c) 2012-2015, 2017, 2019 The Linux Foundation. All rights reserved.
  * Copyright (C) 2017 Linaro Ltd.
@@ -13,12 +14,22 @@
  *
  */
 
+=======
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (c) 2012-2015, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2017 Linaro Ltd.
+ */
+>>>>>>> v4.19.83
 #include <linux/slab.h>
 #include <linux/uaccess.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
+<<<<<<< HEAD
 #include <linux/io.h>
+=======
+>>>>>>> v4.19.83
 #include <linux/string.h>
 #include <linux/soc/qcom/qmi.h>
 
@@ -80,12 +91,20 @@ static int qmi_decode(struct qmi_elem_info *ei_array, void *out_c_struct,
  * @ei_array: Struct info describing the element to be skipped.
  * @level: Depth level of encoding/decoding to identify nested structures.
  *
+<<<<<<< HEAD
  * Returns struct info of the next element that can be encoded.
  *
+=======
+>>>>>>> v4.19.83
  * This function is used while encoding optional elements. If the flag
  * corresponding to an optional element is not set, then encoding the
  * optional element can be skipped. This function can be used to perform
  * that operation.
+<<<<<<< HEAD
+=======
+ *
+ * Return: struct info of the next element that can be encoded.
+>>>>>>> v4.19.83
  */
 static struct qmi_elem_info *skip_to_next_elem(struct qmi_elem_info *ei_array,
 					       int level)
@@ -110,7 +129,11 @@ static struct qmi_elem_info *skip_to_next_elem(struct qmi_elem_info *ei_array,
  * @ei_array: Struct info array describing the structure.
  * @level: Level to identify the depth of the nested structures.
  *
+<<<<<<< HEAD
  * Returns expected minimum length of the QMI message or 0 on error.
+=======
+ * Return: Expected minimum length of the QMI message or 0 on error.
+>>>>>>> v4.19.83
  */
 static int qmi_calc_min_msg_len(struct qmi_elem_info *ei_array,
 				int level)
@@ -155,6 +178,10 @@ static int qmi_calc_min_msg_len(struct qmi_elem_info *ei_array,
 		if (level == 1)
 			min_msg_len += (TLV_TYPE_SIZE + TLV_LEN_SIZE);
 	}
+<<<<<<< HEAD
+=======
+
+>>>>>>> v4.19.83
 	return min_msg_len;
 }
 
@@ -165,13 +192,21 @@ static int qmi_calc_min_msg_len(struct qmi_elem_info *ei_array,
  * @elem_len: Number of elements, in the buf_src, to be encoded.
  * @elem_size: Size of a single instance of the element to be encoded.
  *
+<<<<<<< HEAD
  * Returns the number of bytes of encoded information.
  *
+=======
+>>>>>>> v4.19.83
  * This function encodes the "elem_len" number of data elements, each of
  * size "elem_size" bytes from the source buffer "buf_src" and stores the
  * encoded information in the destination buffer "buf_dst". The elements are
  * of primary data type which include u8 - u64 or similar. This
  * function returns the number of bytes of encoded information.
+<<<<<<< HEAD
+=======
+ *
+ * Return: The number of bytes of encoded information.
+>>>>>>> v4.19.83
  */
 static int qmi_encode_basic_elem(void *buf_dst, const void *buf_src,
 				 u32 elem_len, u32 elem_size)
@@ -195,14 +230,23 @@ static int qmi_encode_basic_elem(void *buf_dst, const void *buf_src,
  * @out_buf_len: Available space in the encode buffer.
  * @enc_level: Depth of the nested structure from the main structure.
  *
+<<<<<<< HEAD
  * Returns the number of bytes of encoded information on success or negative
  * errno on error.
  *
+=======
+>>>>>>> v4.19.83
  * This function encodes the "elem_len" number of struct elements, each of
  * size "ei_array->elem_size" bytes from the source buffer "buf_src" and
  * stores the encoded information in the destination buffer "buf_dst". The
  * elements are of struct data type which includes any C structure. This
  * function returns the number of bytes of encoded information.
+<<<<<<< HEAD
+=======
+ *
+ * Return: The number of bytes of encoded information on success or negative
+ * errno on error.
+>>>>>>> v4.19.83
  */
 static int qmi_encode_struct_elem(struct qmi_elem_info *ei_array,
 				  void *buf_dst, const void *buf_src,
@@ -235,13 +279,22 @@ static int qmi_encode_struct_elem(struct qmi_elem_info *ei_array,
  * @out_buf_len: Available space in the encode buffer.
  * @enc_level: Depth of the string element from the main structure.
  *
+<<<<<<< HEAD
  * Returns the number of bytes of encoded information on success or negative
  * errno on error.
  *
+=======
+>>>>>>> v4.19.83
  * This function encodes a string element of maximum length "ei_array->elem_len"
  * bytes from the source buffer "buf_src" and stores the encoded information in
  * the destination buffer "buf_dst". This function returns the number of bytes
  * of encoded information.
+<<<<<<< HEAD
+=======
+ *
+ * Return: The number of bytes of encoded information on success or negative
+ * errno on error.
+>>>>>>> v4.19.83
  */
 static int qmi_encode_string_elem(struct qmi_elem_info *ei_array,
 				  void *buf_dst, const void *buf_src,
@@ -283,6 +336,10 @@ static int qmi_encode_string_elem(struct qmi_elem_info *ei_array,
 	rc = qmi_encode_basic_elem(buf_dst + encoded_bytes, buf_src,
 				   string_len, temp_ei->elem_size);
 	encoded_bytes += rc;
+<<<<<<< HEAD
+=======
+
+>>>>>>> v4.19.83
 	return encoded_bytes;
 }
 
@@ -295,7 +352,11 @@ static int qmi_encode_string_elem(struct qmi_elem_info *ei_array,
  * @enc_level: Encode level to indicate the depth of the nested structure,
  *             within the main structure, being encoded.
  *
+<<<<<<< HEAD
  * Returns the number of bytes of encoded information on success or negative
+=======
+ * Return: The number of bytes of encoded information on success or negative
+>>>>>>> v4.19.83
  * errno on error.
  */
 static int qmi_encode(struct qmi_elem_info *ei_array, void *out_buf,
@@ -314,7 +375,11 @@ static int qmi_encode(struct qmi_elem_info *ei_array, void *out_buf,
 	int encode_tlv = 0;
 	int rc;
 
+<<<<<<< HEAD
 	if (!ei_array || !in_c_struct)
+=======
+	if (!ei_array)
+>>>>>>> v4.19.83
 		return 0;
 
 	tlv_pointer = buf_dst;
@@ -326,9 +391,15 @@ static int qmi_encode(struct qmi_elem_info *ei_array, void *out_buf,
 		buf_src = in_c_struct + temp_ei->offset;
 		tlv_type = temp_ei->tlv_type;
 
+<<<<<<< HEAD
 		if (temp_ei->is_array == NO_ARRAY) {
 			data_len_value = 1;
 		} else if (temp_ei->is_array == STATIC_ARRAY) {
+=======
+		if (temp_ei->array_type == NO_ARRAY) {
+			data_len_value = 1;
+		} else if (temp_ei->array_type == STATIC_ARRAY) {
+>>>>>>> v4.19.83
 			data_len_value = temp_ei->elem_len;
 		} else if (data_len_value <= 0 ||
 			    temp_ei->elem_len < data_len_value) {
@@ -426,6 +497,10 @@ static int qmi_encode(struct qmi_elem_info *ei_array, void *out_buf,
 			encode_tlv = 0;
 		}
 	}
+<<<<<<< HEAD
+=======
+
+>>>>>>> v4.19.83
 	return encoded_bytes;
 }
 
@@ -436,13 +511,21 @@ static int qmi_encode(struct qmi_elem_info *ei_array, void *out_buf,
  * @elem_len: Number of elements to be decoded.
  * @elem_size: Size of a single instance of the element to be decoded.
  *
+<<<<<<< HEAD
  * Returns the total size of the decoded data elements, in bytes.
  *
+=======
+>>>>>>> v4.19.83
  * This function decodes the "elem_len" number of elements in QMI wire format,
  * each of size "elem_size" bytes from the source buffer "buf_src" and stores
  * the decoded elements in the destination buffer "buf_dst". The elements are
  * of primary data type which include u8 - u64 or similar. This
  * function returns the number of bytes of decoded information.
+<<<<<<< HEAD
+=======
+ *
+ * Return: The total size of the decoded data elements, in bytes.
+>>>>>>> v4.19.83
  */
 static int qmi_decode_basic_elem(void *buf_dst, const void *buf_src,
 				 u32 elem_len, u32 elem_size)
@@ -467,14 +550,23 @@ static int qmi_decode_basic_elem(void *buf_dst, const void *buf_src,
  *           this struct element.
  * @dec_level: Depth of the nested structure from the main structure.
  *
+<<<<<<< HEAD
  * Returns the total size of the decoded data elements on success, negative
  * errno on error.
  *
+=======
+>>>>>>> v4.19.83
  * This function decodes the "elem_len" number of elements in QMI wire format,
  * each of size "(tlv_len/elem_len)" bytes from the source buffer "buf_src"
  * and stores the decoded elements in the destination buffer "buf_dst". The
  * elements are of struct data type which includes any C structure. This
  * function returns the number of bytes of decoded information.
+<<<<<<< HEAD
+=======
+ *
+ * Return: The total size of the decoded data elements on success, negative
+ * errno on error.
+>>>>>>> v4.19.83
  */
 static int qmi_decode_struct_elem(struct qmi_elem_info *ei_array,
 				  void *buf_dst, const void *buf_src,
@@ -501,6 +593,10 @@ static int qmi_decode_struct_elem(struct qmi_elem_info *ei_array,
 		       i, elem_len);
 		return -EFAULT;
 	}
+<<<<<<< HEAD
+=======
+
+>>>>>>> v4.19.83
 	return decoded_bytes;
 }
 
@@ -513,15 +609,24 @@ static int qmi_decode_struct_elem(struct qmi_elem_info *ei_array,
  *           this string element.
  * @dec_level: Depth of the string element from the main structure.
  *
+<<<<<<< HEAD
 
  * Returns the total size of the decoded data elements on success, negative
  * errno on error.
 
  *
+=======
+>>>>>>> v4.19.83
  * This function decodes the string element of maximum length
  * "ei_array->elem_len" from the source buffer "buf_src" and puts it into
  * the destination buffer "buf_dst". This function returns number of bytes
  * decoded from the input buffer.
+<<<<<<< HEAD
+=======
+ *
+ * Return: The total size of the decoded data elements on success, negative
+ * errno on error.
+>>>>>>> v4.19.83
  */
 static int qmi_decode_string_elem(struct qmi_elem_info *ei_array,
 				  void *buf_dst, const void *buf_src,
@@ -543,8 +648,13 @@ static int qmi_decode_string_elem(struct qmi_elem_info *ei_array,
 		decoded_bytes += rc;
 	}
 
+<<<<<<< HEAD
 	if (string_len >= temp_ei->elem_len) {
 		pr_err("%s: String len %d >= Max Len %d\n",
+=======
+	if (string_len > temp_ei->elem_len) {
+		pr_err("%s: String len %d > Max Len %d\n",
+>>>>>>> v4.19.83
 		       __func__, string_len, temp_ei->elem_len);
 		return -ETOOSMALL;
 	} else if (string_len > tlv_len) {
@@ -557,6 +667,10 @@ static int qmi_decode_string_elem(struct qmi_elem_info *ei_array,
 				   string_len, temp_ei->elem_size);
 	*((char *)buf_dst + string_len) = '\0';
 	decoded_bytes += rc;
+<<<<<<< HEAD
+=======
+
+>>>>>>> v4.19.83
 	return decoded_bytes;
 }
 
@@ -565,12 +679,20 @@ static int qmi_decode_string_elem(struct qmi_elem_info *ei_array,
  * @ei_array: Struct info array of the message being decoded.
  * @type: TLV Type of the element being searched.
  *
+<<<<<<< HEAD
  * Returns pointer to struct info, if found
  *
+=======
+>>>>>>> v4.19.83
  * Every element that got encoded in the QMI message will have a type
  * information associated with it. While decoding the QMI message,
  * this function is used to find the struct info regarding the element
  * that corresponds to the type being decoded.
+<<<<<<< HEAD
+=======
+ *
+ * Return: Pointer to struct info, if found
+>>>>>>> v4.19.83
  */
 static struct qmi_elem_info *find_ei(struct qmi_elem_info *ei_array,
 				     u32 type)
@@ -582,6 +704,10 @@ static struct qmi_elem_info *find_ei(struct qmi_elem_info *ei_array,
 			return temp_ei;
 		temp_ei = temp_ei + 1;
 	}
+<<<<<<< HEAD
+=======
+
+>>>>>>> v4.19.83
 	return NULL;
 }
 
@@ -594,7 +720,11 @@ static struct qmi_elem_info *find_ei(struct qmi_elem_info *ei_array,
  * @dec_level: Decode level to indicate the depth of the nested structure,
  *             within the main structure, being decoded
  *
+<<<<<<< HEAD
  * Returns the number of bytes of decoded information on success, negative
+=======
+ * Return: The number of bytes of decoded information on success, negative
+>>>>>>> v4.19.83
  * errno on error.
  */
 static int qmi_decode(struct qmi_elem_info *ei_array, void *out_c_struct,
@@ -658,9 +788,15 @@ static int qmi_decode(struct qmi_elem_info *ei_array, void *out_c_struct,
 			UPDATE_DECODE_VARIABLES(buf_src, decoded_bytes, rc);
 		}
 
+<<<<<<< HEAD
 		if (temp_ei->is_array == NO_ARRAY) {
 			data_len_value = 1;
 		} else if (temp_ei->is_array == STATIC_ARRAY) {
+=======
+		if (temp_ei->array_type == NO_ARRAY) {
+			data_len_value = 1;
+		} else if (temp_ei->array_type == STATIC_ARRAY) {
+>>>>>>> v4.19.83
 			data_len_value = temp_ei->elem_len;
 		} else if (data_len_value > temp_ei->elem_len) {
 			pr_err("%s: Data len %d > max spec %d\n",
@@ -704,6 +840,10 @@ static int qmi_decode(struct qmi_elem_info *ei_array, void *out_c_struct,
 		}
 		temp_ei = temp_ei + 1;
 	}
+<<<<<<< HEAD
+=======
+
+>>>>>>> v4.19.83
 	return decoded_bytes;
 }
 
@@ -716,7 +856,11 @@ static int qmi_decode(struct qmi_elem_info *ei_array, void *out_c_struct,
  * @ei:		QMI message descriptor
  * @c_struct:	Reference to structure to encode
  *
+<<<<<<< HEAD
  * Returns buffer with encoded message, or negative ERR_PTR() on error
+=======
+ * Return: Buffer with encoded message, or negative ERR_PTR() on error
+>>>>>>> v4.19.83
  */
 void *qmi_encode_message(int type, unsigned int msg_id, size_t *len,
 			 unsigned int txn_id, struct qmi_elem_info *ei,
@@ -736,8 +880,11 @@ void *qmi_encode_message(int type, unsigned int msg_id, size_t *len,
 			return ERR_PTR(-EINVAL);
 		}
 	}
+<<<<<<< HEAD
 	if (WARN_ON(ei && !c_struct))
 		return ERR_PTR(-EINVAL);
+=======
+>>>>>>> v4.19.83
 
 	msg = kzalloc(sizeof(*hdr) + *len, GFP_KERNEL);
 	if (!msg)
@@ -771,7 +918,11 @@ EXPORT_SYMBOL(qmi_encode_message);
  * @ei:		QMI message descriptor
  * @c_struct:	Reference to structure to decode into
  *
+<<<<<<< HEAD
  * Returns the number of bytes of decoded information on success, negative
+=======
+ * Return: The number of bytes of decoded information on success, negative
+>>>>>>> v4.19.83
  * errno on error.
  */
 int qmi_decode_message(const void *buf, size_t len,
@@ -794,6 +945,7 @@ struct qmi_elem_info qmi_response_type_v01_ei[] = {
 		.data_type	= QMI_SIGNED_2_BYTE_ENUM,
 		.elem_len	= 1,
 		.elem_size	= sizeof(u16),
+<<<<<<< HEAD
 		.is_array	= NO_ARRAY,
 		.tlv_type	= QMI_COMMON_TLV_TYPE,
 		.offset		= offsetof(struct qmi_response_type_v01,
@@ -809,12 +961,31 @@ struct qmi_elem_info qmi_response_type_v01_ei[] = {
 		.offset         = offsetof(struct qmi_response_type_v01,
 					   error),
 		.ei_array       = NULL,
+=======
+		.array_type	= NO_ARRAY,
+		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.offset		= offsetof(struct qmi_response_type_v01, result),
+		.ei_array	= NULL,
+	},
+	{
+		.data_type	= QMI_SIGNED_2_BYTE_ENUM,
+		.elem_len	= 1,
+		.elem_size	= sizeof(u16),
+		.array_type	= NO_ARRAY,
+		.tlv_type	= QMI_COMMON_TLV_TYPE,
+		.offset		= offsetof(struct qmi_response_type_v01, error),
+		.ei_array	= NULL,
+>>>>>>> v4.19.83
 	},
 	{
 		.data_type	= QMI_EOTI,
 		.elem_len	= 0,
 		.elem_size	= 0,
+<<<<<<< HEAD
 		.is_array	= NO_ARRAY,
+=======
+		.array_type	= NO_ARRAY,
+>>>>>>> v4.19.83
 		.tlv_type	= QMI_COMMON_TLV_TYPE,
 		.offset		= 0,
 		.ei_array	= NULL,

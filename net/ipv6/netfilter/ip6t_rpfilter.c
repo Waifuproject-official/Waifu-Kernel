@@ -54,14 +54,25 @@ static bool rpfilter_lookup_reverse6(struct net *net, const struct sk_buff *skb,
 	}
 
 	fl6.flowi6_mark = flags & XT_RPFILTER_VALID_MARK ? skb->mark : 0;
+<<<<<<< HEAD
 
 	if (rpfilter_addr_linklocal(&iph->saddr)) {
 		lookup_flags |= RT6_LOOKUP_F_IFACE;
 		fl6.flowi6_oif = dev->ifindex;
 	} else if ((flags & XT_RPFILTER_LOOSE) == 0)
 		fl6.flowi6_oif = dev->ifindex;
+=======
+>>>>>>> v4.19.83
 
-	rt = (void *) ip6_route_lookup(net, &fl6, lookup_flags);
+	if (rpfilter_addr_linklocal(&iph->saddr)) {
+		lookup_flags |= RT6_LOOKUP_F_IFACE;
+		fl6.flowi6_oif = dev->ifindex;
+	/* Set flowi6_oif for vrf devices to lookup route in l3mdev domain. */
+	} else if (netif_is_l3_master(dev) || netif_is_l3_slave(dev) ||
+		  (flags & XT_RPFILTER_LOOSE) == 0)
+		fl6.flowi6_oif = dev->ifindex;
+
+	rt = (void *)ip6_route_lookup(net, &fl6, skb, lookup_flags);
 	if (rt->dst.error)
 		goto out;
 
@@ -73,7 +84,9 @@ static bool rpfilter_lookup_reverse6(struct net *net, const struct sk_buff *skb,
 		goto out;
 	}
 
-	if (rt->rt6i_idev->dev == dev || (flags & XT_RPFILTER_LOOSE))
+	if (rt->rt6i_idev->dev == dev ||
+	    l3mdev_master_ifindex_rcu(rt->rt6i_idev->dev) == dev->ifindex ||
+	    (flags & XT_RPFILTER_LOOSE))
 		ret = true;
  out:
 	ip6_rt_put(rt);
@@ -111,14 +124,14 @@ static int rpfilter_check(const struct xt_mtchk_param *par)
 	unsigned int options = ~XT_RPFILTER_OPTION_MASK;
 
 	if (info->flags & options) {
-		pr_info("unknown options encountered");
+		pr_info_ratelimited("unknown options\n");
 		return -EINVAL;
 	}
 
 	if (strcmp(par->table, "mangle") != 0 &&
 	    strcmp(par->table, "raw") != 0) {
-		pr_info("match only valid in the \'raw\' "
-			"or \'mangle\' tables, not \'%s\'.\n", par->table);
+		pr_info_ratelimited("only valid in \'raw\' or \'mangle\' table, not \'%s\'\n",
+				    par->table);
 		return -EINVAL;
 	}
 

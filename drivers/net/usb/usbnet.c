@@ -112,6 +112,11 @@ int usbnet_get_endpoints(struct usbnet *dev, struct usb_interface *intf)
 			int				intr = 0;
 
 			e = alt->endpoint + ep;
+
+			/* ignore endpoints which cannot transfer data */
+			if (!usb_endpoint_maxp(&e->desc))
+				continue;
+
 			switch (e->desc.bmAttributes) {
 			case USB_ENDPOINT_XFER_INT:
 				if (!usb_endpoint_dir_in(&e->desc))
@@ -331,7 +336,10 @@ void usbnet_skb_return (struct usbnet *dev, struct sk_buff *skb)
 	stats64->rx_packets++;
 	dev->net->stats.rx_packets++;
 	stats64->rx_bytes += skb->len;
+<<<<<<< HEAD
 	dev->net->stats.rx_bytes += skb->len;
+=======
+>>>>>>> v4.19.83
 	u64_stats_update_end_irqrestore(&stats64->syncp, flags);
 
 	netif_dbg(dev, rx_status, dev->net, "< rx, len %zu, type 0x%x\n",
@@ -353,6 +361,8 @@ void usbnet_update_max_qlen(struct usbnet *dev)
 {
 	enum usb_device_speed speed = dev->udev->speed;
 
+	if (!dev->rx_urb_size || !dev->hard_mtu)
+		goto insanity;
 	switch (speed) {
 	case USB_SPEED_HIGH:
 		dev->rx_qlen = MAX_QUEUE_MEMORY / dev->rx_urb_size;
@@ -369,6 +379,7 @@ void usbnet_update_max_qlen(struct usbnet *dev)
 		dev->tx_qlen = 5 * MAX_QUEUE_MEMORY / dev->hard_mtu;
 		break;
 	default:
+insanity:
 		dev->rx_qlen = dev->tx_qlen = 4;
 	}
 }
@@ -460,12 +471,10 @@ static enum skb_state defer_bh(struct usbnet *dev, struct sk_buff *skb,
 void usbnet_defer_kevent (struct usbnet *dev, int work)
 {
 	set_bit (work, &dev->flags);
-	if (!schedule_work (&dev->kevent)) {
-		if (net_ratelimit())
-			netdev_err(dev->net, "kevent %d may have been dropped\n", work);
-	} else {
+	if (!schedule_work (&dev->kevent))
+		netdev_dbg(dev->net, "kevent %d may have been dropped\n", work);
+	else
 		netdev_dbg(dev->net, "kevent %d scheduled\n", work);
-	}
 }
 EXPORT_SYMBOL_GPL(usbnet_defer_kevent);
 
@@ -510,6 +519,7 @@ static int rx_submit (struct usbnet *dev, struct urb *urb, gfp_t flags)
 
 	if (netif_running (dev->net) &&
 	    netif_device_present (dev->net) &&
+	    test_bit(EVENT_DEV_OPEN, &dev->flags) &&
 	    !test_bit (EVENT_RX_HALT, &dev->flags) &&
 	    !test_bit (EVENT_DEV_ASLEEP, &dev->flags)) {
 		switch (retval = usb_submit_urb (urb, GFP_ATOMIC)) {
@@ -1259,7 +1269,10 @@ static void tx_complete (struct urb *urb)
 		stats64->tx_packets += entry->packets;
 		dev->net->stats.tx_packets += entry->packets;
 		stats64->tx_bytes += entry->length;
+<<<<<<< HEAD
 		dev->net->stats.tx_bytes += entry->length;
+=======
+>>>>>>> v4.19.83
 		u64_stats_update_end_irqrestore(&stats64->syncp, flags);
 	} else {
 		dev->net->stats.tx_errors++;
@@ -1329,8 +1342,8 @@ static int build_dma_sg(const struct sk_buff *skb, struct urb *urb)
 		return 0;
 
 	/* reserve one for zero packet */
-	urb->sg = kmalloc((num_sgs + 1) * sizeof(struct scatterlist),
-			  GFP_ATOMIC);
+	urb->sg = kmalloc_array(num_sgs + 1, sizeof(struct scatterlist),
+				GFP_ATOMIC);
 	if (!urb->sg)
 		return -ENOMEM;
 
@@ -1437,6 +1450,11 @@ netdev_tx_t usbnet_start_xmit (struct sk_buff *skb,
 		spin_unlock_irqrestore(&dev->txq.lock, flags);
 		goto drop;
 	}
+	if (netif_queue_stopped(net)) {
+		usb_autopm_put_interface_async(dev->intf);
+		spin_unlock_irqrestore(&dev->txq.lock, flags);
+		goto drop;
+	}
 
 #ifdef CONFIG_PM
 	/* if this triggers the device is still a sleep */
@@ -1518,9 +1536,9 @@ err:
 
 // tasklet (work deferred from completions, in_irq) or timer
 
-static void usbnet_bh (unsigned long param)
+static void usbnet_bh (struct timer_list *t)
 {
-	struct usbnet		*dev = (struct usbnet *) param;
+	struct usbnet		*dev = from_timer(dev, t, delay);
 	struct sk_buff		*skb;
 	struct skb_data		*entry;
 
@@ -1703,13 +1721,11 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 	skb_queue_head_init (&dev->txq);
 	skb_queue_head_init (&dev->done);
 	skb_queue_head_init(&dev->rxq_pause);
-	dev->bh.func = usbnet_bh;
-	dev->bh.data = (unsigned long) dev;
+	dev->bh.func = (void (*)(unsigned long))usbnet_bh;
+	dev->bh.data = (unsigned long)&dev->delay;
 	INIT_WORK (&dev->kevent, usbnet_deferred_kevent);
 	init_usb_anchor(&dev->deferred);
-	dev->delay.function = usbnet_bh;
-	dev->delay.data = (unsigned long) dev;
-	init_timer (&dev->delay);
+	timer_setup(&dev->delay, usbnet_bh, 0);
 	mutex_init (&dev->phy_mutex);
 	mutex_init(&dev->interrupt_mutex);
 	dev->interrupt_count = 0;

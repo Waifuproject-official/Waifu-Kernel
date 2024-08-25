@@ -36,6 +36,15 @@ ksft_skip=4
 if ! uname -m | sed -e s/i.86/x86/ -e s/x86_64/x86/ | grep -q x86; then
 	echo "$0 # Skipped: Test can only run on x86 architectures."
 	exit $ksft_skip
+<<<<<<< HEAD
+=======
+fi
+
+msg="skip all tests:"
+if [ $UID != 0 ] && [ $EVALUATE_ONLY == 0 ]; then
+    echo $msg please run this as root >&2
+    exit $ksft_skip
+>>>>>>> v4.19.83
 fi
 
 max_cpus=$(($(nproc)-1))
@@ -95,18 +104,36 @@ done
 
 [ $EVALUATE_ONLY -eq 0 ] && cpupower frequency-set -g powersave --max=${max_freq}MHz >& /dev/null
 
+<<<<<<< HEAD
 echo "=============================================================================="
+=======
+echo "========================================================================"
+>>>>>>> v4.19.83
 echo "The marketing frequency of the cpu is $mkt_freq MHz"
 echo "The maximum frequency of the cpu is $max_freq MHz"
 echo "The minimum frequency of the cpu is $min_freq MHz"
 
 # make a pretty table
-echo "Target      Actual      Difference     MSR(0x199)     max_perf_pct"
+echo "Target Actual Difference MSR(0x199) max_perf_pct" | tr " " "\n" > /tmp/result.tab
 for freq in `seq $max_freq -100 $min_freq`
 do
 	result_freq=$(cat /tmp/result.${freq} | grep "cpu MHz" | awk ' { print $4 } ' | awk -F "." ' { print $1 } ')
 	msr=$(cat /tmp/result.${freq} | grep "msr" | awk ' { print $3 } ')
 	max_perf_pct=$(cat /tmp/result.${freq} | grep "max_perf_pct" | awk ' { print $2 } ' )
+<<<<<<< HEAD
 	echo " $freq        $result_freq          $(($result_freq-$freq))          $msr          $(($max_perf_pct*$max_freq))"
+=======
+	cat >> /tmp/result.tab << EOF
+$freq
+$result_freq
+$((result_freq - freq))
+$msr
+$((max_perf_pct * max_freq))
+EOF
+>>>>>>> v4.19.83
 done
+
+# print the table
+pr -aTt -5 < /tmp/result.tab
+
 exit 0

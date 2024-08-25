@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+// SPDX-License-Identifier: GPL-2.0
+>>>>>>> v4.19.83
 #include <linux/module.h>
 #include <asm/alternative.h>
 #include <asm/facility.h>

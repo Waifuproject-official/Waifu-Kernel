@@ -21,10 +21,13 @@
  * IN THE SOFTWARE.
  *
  */
-#include <linux/firmware.h>
-#include "i915_drv.h"
-#include "intel_uc.h"
 
+#include <linux/types.h>
+
+#include "intel_huc.h"
+#include "i915_drv.h"
+
+<<<<<<< HEAD
 /**
  * DOC: HuC Firmware
  *
@@ -77,65 +80,84 @@ MODULE_FIRMWARE(I915_KBL_HUC_UCODE);
  * Return: 0 on success, non-zero on failure
  */
 static int huc_ucode_xfer(struct drm_i915_private *dev_priv)
+=======
+void intel_huc_init_early(struct intel_huc *huc)
+>>>>>>> v4.19.83
 {
-	struct intel_uc_fw *huc_fw = &dev_priv->huc.fw;
+	intel_huc_fw_init_early(huc);
+}
+
+int intel_huc_init_misc(struct intel_huc *huc)
+{
+	struct drm_i915_private *i915 = huc_to_i915(huc);
+
+	intel_uc_fw_fetch(i915, &huc->fw);
+	return 0;
+}
+
+/**
+ * intel_huc_auth() - Authenticate HuC uCode
+ * @huc: intel_huc structure
+ *
+ * Called after HuC and GuC firmware loading during intel_uc_init_hw().
+ *
+ * This function pins HuC firmware image object into GGTT.
+ * Then it invokes GuC action to authenticate passing the offset to RSA
+ * signature through intel_guc_auth_huc(). It then waits for 50ms for
+ * firmware verification ACK and unpins the object.
+ */
+int intel_huc_auth(struct intel_huc *huc)
+{
+	struct drm_i915_private *i915 = huc_to_i915(huc);
+	struct intel_guc *guc = &i915->guc;
 	struct i915_vma *vma;
-	unsigned long offset = 0;
-	u32 size;
+	u32 status;
 	int ret;
 
-	ret = i915_gem_object_set_to_gtt_domain(huc_fw->obj, false);
-	if (ret) {
-		DRM_DEBUG_DRIVER("set-domain failed %d\n", ret);
-		return ret;
-	}
+	if (huc->fw.load_status != INTEL_UC_FIRMWARE_SUCCESS)
+		return -ENOEXEC;
 
-	vma = i915_gem_object_ggtt_pin(huc_fw->obj, NULL, 0, 0,
-				PIN_OFFSET_BIAS | GUC_WOPCM_TOP);
+	vma = i915_gem_object_ggtt_pin(huc->fw.obj, NULL, 0, 0,
+				       PIN_OFFSET_BIAS | guc->ggtt_pin_bias);
 	if (IS_ERR(vma)) {
-		DRM_DEBUG_DRIVER("pin failed %d\n", (int)PTR_ERR(vma));
-		return PTR_ERR(vma);
+		ret = PTR_ERR(vma);
+		DRM_ERROR("HuC: Failed to pin huc fw object %d\n", ret);
+		goto fail;
 	}
 
-	intel_uncore_forcewake_get(dev_priv, FORCEWAKE_ALL);
+	ret = intel_guc_auth_huc(guc,
+				 intel_guc_ggtt_offset(guc, vma) +
+				 huc->fw.rsa_offset);
+	if (ret) {
+		DRM_ERROR("HuC: GuC did not ack Auth request %d\n", ret);
+		goto fail_unpin;
+	}
 
-	/* Set the source address for the uCode */
-	offset = guc_ggtt_offset(vma) + huc_fw->header_offset;
-	I915_WRITE(DMA_ADDR_0_LOW, lower_32_bits(offset));
-	I915_WRITE(DMA_ADDR_0_HIGH, upper_32_bits(offset) & 0xFFFF);
+	/* Check authentication status, it should be done by now */
+	ret = __intel_wait_for_register(i915,
+					HUC_STATUS2,
+					HUC_FW_VERIFIED,
+					HUC_FW_VERIFIED,
+					2, 50, &status);
+	if (ret) {
+		DRM_ERROR("HuC: Firmware not verified %#x\n", status);
+		goto fail_unpin;
+	}
 
-	/* Hardware doesn't look at destination address for HuC. Set it to 0,
-	 * but still program the correct address space.
-	 */
-	I915_WRITE(DMA_ADDR_1_LOW, 0);
-	I915_WRITE(DMA_ADDR_1_HIGH, DMA_ADDRESS_SPACE_WOPCM);
-
-	size = huc_fw->header_size + huc_fw->ucode_size;
-	I915_WRITE(DMA_COPY_SIZE, size);
-
-	/* Start the DMA */
-	I915_WRITE(DMA_CTRL, _MASKED_BIT_ENABLE(HUC_UKERNEL | START_DMA));
-
-	/* Wait for DMA to finish */
-	ret = wait_for((I915_READ(DMA_CTRL) & START_DMA) == 0, 100);
-
-	DRM_DEBUG_DRIVER("HuC DMA transfer wait over with ret %d\n", ret);
-
-	/* Disable the bits once DMA is over */
-	I915_WRITE(DMA_CTRL, _MASKED_BIT_DISABLE(HUC_UKERNEL));
-
-	intel_uncore_forcewake_put(dev_priv, FORCEWAKE_ALL);
-
-	/*
-	 * We keep the object pages for reuse during resume. But we can unpin it
-	 * now that DMA has completed, so it doesn't continue to take up space.
-	 */
 	i915_vma_unpin(vma);
+	return 0;
 
+fail_unpin:
+	i915_vma_unpin(vma);
+fail:
+	huc->fw.load_status = INTEL_UC_FIRMWARE_FAIL;
+
+	DRM_ERROR("HuC: Authentication failed %d\n", ret);
 	return ret;
 }
 
 /**
+<<<<<<< HEAD
  * intel_huc_select_fw() - selects HuC firmware for loading
  * @huc:	intel_huc struct
  */
@@ -172,96 +194,28 @@ void intel_huc_select_fw(struct intel_huc *huc)
 
 /**
  * intel_huc_init_hw() - load HuC uCode to device
+=======
+ * intel_huc_check_status() - check HuC status
+>>>>>>> v4.19.83
  * @huc: intel_huc structure
  *
- * Called from guc_setup() during driver loading and also after a GPU reset.
- * Be note that HuC loading must be done before GuC loading.
+ * This function reads status register to verify if HuC
+ * firmware was successfully loaded.
  *
- * The firmware image should have already been fetched into memory by the
- * earlier call to intel_huc_init(), so here we need only check that
- * is succeeded, and then transfer the image to the h/w.
- *
+ * Returns positive value if HuC firmware is loaded and verified
+ * and -ENODEV if HuC is not present.
  */
-void intel_huc_init_hw(struct intel_huc *huc)
+int intel_huc_check_status(struct intel_huc *huc)
 {
 	struct drm_i915_private *dev_priv = huc_to_i915(huc);
-	int err;
+	u32 status;
 
-	DRM_DEBUG_DRIVER("%s fw status: fetch %s, load %s\n",
-		huc->fw.path,
-		intel_uc_fw_status_repr(huc->fw.fetch_status),
-		intel_uc_fw_status_repr(huc->fw.load_status));
+	if (!HAS_HUC(dev_priv))
+		return -ENODEV;
 
-	if (huc->fw.fetch_status != INTEL_UC_FIRMWARE_SUCCESS)
-		return;
+	intel_runtime_pm_get(dev_priv);
+	status = I915_READ(HUC_STATUS2) & HUC_FW_VERIFIED;
+	intel_runtime_pm_put(dev_priv);
 
-	huc->fw.load_status = INTEL_UC_FIRMWARE_PENDING;
-
-	err = huc_ucode_xfer(dev_priv);
-
-	huc->fw.load_status = err ?
-		INTEL_UC_FIRMWARE_FAIL : INTEL_UC_FIRMWARE_SUCCESS;
-
-	DRM_DEBUG_DRIVER("%s fw status: fetch %s, load %s\n",
-		huc->fw.path,
-		intel_uc_fw_status_repr(huc->fw.fetch_status),
-		intel_uc_fw_status_repr(huc->fw.load_status));
-
-	if (huc->fw.load_status != INTEL_UC_FIRMWARE_SUCCESS)
-		DRM_ERROR("Failed to complete HuC uCode load with ret %d\n", err);
-
-	return;
+	return status;
 }
-
-/**
- * intel_guc_auth_huc() - authenticate ucode
- * @dev_priv: the drm_i915_device
- *
- * Triggers a HuC fw authentication request to the GuC via intel_guc_action_
- * authenticate_huc interface.
- */
-void intel_guc_auth_huc(struct drm_i915_private *dev_priv)
-{
-	struct intel_guc *guc = &dev_priv->guc;
-	struct intel_huc *huc = &dev_priv->huc;
-	struct i915_vma *vma;
-	int ret;
-	u32 data[2];
-
-	if (huc->fw.load_status != INTEL_UC_FIRMWARE_SUCCESS)
-		return;
-
-	vma = i915_gem_object_ggtt_pin(huc->fw.obj, NULL, 0, 0,
-				PIN_OFFSET_BIAS | GUC_WOPCM_TOP);
-	if (IS_ERR(vma)) {
-		DRM_ERROR("failed to pin huc fw object %d\n",
-				(int)PTR_ERR(vma));
-		return;
-	}
-
-	/* Specify auth action and where public signature is. */
-	data[0] = INTEL_GUC_ACTION_AUTHENTICATE_HUC;
-	data[1] = guc_ggtt_offset(vma) + huc->fw.rsa_offset;
-
-	ret = intel_guc_send(guc, data, ARRAY_SIZE(data));
-	if (ret) {
-		DRM_ERROR("HuC: GuC did not ack Auth request %d\n", ret);
-		goto out;
-	}
-
-	/* Check authentication status, it should be done by now */
-	ret = intel_wait_for_register(dev_priv,
-				HUC_STATUS2,
-				HUC_FW_VERIFIED,
-				HUC_FW_VERIFIED,
-				50);
-
-	if (ret) {
-		DRM_ERROR("HuC: Authentication failed %d\n", ret);
-		goto out;
-	}
-
-out:
-	i915_vma_unpin(vma);
-}
-

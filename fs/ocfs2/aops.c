@@ -346,7 +346,7 @@ static int ocfs2_readpage(struct file *file, struct page *page)
 	unlock = 0;
 
 out_alloc:
-	up_read(&OCFS2_I(inode)->ip_alloc_sem);
+	up_read(&oi->ip_alloc_sem);
 out_inode_unlock:
 	ocfs2_inode_unlock(inode, 0);
 out:
@@ -797,6 +797,7 @@ struct ocfs2_write_ctxt {
 	struct ocfs2_cached_dealloc_ctxt w_dealloc;
 
 	struct list_head		w_unwritten_list;
+	unsigned int			w_unwritten_count;
 };
 
 void ocfs2_unlock_and_free_pages(struct page **pages, int num_pages)
@@ -1386,6 +1387,7 @@ retry:
 	desc->c_clear_unwritten = 0;
 	list_add_tail(&new->ue_ip_node, &oi->ip_unwritten_list);
 	list_add_tail(&new->ue_node, &wc->w_unwritten_list);
+	wc->w_unwritten_count++;
 	new = NULL;
 unlock:
 	spin_unlock(&oi->ip_lock);
@@ -2054,7 +2056,8 @@ out_write_size:
 		inode->i_mtime = inode->i_ctime = current_time(inode);
 		di->i_mtime = di->i_ctime = cpu_to_le64(inode->i_mtime.tv_sec);
 		di->i_mtime_nsec = di->i_ctime_nsec = cpu_to_le32(inode->i_mtime.tv_nsec);
-		ocfs2_update_inode_fsync_trans(handle, inode, 1);
+		if (handle)
+			ocfs2_update_inode_fsync_trans(handle, inode, 1);
 	}
 	if (handle)
 		ocfs2_journal_dirty(handle, wc->w_di_bh);
@@ -2151,12 +2154,29 @@ static int ocfs2_dio_wr_get_block(struct inode *inode, sector_t iblock,
 	struct ocfs2_dio_write_ctxt *dwc = NULL;
 	struct buffer_head *di_bh = NULL;
 	u64 p_blkno;
-	loff_t pos = iblock << inode->i_sb->s_blocksize_bits;
+	unsigned int i_blkbits = inode->i_sb->s_blocksize_bits;
+	loff_t pos = iblock << i_blkbits;
+	sector_t endblk = (i_size_read(inode) - 1) >> i_blkbits;
 	unsigned len, total_len = bh_result->b_size;
 	int ret = 0, first_get_block = 0;
 
 	len = osb->s_clustersize - (pos & (osb->s_clustersize - 1));
 	len = min(total_len, len);
+
+	/*
+	 * bh_result->b_size is count in get_more_blocks according to write
+	 * "pos" and "end", we need map twice to return different buffer state:
+	 * 1. area in file size, not set NEW;
+	 * 2. area out file size, set  NEW.
+	 *
+	 *		   iblock    endblk
+	 * |--------|---------|---------|---------
+	 * |<-------area in file------->|
+	 */
+
+	if ((iblock <= endblk) &&
+	    ((iblock + ((len - 1) >> i_blkbits)) > endblk))
+		len = (endblk - iblock + 1) << i_blkbits;
 
 	mlog(0, "get block of %lu at %llu:%u req %u\n",
 			inode->i_ino, pos, len, total_len);
@@ -2211,7 +2231,7 @@ static int ocfs2_dio_wr_get_block(struct inode *inode, sector_t iblock,
 	down_write(&oi->ip_alloc_sem);
 
 	if (first_get_block) {
-		if (ocfs2_sparse_alloc(OCFS2_SB(inode->i_sb)))
+		if (ocfs2_sparse_alloc(osb))
 			ret = ocfs2_zero_tail(inode, di_bh, pos);
 		else
 			ret = ocfs2_expand_nonsparse_inode(inode, di_bh, pos,
@@ -2241,6 +2261,9 @@ static int ocfs2_dio_wr_get_block(struct inode *inode, sector_t iblock,
 	if (desc->c_needs_zero)
 		set_buffer_new(bh_result);
 
+	if (iblock > endblk)
+		set_buffer_new(bh_result);
+
 	/* May sleep in end_io. It should not happen in a irq context. So defer
 	 * it to dio work queue. */
 	set_buffer_defer_completion(bh_result);
@@ -2256,7 +2279,7 @@ static int ocfs2_dio_wr_get_block(struct inode *inode, sector_t iblock,
 		ue->ue_phys = desc->c_phys;
 
 		list_splice_tail_init(&wc->w_unwritten_list, &dwc->dw_zero_list);
-		dwc->dw_zero_count++;
+		dwc->dw_zero_count += wc->w_unwritten_count;
 	}
 
 	ret = ocfs2_write_end_nolock(inode->i_mapping, pos, len, len, wc);
@@ -2329,6 +2352,12 @@ static int ocfs2_dio_end_io_write(struct inode *inode,
 	di = (struct ocfs2_dinode *)di_bh->b_data;
 
 	ocfs2_init_dinode_extent_tree(&et, INODE_CACHE(inode), di_bh);
+
+	/* Attach dealloc with extent tree in case that we may reuse extents
+	 * which are already unlinked from current extent tree due to extent
+	 * rotation and merging.
+	 */
+	et.et_dealloc = &dealloc;
 
 	ret = ocfs2_lock_allocators(inode, &et, 0, dwc->dw_zero_count*2,
 				    &data_ac, &meta_ac);

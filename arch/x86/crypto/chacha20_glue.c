@@ -106,8 +106,12 @@ static struct skcipher_alg alg = {
 	.base.cra_driver_name	= "chacha20-simd",
 	.base.cra_priority	= 300,
 	.base.cra_blocksize	= 1,
+<<<<<<< HEAD
 	.base.cra_ctxsize	= sizeof(struct chacha_ctx),
 	.base.cra_alignmask	= sizeof(u32) - 1,
+=======
+	.base.cra_ctxsize	= sizeof(struct chacha20_ctx),
+>>>>>>> v4.19.83
 	.base.cra_module	= THIS_MODULE,
 
 	.min_keysize		= CHACHA_KEY_SIZE,

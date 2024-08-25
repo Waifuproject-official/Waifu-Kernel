@@ -57,6 +57,11 @@ extern ssize_t cpu_show_spec_store_bypass(struct device *dev,
 					  struct device_attribute *attr, char *buf);
 extern ssize_t cpu_show_l1tf(struct device *dev,
 			     struct device_attribute *attr, char *buf);
+<<<<<<< HEAD
+=======
+extern ssize_t cpu_show_mds(struct device *dev,
+			    struct device_attribute *attr, char *buf);
+>>>>>>> v4.19.83
 
 extern __printf(4, 5)
 struct device *cpu_device_create(struct device *parent, void *drvdata,
@@ -67,27 +72,17 @@ extern void unregister_cpu(struct cpu *cpu);
 extern ssize_t arch_cpu_probe(const char *, size_t);
 extern ssize_t arch_cpu_release(const char *, size_t);
 #endif
-struct notifier_block;
 
-#define CPU_ONLINE		0x0002 /* CPU (unsigned)v is up */
-#define CPU_UP_PREPARE		0x0003 /* CPU (unsigned)v coming up */
-#define CPU_DEAD		0x0007 /* CPU (unsigned)v dead */
-#define CPU_POST_DEAD		0x0009 /* CPU (unsigned)v dead, cpu_hotplug
-					* lock is dropped */
-#define CPU_BROKEN		0x000B /* CPU (unsigned)v did not die properly,
-					* perhaps due to preemption. */
-
-/* Used for CPU hotplug events occurring while tasks are frozen due to a suspend
- * operation in progress
+/*
+ * These states are not related to the core CPU hotplug mechanism. They are
+ * used by various (sub)architectures to track internal state
  */
-#define CPU_TASKS_FROZEN	0x0010
-
-#define CPU_ONLINE_FROZEN	(CPU_ONLINE | CPU_TASKS_FROZEN)
-#define CPU_UP_PREPARE_FROZEN	(CPU_UP_PREPARE | CPU_TASKS_FROZEN)
-#define CPU_UP_CANCELED_FROZEN	(CPU_UP_CANCELED | CPU_TASKS_FROZEN)
-#define CPU_DOWN_PREPARE_FROZEN	(CPU_DOWN_PREPARE | CPU_TASKS_FROZEN)
-#define CPU_DOWN_FAILED_FROZEN	(CPU_DOWN_FAILED | CPU_TASKS_FROZEN)
-#define CPU_DEAD_FROZEN		(CPU_DEAD | CPU_TASKS_FROZEN)
+#define CPU_ONLINE		0x0002 /* CPU is up */
+#define CPU_UP_PREPARE		0x0003 /* CPU coming up */
+#define CPU_DEAD		0x0007 /* CPU dead */
+#define CPU_DEAD_FROZEN		0x0008 /* CPU timed out on unplug */
+#define CPU_POST_DEAD		0x0009 /* CPU successfully unplugged */
+#define CPU_BROKEN		0x000B /* CPU did not die properly */
 
 #ifdef CONFIG_SMP
 extern bool cpuhp_tasks_frozen;
@@ -115,6 +110,7 @@ extern void cpus_write_lock(void);
 extern void cpus_write_unlock(void);
 extern void cpus_read_lock(void);
 extern void cpus_read_unlock(void);
+extern int  cpus_read_trylock(void);
 extern void lockdep_assert_cpus_held(void);
 extern void cpu_hotplug_disable(void);
 extern void cpu_hotplug_enable(void);
@@ -127,6 +123,7 @@ static inline void cpus_write_lock(void) { }
 static inline void cpus_write_unlock(void) { }
 static inline void cpus_read_lock(void) { }
 static inline void cpus_read_unlock(void) { }
+static inline int  cpus_read_trylock(void) { return true; }
 static inline void lockdep_assert_cpus_held(void) { }
 static inline void cpu_hotplug_disable(void) { }
 static inline void cpu_hotplug_enable(void) { }
@@ -178,6 +175,7 @@ void cpuhp_report_idle_dead(void);
 static inline void cpuhp_report_idle_dead(void) { }
 #endif /* #ifdef CONFIG_HOTPLUG_CPU */
 
+<<<<<<< HEAD
 #define IDLE_START 1
 #define IDLE_END 2
 
@@ -185,6 +183,8 @@ void idle_notifier_register(struct notifier_block *n);
 void idle_notifier_unregister(struct notifier_block *n);
 void idle_notifier_call_chain(unsigned long val);
 
+=======
+>>>>>>> v4.19.83
 enum cpuhp_smt_control {
 	CPU_SMT_ENABLED,
 	CPU_SMT_DISABLED,
@@ -196,10 +196,46 @@ enum cpuhp_smt_control {
 extern enum cpuhp_smt_control cpu_smt_control;
 extern void cpu_smt_disable(bool force);
 extern void cpu_smt_check_topology(void);
+<<<<<<< HEAD
+=======
+extern int cpuhp_smt_enable(void);
+extern int cpuhp_smt_disable(enum cpuhp_smt_control ctrlval);
+>>>>>>> v4.19.83
 #else
 # define cpu_smt_control		(CPU_SMT_ENABLED)
 static inline void cpu_smt_disable(bool force) { }
 static inline void cpu_smt_check_topology(void) { }
+<<<<<<< HEAD
 #endif
 
+=======
+static inline int cpuhp_smt_enable(void) { return 0; }
+static inline int cpuhp_smt_disable(enum cpuhp_smt_control ctrlval) { return 0; }
+#endif
+
+/*
+ * These are used for a global "mitigations=" cmdline option for toggling
+ * optional CPU mitigations.
+ */
+enum cpu_mitigations {
+	CPU_MITIGATIONS_OFF,
+	CPU_MITIGATIONS_AUTO,
+	CPU_MITIGATIONS_AUTO_NOSMT,
+};
+
+extern enum cpu_mitigations cpu_mitigations;
+
+/* mitigations=off */
+static inline bool cpu_mitigations_off(void)
+{
+	return cpu_mitigations == CPU_MITIGATIONS_OFF;
+}
+
+/* mitigations=auto,nosmt */
+static inline bool cpu_mitigations_auto_nosmt(void)
+{
+	return cpu_mitigations == CPU_MITIGATIONS_AUTO_NOSMT;
+}
+
+>>>>>>> v4.19.83
 #endif /* _LINUX_CPU_H_ */

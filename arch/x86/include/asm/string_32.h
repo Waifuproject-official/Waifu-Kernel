@@ -179,6 +179,7 @@ static inline void *__memcpy3d(void *to, const void *from, size_t len)
  *	No 3D Now!
  */
 
+<<<<<<< HEAD
 #if (__GNUC__ >= 4)
 #define memcpy(t, f, n) __builtin_memcpy(t, f, n)
 #else
@@ -187,6 +188,9 @@ static inline void *__memcpy3d(void *to, const void *from, size_t len)
 	 ? __constant_memcpy((t), (f), (n))	\
 	 : __memcpy((t), (f), (n)))
 #endif
+=======
+#define memcpy(t, f, n) __builtin_memcpy(t, f, n)
+>>>>>>> v4.19.83
 
 #endif
 #endif /* !CONFIG_FORTIFY_SOURCE */
@@ -282,12 +286,7 @@ void *__constant_c_and_count_memset(void *s, unsigned long pattern,
 
 	{
 		int d0, d1;
-#if __GNUC__ == 4 && __GNUC_MINOR__ == 0
-		/* Workaround for broken gcc 4.0 */
-		register unsigned long eax asm("%eax") = pattern;
-#else
 		unsigned long eax = pattern;
-#endif
 
 		switch (count % 4) {
 		case 0:
@@ -321,15 +320,7 @@ void *__constant_c_and_count_memset(void *s, unsigned long pattern,
 #define __HAVE_ARCH_MEMSET
 extern void *memset(void *, int, size_t);
 #ifndef CONFIG_FORTIFY_SOURCE
-#if (__GNUC__ >= 4)
 #define memset(s, c, count) __builtin_memset(s, c, count)
-#else
-#define memset(s, c, count)						\
-	(__builtin_constant_p(c)					\
-	 ? __constant_c_x_memset((s), (0x01010101UL * (unsigned char)(c)), \
-				 (count))				\
-	 : __memset((s), (c), (count)))
-#endif
 #endif /* !CONFIG_FORTIFY_SOURCE */
 
 #define __HAVE_ARCH_MEMSET16

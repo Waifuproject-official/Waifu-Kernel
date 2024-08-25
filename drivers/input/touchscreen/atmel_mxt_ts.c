@@ -23,7 +23,10 @@
 #include <linux/delay.h>
 #include <linux/firmware.h>
 #include <linux/i2c.h>
+<<<<<<< HEAD
 #include <linux/input.h>
+=======
+>>>>>>> v4.19.83
 #include <linux/input/mt.h>
 #include <linux/interrupt.h>
 #include <linux/regulator/consumer.h>
@@ -381,16 +384,20 @@ struct mxt_data {
 	/* for config update handling */
 	struct completion crc_completion;
 
+<<<<<<< HEAD
 	/* Enable reporting of input events */
 	bool enable_reporting;
 
 	/* Indicates whether device is in suspend */
 	bool suspended;
 
+=======
+>>>>>>> v4.19.83
 	u32 *t19_keymap;
 	unsigned int t19_num_keys;
 
 	enum mxt_suspend_mode suspend_mode;
+<<<<<<< HEAD
 
 	bool use_regulator;
 	struct regulator *reg_vdd;
@@ -402,6 +409,8 @@ struct mxt_data {
 
 	u32 panel_minx, panel_miny, panel_maxx, panel_maxy;
 	u32 disp_minx, disp_miny, disp_maxx, disp_maxy;
+=======
+>>>>>>> v4.19.83
 };
 
 struct mxt_vb2_buffer {
@@ -901,6 +910,7 @@ static void mxt_proc_t9_message(struct mxt_data *data, u8 *message)
 		if (!amplitude)
 			amplitude = MXT_PRESSURE_DEFAULT;
 
+<<<<<<< HEAD
 		/* Handle orientation */
 		if (data->xy_switch)
 			swap(x, y);
@@ -909,6 +919,8 @@ static void mxt_proc_t9_message(struct mxt_data *data, u8 *message)
 		if (data->inverty)
 			y = data->max_y - y;
 
+=======
+>>>>>>> v4.19.83
 		/* Touch active */
 		input_mt_report_slot_state(input_dev, MT_TOOL_FINGER, 1);
 		input_report_abs(input_dev, ABS_MT_POSITION_X,
@@ -1396,10 +1408,13 @@ static int mxt_prepare_cfg_mem(struct mxt_data *data, struct mxt_cfg *cfg)
 			dev_err(dev, "Bad format: failed to parse object\n");
 			return -EINVAL;
 		}
+<<<<<<< HEAD
 
 		if (cfg->raw_pos + offset >= cfg->raw_size)
 			return -EINVAL;
 
+=======
+>>>>>>> v4.19.83
 		cfg->raw_pos += offset;
 
 		object = mxt_get_object(data, type);
@@ -1415,7 +1430,10 @@ static int mxt_prepare_cfg_mem(struct mxt_data *data, struct mxt_cfg *cfg)
 					return -EINVAL;
 				}
 				cfg->raw_pos += offset;
+<<<<<<< HEAD
 
+=======
+>>>>>>> v4.19.83
 			}
 			continue;
 		}
@@ -1546,7 +1564,11 @@ static int mxt_update_cfg(struct mxt_data *data, const struct firmware *fw)
 
 	mxt_update_crc(data, MXT_COMMAND_REPORTALL, 1);
 
+<<<<<<< HEAD
 	if (memcmp(cfg.raw, MXT_CFG_MAGIC, strlen(MXT_CFG_MAGIC))) {
+=======
+	if (strncmp(cfg.raw, MXT_CFG_MAGIC, strlen(MXT_CFG_MAGIC))) {
+>>>>>>> v4.19.83
 		dev_err(dev, "Unrecognised config file\n");
 		ret = -EINVAL;
 		goto release_raw;
@@ -1582,7 +1604,11 @@ static int mxt_update_cfg(struct mxt_data *data, const struct firmware *fw)
 
 	/* Read CRCs */
 	ret = sscanf(cfg.raw + cfg.raw_pos, "%x%n", &info_crc, &offset);
+<<<<<<< HEAD
 	if (ret != 1 || (cfg.raw_pos + offset >= cfg.raw_size)) {
+=======
+	if (ret != 1) {
+>>>>>>> v4.19.83
 		dev_err(dev, "Bad format: failed to parse Info CRC\n");
 		ret = -EINVAL;
 		goto release_raw;
@@ -1590,7 +1616,11 @@ static int mxt_update_cfg(struct mxt_data *data, const struct firmware *fw)
 	cfg.raw_pos += offset;
 
 	ret = sscanf(cfg.raw + cfg.raw_pos, "%x%n", &config_crc, &offset);
+<<<<<<< HEAD
 	if (ret != 1 || (cfg.raw_pos + offset >= cfg.raw_size)) {
+=======
+	if (ret != 1) {
+>>>>>>> v4.19.83
 		dev_err(dev, "Bad format: failed to parse Config CRC\n");
 		ret = -EINVAL;
 		goto release_raw;
@@ -1835,7 +1865,11 @@ static int mxt_read_info_block(struct mxt_data *data)
 	if (!id_buf)
 		return -ENOMEM;
 
+<<<<<<< HEAD
 	error = __mxt_read_reg(data, 0, size, id_buf);
+=======
+	error = __mxt_read_reg(client, 0, size, id_buf);
+>>>>>>> v4.19.83
 	if (error)
 		goto err_free_mem;
 
@@ -1852,7 +1886,11 @@ static int mxt_read_info_block(struct mxt_data *data)
 	id_buf = buf;
 
 	/* Read rest of info block */
+<<<<<<< HEAD
 	error = __mxt_read_reg(data, MXT_OBJECT_START,
+=======
+	error = __mxt_read_reg(client, MXT_OBJECT_START,
+>>>>>>> v4.19.83
 			       size - MXT_OBJECT_START,
 			       id_buf + MXT_OBJECT_START);
 	if (error)
@@ -1900,6 +1938,7 @@ static int mxt_read_info_block(struct mxt_data *data)
 
 err_free_mem:
 	kfree(id_buf);
+<<<<<<< HEAD
 	return error;
 }
 
@@ -2125,6 +2164,8 @@ fail_put_avdd:
 	regulator_put(data->reg_avdd);
 fail_put_vdd:
 	regulator_put(data->reg_vdd);
+=======
+>>>>>>> v4.19.83
 	return error;
 }
 
@@ -3265,6 +3306,7 @@ static const struct attribute_group mxt_attr_group = {
 
 static void mxt_start(struct mxt_data *data)
 {
+<<<<<<< HEAD
 	if (!data->suspended || data->in_bootloader)
 		return;
 
@@ -3274,6 +3316,8 @@ static void mxt_start(struct mxt_data *data)
 	/* enable regulators */
 	mxt_regulator_enable(data);
 
+=======
+>>>>>>> v4.19.83
 	switch (data->suspend_mode) {
 	case MXT_SUSPEND_T9_CTRL:
 		mxt_soft_reset(data);
@@ -3292,18 +3336,24 @@ static void mxt_start(struct mxt_data *data)
 		mxt_t6_command(data, MXT_COMMAND_CALIBRATE, 1, false);
 		break;
 	}
+<<<<<<< HEAD
 
 	mxt_acquire_irq(data);
 	data->suspended = false;
+=======
+>>>>>>> v4.19.83
 }
 
 static void mxt_stop(struct mxt_data *data)
 {
+<<<<<<< HEAD
 	if (data->suspended || data->in_bootloader)
 		return;
 
 	disable_irq(data->irq);
 
+=======
+>>>>>>> v4.19.83
 	switch (data->suspend_mode) {
 	case MXT_SUSPEND_T9_CTRL:
 		/* Touch disable */
@@ -3378,6 +3428,7 @@ static int mxt_parse_device_properties(struct mxt_data *data)
 
 	return 0;
 }
+<<<<<<< HEAD
 
 #ifdef CONFIG_OF
 
@@ -3465,6 +3516,8 @@ static int mxt_get_dt_coords(struct device *dev, char *name,
 }
 
 #endif
+=======
+>>>>>>> v4.19.83
 
 static const struct dmi_system_id chromebook_T9_suspend_dmi[] = {
 	{
@@ -3485,9 +3538,13 @@ static int mxt_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct mxt_data *data;
 	int error;
+<<<<<<< HEAD
 #ifdef CONFIG_OF
 	struct device_node *dt = client->dev.of_node;
 #endif
+=======
+
+>>>>>>> v4.19.83
 	/*
 	 * Ignore devices that do not have device properties attached to
 	 * them, as we need help determining whether we are dealing with
@@ -3513,12 +3570,15 @@ static int mxt_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	if (ACPI_COMPANION(&client->dev) && client->addr < 0x40)
 		return -ENXIO;
 
+<<<<<<< HEAD
 #ifdef CONFIG_OF
 	if (mxt_check_dedicated_touch(dt, "compatible",
 		"qcom,i2c-touch-active") < 0)
 		return -ENODEV;
 #endif
 
+=======
+>>>>>>> v4.19.83
 	data = devm_kzalloc(&client->dev, sizeof(struct mxt_data), GFP_KERNEL);
 	if (!data)
 		return -ENOMEM;
@@ -3592,11 +3652,15 @@ static int mxt_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	disable_irq(client->irq);
 
 	if (data->reset_gpio) {
+<<<<<<< HEAD
 		gpiod_set_value(data->reset_gpio, 0);
+=======
+>>>>>>> v4.19.83
 		msleep(MXT_RESET_GPIO_TIME);
 		gpiod_set_value(data->reset_gpio, 1);
 		msleep(MXT_RESET_INVALID_CHG);
 	}
+<<<<<<< HEAD
 	error = mxt_pinctrl_init(data);
 	if (error)
 		dev_info(&client->dev, "No pinctrl support\n");
@@ -3607,6 +3671,8 @@ static int mxt_probe(struct i2c_client *client, const struct i2c_device_id *id)
 
 	data->irq = data->client->irq =
 				gpiod_to_irq(data->irq_gpio);
+=======
+>>>>>>> v4.19.83
 
 	error = mxt_initialize(data);
 	if (error)
@@ -3681,6 +3747,11 @@ static SIMPLE_DEV_PM_OPS(mxt_pm_ops, mxt_suspend, mxt_resume);
 
 static const struct of_device_id mxt_of_match[] = {
 	{ .compatible = "atmel,maxtouch", },
+	/* Compatibles listed below are deprecated */
+	{ .compatible = "atmel,qt602240_ts", },
+	{ .compatible = "atmel,atmel_mxt_ts", },
+	{ .compatible = "atmel,atmel_mxt_tp", },
+	{ .compatible = "atmel,mXT224", },
 	{},
 };
 MODULE_DEVICE_TABLE(of, mxt_of_match);

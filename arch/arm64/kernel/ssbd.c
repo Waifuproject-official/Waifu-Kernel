@@ -15,7 +15,11 @@
 static void ssbd_ssbs_enable(struct task_struct *task)
 {
 	u64 val = is_compat_thread(task_thread_info(task)) ?
+<<<<<<< HEAD
 			COMPAT_PSR_SSBS_BIT : PSR_SSBS_BIT;
+=======
+		  PSR_AA32_SSBS_BIT : PSR_SSBS_BIT;
+>>>>>>> v4.19.83
 
 	task_pt_regs(task)->pstate |= val;
 }
@@ -23,14 +27,24 @@ static void ssbd_ssbs_enable(struct task_struct *task)
 static void ssbd_ssbs_disable(struct task_struct *task)
 {
 	u64 val = is_compat_thread(task_thread_info(task)) ?
+<<<<<<< HEAD
 			COMPAT_PSR_SSBS_BIT : PSR_SSBS_BIT;
+=======
+		  PSR_AA32_SSBS_BIT : PSR_SSBS_BIT;
+>>>>>>> v4.19.83
 
 	task_pt_regs(task)->pstate &= ~val;
 }
 
 /*
  * prctl interface for SSBD
+<<<<<<< HEAD
  */
+=======
+ * FIXME: Drop the below ifdefery once merged in 4.18.
+ */
+#ifdef PR_SPEC_STORE_BYPASS
+>>>>>>> v4.19.83
 static int ssbd_prctl_set(struct task_struct *task, unsigned long ctrl)
 {
 	int state = arm64_get_ssbd_state();
@@ -127,3 +141,7 @@ int arch_prctl_spec_ctrl_get(struct task_struct *task, unsigned long which)
 		return -ENODEV;
 	}
 }
+<<<<<<< HEAD
+=======
+#endif	/* PR_SPEC_STORE_BYPASS */
+>>>>>>> v4.19.83

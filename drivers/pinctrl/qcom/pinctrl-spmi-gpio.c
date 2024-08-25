@@ -436,9 +436,12 @@ static int pmic_gpio_config_get(struct pinctrl_dev *pctldev,
 		if (!pad->input_enabled)
 			return -EINVAL;
 		arg = 1;
+<<<<<<< HEAD
 		break;
 	case PIN_CONFIG_OUTPUT_ENABLE:
 		arg = pad->output_enabled;
+=======
+>>>>>>> v4.19.83
 		break;
 	case PIN_CONFIG_OUTPUT:
 		arg = pad->out_value;
@@ -1185,6 +1188,7 @@ static const struct of_device_id pmic_gpio_of_match[] = {
 	{ .compatible = "qcom,pm8916-gpio" },	/* 4 GPIO's */
 	{ .compatible = "qcom,pm8941-gpio" },	/* 36 GPIO's */
 	{ .compatible = "qcom,pm8994-gpio" },	/* 22 GPIO's */
+	{ .compatible = "qcom,pmi8994-gpio" },  /* 10 GPIO's */
 	{ .compatible = "qcom,pma8084-gpio" },	/* 22 GPIO's */
 	{ .compatible = "qcom,spmi-gpio" }, /* Generic */
 	{ },

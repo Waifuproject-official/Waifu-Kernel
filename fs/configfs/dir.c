@@ -59,11 +59,18 @@ static void configfs_d_iput(struct dentry * dentry,
 		/* Coordinate with configfs_readdir */
 		spin_lock(&configfs_dirent_lock);
 		/*
+<<<<<<< HEAD
 		 * Set sd->s_dentry to null only when this dentry is the
 		 * one that is going to be killed.
 		 * If not do so, configfs_d_iput may run just after
 		 * configfs_attach_attr and set sd->s_dentry to null
 		 * even it's still in use.
+=======
+		 * Set sd->s_dentry to null only when this dentry is the one
+		 * that is going to be killed.  Otherwise configfs_d_iput may
+		 * run just after configfs_attach_attr and set sd->s_dentry to
+		 * NULL even it's still in use.
+>>>>>>> v4.19.83
 		 */
 		if (sd->s_dentry == dentry)
 			sd->s_dentry = NULL;
@@ -583,7 +590,7 @@ static void detach_attrs(struct config_item * item)
 
 static int populate_attrs(struct config_item *item)
 {
-	struct config_item_type *t = item->ci_type;
+	const struct config_item_type *t = item->ci_type;
 	struct configfs_attribute *attr;
 	struct configfs_bin_attribute *bin_attr;
 	int error = 0;
@@ -900,7 +907,7 @@ static void configfs_detach_group(struct config_item *item)
 static void client_disconnect_notify(struct config_item *parent_item,
 				     struct config_item *item)
 {
-	struct config_item_type *type;
+	const struct config_item_type *type;
 
 	type = parent_item->ci_type;
 	BUG_ON(!type);
@@ -919,7 +926,7 @@ static void client_disconnect_notify(struct config_item *parent_item,
 static void client_drop_item(struct config_item *parent_item,
 			     struct config_item *item)
 {
-	struct config_item_type *type;
+	const struct config_item_type *type;
 
 	type = parent_item->ci_type;
 	BUG_ON(!type);
@@ -1259,7 +1266,7 @@ static int configfs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode
 	struct config_item *parent_item;
 	struct configfs_subsystem *subsys;
 	struct configfs_dirent *sd;
-	struct config_item_type *type;
+	const struct config_item_type *type;
 	struct module *subsys_owner = NULL, *new_item_owner = NULL;
 	char *name;
 
@@ -1754,12 +1761,19 @@ int configfs_register_group(struct config_group *parent_group,
 
 	inode_lock_nested(d_inode(parent), I_MUTEX_PARENT);
 	ret = create_default_group(parent_group, group);
-	if (!ret) {
-		spin_lock(&configfs_dirent_lock);
-		configfs_dir_set_ready(group->cg_item.ci_dentry->d_fsdata);
-		spin_unlock(&configfs_dirent_lock);
-	}
+	if (ret)
+		goto err_out;
+
+	spin_lock(&configfs_dirent_lock);
+	configfs_dir_set_ready(group->cg_item.ci_dentry->d_fsdata);
+	spin_unlock(&configfs_dirent_lock);
 	inode_unlock(d_inode(parent));
+	return 0;
+err_out:
+	inode_unlock(d_inode(parent));
+	mutex_lock(&subsys->su_mutex);
+	unlink_group(group);
+	mutex_unlock(&subsys->su_mutex);
 	return ret;
 }
 EXPORT_SYMBOL(configfs_register_group);
@@ -1820,7 +1834,7 @@ EXPORT_SYMBOL(configfs_unregister_group);
 struct config_group *
 configfs_register_default_group(struct config_group *parent_group,
 				const char *name,
-				struct config_item_type *item_type)
+				const struct config_item_type *item_type)
 {
 	int ret;
 	struct config_group *group;

@@ -222,6 +222,7 @@ line of text and contains the following stats separated by whitespace:
  same_pages       the number of same element filled pages written to this disk.
                   No memory is allocated for such pages.
  pages_compacted  the number of pages freed during compaction
+<<<<<<< HEAD
  dup_data_size	  deduplicated data size
  meta_data_size	  the amount of metadata allocated for deduplication feature
  huge_pages	  the number of incompressible pages
@@ -236,6 +237,9 @@ a single line of text and contains the following stats separated by whitespace:
 		Unit: 4K bytes
  bd_writes	the number of writes to backing device
 		Unit: 4K bytes
+=======
+ huge_pages	  the number of incompressible pages
+>>>>>>> v4.19.83
 
 9) Deactivate:
 	swapoff /dev/zram0
@@ -347,6 +351,30 @@ Third column is state of the block.
 w: written page to backing store
 h: huge page
 i: idle page)
+
+First line of above example says 300th block is accessed at 75.033841sec
+and the block's state is huge so it is written back to the backing
+storage. It's a debugging feature so anyone shouldn't rely on it to work
+properly.
+
+= memory tracking
+
+With CONFIG_ZRAM_MEMORY_TRACKING, user can know information of the
+zram block. It could be useful to catch cold or incompressible
+pages of the process with*pagemap.
+If you enable the feature, you could see block state via
+/sys/kernel/debug/zram/zram0/block_state". The output is as follows,
+
+	  300    75.033841 .wh
+	  301    63.806904 s..
+	  302    63.806919 ..h
+
+First column is zram's block index.
+Second column is access time since the system was booted
+Third column is state of the block.
+(s: same page
+w: written page to backing store
+h: huge page)
 
 First line of above example says 300th block is accessed at 75.033841sec
 and the block's state is huge so it is written back to the backing

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* Copyright (c) 2016-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -9,10 +10,15 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+=======
+/* SPDX-License-Identifier: GPL-2.0 */
+/* Copyright (c) 2018, The Linux Foundation. All rights reserved. */
+>>>>>>> v4.19.83
 
 #ifndef __QCOM_RPMH_REGULATOR_H
 #define __QCOM_RPMH_REGULATOR_H
 
+<<<<<<< HEAD
 /* This offset is needed as 0 is considered an invalid voltage. */
 #define RPMH_REGULATOR_LEVEL_OFFSET	1
 
@@ -50,6 +56,13 @@
  * %RPMH_REGULATOR_MODE_PASS:	Pass-through mode in which output is directly
  *				tied to input.  This mode is only supported by
  *				BOB type regulators.
+=======
+/*
+ * These mode constants may be used to specify modes for various RPMh regulator
+ * device tree properties (e.g. regulator-initial-mode).  Each type of regulator
+ * supports a subset of the possible modes.
+ *
+>>>>>>> v4.19.83
  * %RPMH_REGULATOR_MODE_RET:	Retention mode in which only an extremely small
  *				load current is allowed.  This mode is supported
  *				by LDO and SMPS type regulators.
@@ -69,10 +82,17 @@
  *				regulators.  This mode is supported by all types
  *				of regulators.
  */
+<<<<<<< HEAD
 #define RPMH_REGULATOR_MODE_PASS	0
 #define RPMH_REGULATOR_MODE_RET		1
 #define RPMH_REGULATOR_MODE_LPM		2
 #define RPMH_REGULATOR_MODE_AUTO	3
 #define RPMH_REGULATOR_MODE_HPM		4
+=======
+#define RPMH_REGULATOR_MODE_RET		0
+#define RPMH_REGULATOR_MODE_LPM		1
+#define RPMH_REGULATOR_MODE_AUTO	2
+#define RPMH_REGULATOR_MODE_HPM		3
+>>>>>>> v4.19.83
 
 #endif

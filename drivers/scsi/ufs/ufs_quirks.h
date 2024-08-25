@@ -135,6 +135,7 @@ struct ufs_dev_fix {
 #define UFS_DEVICE_QUIRK_HOST_PA_SAVECONFIGTIME	(1 << 8)
 
 /*
+<<<<<<< HEAD
  * Some UFS devices may stop responding after switching from HS-G1 to HS-G3.
  * Also, it is found that these devices work fine if we do 2 steps switch:
  * HS-G1 to HS-G2 followed by HS-G2 to HS-G3. Enabling this quirk for such
@@ -149,5 +150,11 @@ struct ufs_dev_fix {
  * instead of the default delay.
  */
 #define UFS_DEVICE_QUIRK_WAIT_AFTER_REF_CLK_UNGATE	(1 << 10)
+=======
+ * Some UFS devices require VS_DebugSaveConfigTime is 0x10,
+ * enabling this quirk ensure this.
+ */
+#define UFS_DEVICE_QUIRK_HOST_VS_DEBUGSAVECONFIGTIME	(1 << 9)
+>>>>>>> v4.19.83
 
 #endif /* UFS_QUIRKS_H_ */

@@ -22,7 +22,10 @@
 #include <asm/page.h>
 #include <asm/code-patching.h>
 #include <asm/setup.h>
+<<<<<<< HEAD
 #include <asm/sections.h>
+=======
+>>>>>>> v4.19.83
 
 static int __patch_instruction(unsigned int *exec_addr, unsigned int instr,
 			       unsigned int *patch_addr)

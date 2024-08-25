@@ -17,7 +17,9 @@ Required properties :
 			"qcom,gcc-msm8974pro-ac"
 			"qcom,gcc-msm8994"
 			"qcom,gcc-msm8996"
+			"qcom,gcc-msm8998"
 			"qcom,gcc-mdm9615"
+<<<<<<< HEAD
 			"qcom,gcc-sm8150"
 			"qcom,gcc-sm8150-v2"
 			"qcom,gcc-sdmshrike"
@@ -30,6 +32,9 @@ Required properties :
 			"qcom,gcc-sa6155"
 			"qcom,gcc-sdxprairie-v2"
 			"qcom,atoll-gcc"
+=======
+			"qcom,gcc-sdm845"
+>>>>>>> v4.19.83
 
 - reg : shall contain base register location and length
 - #clock-cells : shall contain 1

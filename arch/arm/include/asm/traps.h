@@ -28,6 +28,7 @@ static inline int __in_irqentry_text(unsigned long ptr)
 	       ptr < (unsigned long)&__irqentry_text_end;
 }
 
+<<<<<<< HEAD
 static inline int in_exception_text(unsigned long ptr)
 {
 	extern char __exception_text_start[];
@@ -41,6 +42,8 @@ static inline int in_exception_text(unsigned long ptr)
 }
 
 extern void get_pct_hook_init(void);
+=======
+>>>>>>> v4.19.83
 extern void __init early_trap_init(void *);
 extern void dump_backtrace_entry(unsigned long where, unsigned long from, unsigned long frame);
 extern void ptrace_break(struct task_struct *tsk, struct pt_regs *regs);

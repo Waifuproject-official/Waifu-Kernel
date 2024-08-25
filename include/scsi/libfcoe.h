@@ -241,6 +241,7 @@ struct fcoe_fcf {
  * @vn_mac:	VN_Node assigned MAC address for data
  */
 struct fcoe_rport {
+	struct fc_rport_priv rdata;
 	unsigned long time;
 	u16 fcoe_len;
 	u16 flags;
@@ -382,7 +383,7 @@ static inline struct net_device *fcoe_get_netdev(const struct fc_lport *lport)
 
 void fcoe_clean_pending_queue(struct fc_lport *);
 void fcoe_check_wait_queue(struct fc_lport *lport, struct sk_buff *skb);
-void fcoe_queue_timer(ulong lport);
+void fcoe_queue_timer(struct timer_list *t);
 int fcoe_get_paged_crc_eof(struct sk_buff *skb, int tlen,
 			   struct fcoe_percpu_s *fps);
 

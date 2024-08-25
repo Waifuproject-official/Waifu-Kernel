@@ -140,7 +140,10 @@ int __delayacct_add_tsk(struct taskstats *d, struct task_struct *tsk)
 	d->blkio_count += tsk->delays->blkio_count;
 	d->swapin_count += tsk->delays->swapin_count;
 	d->freepages_count += tsk->delays->freepages_count;
+<<<<<<< HEAD
 	d->thrashing_count += tsk->delays->thrashing_count;
+=======
+>>>>>>> v4.19.83
 	raw_spin_unlock_irqrestore(&tsk->delays->lock, flags);
 
 	return 0;

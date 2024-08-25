@@ -20,6 +20,7 @@
 #include <linux/skbuff.h>
 #include <linux/rtnetlink.h>
 #include <linux/slab.h>
+#include <linux/rhashtable.h>
 
 #include <net/sock.h>
 #include <net/inet_frag.h>
@@ -239,9 +240,12 @@ static struct inet_frag_queue *inet_frag_alloc(struct netns_frags *nf,
 {
 	struct inet_frag_queue *q;
 
+<<<<<<< HEAD
 	if (!nf->high_thresh || frag_mem_limit(nf) > nf->high_thresh)
 		return NULL;
 
+=======
+>>>>>>> v4.19.83
 	q = kmem_cache_zalloc(f->frags_cachep, GFP_ATOMIC);
 	if (!q)
 		return NULL;
@@ -287,8 +291,16 @@ struct inet_frag_queue *inet_frag_find(struct netns_frags *nf, void *key)
 {
 	struct inet_frag_queue *fq = NULL, *prev;
 
+<<<<<<< HEAD
 	rcu_read_lock();
 
+=======
+	if (!nf->high_thresh || frag_mem_limit(nf) > nf->high_thresh)
+		return NULL;
+
+	rcu_read_lock();
+
+>>>>>>> v4.19.83
 	prev = rhashtable_lookup(&nf->rhashtable, key, nf->f->rhash_params);
 	if (!prev)
 		fq = inet_frag_create(nf, key, &prev);
@@ -480,7 +492,11 @@ void inet_frag_reasm_finish(struct inet_frag_queue *q, struct sk_buff *head,
 	sub_frag_mem_limit(q->net, head->truesize);
 
 	*nextp = NULL;
+<<<<<<< HEAD
 	head->next = NULL;
+=======
+	skb_mark_not_on_list(head);
+>>>>>>> v4.19.83
 	head->prev = NULL;
 	head->tstamp = q->stamp;
 }

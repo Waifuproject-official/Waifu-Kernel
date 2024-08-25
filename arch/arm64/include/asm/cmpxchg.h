@@ -74,7 +74,7 @@ __XCHG_CASE( ,  ,  mb_, 64, dmb ish, nop,  , a, l, "memory")
 #undef __XCHG_CASE
 
 #define __XCHG_GEN(sfx)							\
-static inline unsigned long __xchg##sfx(unsigned long x,		\
+static __always_inline  unsigned long __xchg##sfx(unsigned long x,	\
 					volatile void *ptr,		\
 					int size)			\
 {									\
@@ -116,7 +116,7 @@ __XCHG_GEN(_mb)
 #define xchg(...)		__xchg_wrapper( _mb, __VA_ARGS__)
 
 #define __CMPXCHG_GEN(sfx)						\
-static inline unsigned long __cmpxchg##sfx(volatile void *ptr,		\
+static __always_inline unsigned long __cmpxchg##sfx(volatile void *ptr,	\
 					   unsigned long old,		\
 					   unsigned long new,		\
 					   int size)			\
@@ -197,16 +197,26 @@ __CMPXCHG_GEN(_mb)
 	__ret; \
 })
 
+<<<<<<< HEAD
 #define __CMPWAIT_CASE(w, sfx, sz)					\
 static inline void __cmpwait_case_##sz(volatile void *ptr,		\
 				       unsigned long val)		\
+=======
+#define __CMPWAIT_CASE(w, sz, name)					\
+static inline void __cmpwait_case_##name(volatile void *ptr,		\
+					 unsigned long val)		\
+>>>>>>> v4.19.83
 {									\
 	unsigned long tmp;						\
 									\
 	asm volatile(							\
 	"	sevl\n"							\
 	"	wfe\n"							\
+<<<<<<< HEAD
 	"	ldxr" #sfx "\t%" #w "[tmp], %[v]\n"			\
+=======
+	"	ldxr" #sz "\t%" #w "[tmp], %[v]\n"			\
+>>>>>>> v4.19.83
 	"	eor	%" #w "[tmp], %" #w "[tmp], %" #w "[val]\n"	\
 	"	cbnz	%" #w "[tmp], 1f\n"				\
 	"	wfe\n"							\
@@ -223,7 +233,7 @@ __CMPWAIT_CASE( ,  , 64);
 #undef __CMPWAIT_CASE
 
 #define __CMPWAIT_GEN(sfx)						\
-static inline void __cmpwait##sfx(volatile void *ptr,			\
+static __always_inline void __cmpwait##sfx(volatile void *ptr,		\
 				  unsigned long val,			\
 				  int size)				\
 {									\

@@ -61,6 +61,7 @@ Optional properties:
 -lanes-per-direction	: number of lanes available per direction - either 1 or 2.
 			  Note that it is assume same number of lanes is used both
 			  directions at once. If not specified, default is 2 lanes per direction.
+<<<<<<< HEAD
 - pinctrl-names, pinctrl-0, pinctrl-1,.. pinctrl-n: Refer to "Documentation/devicetree/bindings/pinctrl/pinctrl-bindings.txt"
 			for these optional properties
 - limit-tx-hs-gear	: Specify the max. limit on the TX HS gear.
@@ -80,12 +81,16 @@ Optional properties:
 - non-removable		: defines if the connected ufs device is not removable
 - force-g4		: forces UFS Host PHY to be initialized in HS-G4
 
+=======
+- resets            : reset node register
+- reset-names       : describe reset node register, the "rst" corresponds to reset the whole UFS IP.
+>>>>>>> v4.19.83
 
 Note: If above properties are not defined it can be assumed that the supply
 regulators or clocks are always on.
 
 Example:
-	ufshc@0xfc598000 {
+	ufshc@fc598000 {
 		compatible = "jedec,ufs-1.1";
 		reg = <0xfc598000 0x800>, <0xfd512074 0x4>;
 		interrupts = <0 28 0>;
@@ -102,11 +107,19 @@ Example:
 		vccq-max-microamp = 200000;
 		vccq2-max-microamp = 200000;
 
+<<<<<<< HEAD
 		clocks = <&core 0>, <&ref 0>, <&iface 0>;
 		clock-names = "core_clk", "ref_clk", "iface_clk";
 		freq-table-hz = <100000000 200000000>, <0 0>, <0 0>;
 		resets = <clock_gcc GCC_UFS_BCR>;
 		reset-names = "core_reset";
+=======
+		clocks = <&core 0>, <&ref 0>, <&phy 0>, <&iface 0>;
+		clock-names = "core_clk", "ref_clk", "phy_clk", "iface_clk";
+		freq-table-hz = <100000000 200000000>, <0 0>, <0 0>, <0 0>;
+		resets = <&reset 0 1>;
+		reset-names = "rst";
+>>>>>>> v4.19.83
 		phys = <&ufsphy1>;
 		phy-names = "ufsphy";
 		rpm-level = <3>;

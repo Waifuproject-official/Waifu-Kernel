@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* Copyright (c) 2010, 2014, 2017 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -9,6 +10,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+=======
+// SPDX-License-Identifier: GPL-2.0
+/* Copyright (c) 2010, 2014 The Linux Foundation. All rights reserved.  */
+>>>>>>> v4.19.83
 
 #include <linux/init.h>
 #include <linux/kfifo.h>

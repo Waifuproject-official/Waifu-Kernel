@@ -182,6 +182,7 @@ static const u32 bbr_lt_bw_diff = 4000 / 8;
 /* If we estimate we're policed, use lt_bw for this many round trips: */
 static const u32 bbr_lt_bw_max_rtts = 48;
 
+<<<<<<< HEAD
 /* Gain factor for adding extra_acked to target cwnd: */
 static const int bbr_extra_acked_gain = BBR_UNIT;
 /* Window length of extra_acked window. */
@@ -191,6 +192,8 @@ static const u32 bbr_ack_epoch_acked_reset_thresh = 1U << 20;
 /* Time period for clamping cwnd increment due to ack aggregation */
 static const u32 bbr_extra_acked_max_us = 100 * 1000;
 
+=======
+>>>>>>> v4.19.83
 static void bbr_check_probe_rtt_done(struct sock *sk);
 
 /* Do we estimate that STARTUP filled the pipe? */
@@ -306,8 +309,12 @@ static u32 bbr_tso_segs_goal(struct sock *sk)
 	/* Sort of tcp_tso_autosize() but ignoring
 	 * driver provided sk_gso_max_size.
 	 */
+<<<<<<< HEAD
 	bytes = min_t(unsigned long,
 		      sk->sk_pacing_rate >> READ_ONCE(sk->sk_pacing_shift),
+=======
+	bytes = min_t(u32, sk->sk_pacing_rate >> sk->sk_pacing_shift,
+>>>>>>> v4.19.83
 		      GSO_MAX_SIZE - 1 - MAX_TCP_HEADER);
 	segs = max_t(u32, bytes / tp->mss_cache, bbr_min_tso_segs(sk));
 
@@ -398,7 +405,11 @@ static u32 bbr_quantization_budget(struct sock *sk, u32 cwnd)
 	cwnd = (cwnd + 1) & ~1U;
 
 	/* Ensure gain cycling gets inflight above BDP even for small BDPs. */
+<<<<<<< HEAD
 	if (bbr->mode == BBR_PROBE_BW && bbr->cycle_idx == 0)
+=======
+	if (bbr->mode == BBR_PROBE_BW && gain > BBR_UNIT)
+>>>>>>> v4.19.83
 		cwnd += 2;
 
 	return cwnd;
@@ -557,6 +568,11 @@ static void bbr_advance_cycle_phase(struct sock *sk)
 
 	bbr->cycle_idx = (bbr->cycle_idx + 1) & (CYCLE_LEN - 1);
 	bbr->cycle_mstamp = tp->delivered_mstamp;
+<<<<<<< HEAD
+=======
+	bbr->pacing_gain = bbr->lt_use_bw ? BBR_UNIT :
+					    bbr_pacing_gain[bbr->cycle_idx];
+>>>>>>> v4.19.83
 }
 
 /* Gain cycling: cycle pacing gain to converge to fair share of available bw. */
@@ -859,8 +875,15 @@ static void bbr_check_drain(struct sock *sk, const struct rate_sample *rs)
 
 	if (bbr->mode == BBR_STARTUP && bbr_full_bw_reached(sk)) {
 		bbr->mode = BBR_DRAIN;	/* drain queue we created */
+<<<<<<< HEAD
 		tcp_sk(sk)->snd_ssthresh =
 				bbr_inflight(sk, bbr_max_bw(sk), BBR_UNIT);
+=======
+		bbr->pacing_gain = bbr_drain_gain;	/* pace slow to drain */
+		bbr->cwnd_gain = bbr_high_gain;	/* maintain cwnd */
+		tcp_sk(sk)->snd_ssthresh =
+				bbr_target_cwnd(sk, bbr_max_bw(sk), BBR_UNIT);
+>>>>>>> v4.19.83
 	}	/* fall through to check if in-flight is already small: */
 	if (bbr->mode == BBR_DRAIN &&
 	    tcp_packets_in_flight(tcp_sk(sk)) <=
@@ -945,6 +968,7 @@ static void bbr_update_min_rtt(struct sock *sk, const struct rate_sample *rs)
 	/* Restart after idle ends only once we process a new S/ACK for data */
 	if (rs->delivered > 0)
 		bbr->idle_restart = 0;
+<<<<<<< HEAD
 }
 
 static void bbr_update_gains(struct sock *sk)
@@ -974,6 +998,8 @@ static void bbr_update_gains(struct sock *sk)
 		WARN_ONCE(1, "BBR bad mode: %u\n", bbr->mode);
 		break;
 	}
+=======
+>>>>>>> v4.19.83
 }
 
 static void bbr_update_model(struct sock *sk, const struct rate_sample *rs)

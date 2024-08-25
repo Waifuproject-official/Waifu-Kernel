@@ -2,7 +2,11 @@
 #ifndef __NET_FRAG_H__
 #define __NET_FRAG_H__
 
+<<<<<<< HEAD
 #include <linux/rhashtable.h>
+=======
+#include <linux/rhashtable-types.h>
+>>>>>>> v4.19.83
 
 struct netns_frags {
 	/* sysctls */

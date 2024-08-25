@@ -68,9 +68,19 @@
 #include <linux/debugfs.h>
 #include <linux/uaccess.h>
 
+/*
+ * Apparently, some Qualcomm arm64 platforms which appear to expose their SMMU
+ * global register space are still, in fact, using a hypervisor to mediate it
+ * by trapping and emulating register accesses. Sadly, some deployed versions
+ * of said trapping code have bugs wherein they go horribly wrong for stores
+ * using r31 (i.e. XZR/WZR) as the source register.
+ */
+#define QCOM_DUMMY_VAL -1
+
 #define ARM_MMU500_ACTLR_CPRE		(1 << 1)
 
 #define ARM_MMU500_ACR_CACHE_LOCK	(1 << 26)
+#define ARM_MMU500_ACR_S2CRB_TLBEN	(1 << 10)
 #define ARM_MMU500_ACR_SMTNMB_TLBEN	(1 << 8)
 
 #define TLB_LOOP_TIMEOUT		500000	/* 500ms */
@@ -135,6 +145,7 @@ enum arm_smmu_implementation {
 	ARM_MMU500,
 	CAVIUM_SMMUV2,
 	QCOM_SMMUV2,
+<<<<<<< HEAD
 	QCOM_SMMUV500,
 };
 
@@ -158,6 +169,10 @@ struct arm_smmu_impl_def_reg {
  *	is required for the "SID switch" use case for secure display.
  *	Protected by stream_map_mutex.
  */
+=======
+};
+
+>>>>>>> v4.19.83
 struct arm_smmu_s2cr {
 	struct iommu_group		*group;
 	int				count;
@@ -375,7 +390,11 @@ struct arm_smmu_domain {
 	struct arm_smmu_device		*smmu;
 	struct device			*dev;
 	struct io_pgtable_ops		*pgtbl_ops;
+<<<<<<< HEAD
 
+=======
+	const struct iommu_gather_ops	*tlb_ops;
+>>>>>>> v4.19.83
 	struct arm_smmu_cfg		cfg;
 	enum arm_smmu_domain_stage	stage;
 	struct mutex			init_mutex; /* Protects smmu pointer */
@@ -1272,7 +1291,7 @@ static int __arm_smmu_tlb_sync(struct arm_smmu_device *smmu,
 {
 	unsigned int spin_cnt, delay;
 
-	writel_relaxed(0, sync);
+	writel_relaxed(QCOM_DUMMY_VAL, sync);
 	for (delay = 1; delay < TLB_LOOP_TIMEOUT; delay *= 2) {
 		for (spin_cnt = TLB_SPIN_COUNT; spin_cnt > 0; spin_cnt--) {
 			if (!(readl_relaxed(status) & sTLBGSTATUS_GSACTIVE))
@@ -1369,7 +1388,11 @@ static void arm_smmu_tlb_inv_range_nosync(unsigned long iova, size_t size,
 	if (smmu_domain->smmu->features & ARM_SMMU_FEAT_COHERENT_WALK)
 		wmb();
 
+<<<<<<< HEAD
 	if (stage1 && !use_tlbiall) {
+=======
+	if (stage1) {
+>>>>>>> v4.19.83
 		reg += leaf ? ARM_SMMU_CB_S1_TLBIVAL : ARM_SMMU_CB_S1_TLBIVA;
 
 		if (cfg->fmt != ARM_SMMU_CTX_FMT_AARCH64) {
@@ -2049,10 +2072,13 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 	enum io_pgtable_fmt fmt;
 	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
 	struct arm_smmu_cfg *cfg = &smmu_domain->cfg;
+<<<<<<< HEAD
 	const struct iommu_gather_ops *tlb_ops;
 	bool is_fast = smmu_domain->attributes & (1 << DOMAIN_ATTR_FAST);
 	unsigned long quirks = 0;
 	bool dynamic;
+=======
+>>>>>>> v4.19.83
 
 	mutex_lock(&smmu_domain->init_mutex);
 	if (smmu_domain->smmu)
@@ -2141,7 +2167,7 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 			ias = min(ias, 32UL);
 			oas = min(oas, 32UL);
 		}
-		tlb_ops = &arm_smmu_s1_tlb_ops;
+		smmu_domain->tlb_ops = &arm_smmu_s1_tlb_ops;
 		break;
 	case ARM_SMMU_DOMAIN_NESTED:
 		/*
@@ -2161,9 +2187,9 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 			oas = min(oas, 40UL);
 		}
 		if (smmu->version == ARM_SMMU_V2)
-			tlb_ops = &arm_smmu_s2_tlb_ops_v2;
+			smmu_domain->tlb_ops = &arm_smmu_s2_tlb_ops_v2;
 		else
-			tlb_ops = &arm_smmu_s2_tlb_ops_v1;
+			smmu_domain->tlb_ops = &arm_smmu_s2_tlb_ops_v1;
 		break;
 	default:
 		ret = -EINVAL;
@@ -2216,6 +2242,25 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 		};
 	}
 
+<<<<<<< HEAD
+=======
+	if (smmu_domain->stage == ARM_SMMU_DOMAIN_S2)
+		cfg->vmid = cfg->cbndx + 1 + smmu->cavium_id_base;
+	else
+		cfg->asid = cfg->cbndx + smmu->cavium_id_base;
+
+	pgtbl_cfg = (struct io_pgtable_cfg) {
+		.pgsize_bitmap	= smmu->pgsize_bitmap,
+		.ias		= ias,
+		.oas		= oas,
+		.tlb		= smmu_domain->tlb_ops,
+		.iommu_dev	= smmu->dev,
+	};
+
+	if (smmu->features & ARM_SMMU_FEAT_COHERENT_WALK)
+		pgtbl_cfg.quirks = IO_PGTABLE_QUIRK_NO_DMA;
+
+>>>>>>> v4.19.83
 	smmu_domain->smmu = smmu;
 	smmu_domain->dev = dev;
 	pgtbl_ops = alloc_io_pgtable_ops(fmt, &smmu_domain->pgtbl_cfg,
@@ -3024,6 +3069,7 @@ static size_t arm_smmu_unmap(struct iommu_domain *domain, unsigned long iova,
 	return ret;
 }
 
+<<<<<<< HEAD
 #define MAX_MAP_SG_BATCH_SIZE (SZ_4M)
 static size_t arm_smmu_map_sg(struct iommu_domain *domain, unsigned long iova,
 			   struct scatterlist *sg, unsigned int nents, int prot)
@@ -3112,6 +3158,17 @@ out:
 }
 
 static phys_addr_t __arm_smmu_iova_to_phys_hard(struct iommu_domain *domain,
+=======
+static void arm_smmu_iotlb_sync(struct iommu_domain *domain)
+{
+	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
+
+	if (smmu_domain->tlb_ops)
+		smmu_domain->tlb_ops->tlb_sync(smmu_domain);
+}
+
+static phys_addr_t arm_smmu_iova_to_phys_hard(struct iommu_domain *domain,
+>>>>>>> v4.19.83
 					      dma_addr_t iova)
 {
 	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
@@ -3984,7 +4041,12 @@ static struct iommu_ops arm_smmu_ops = {
 	.detach_dev		= arm_smmu_detach_dev,
 	.map			= arm_smmu_map,
 	.unmap			= arm_smmu_unmap,
+<<<<<<< HEAD
 	.map_sg			= arm_smmu_map_sg,
+=======
+	.flush_iotlb_all	= arm_smmu_iotlb_sync,
+	.iotlb_sync		= arm_smmu_iotlb_sync,
+>>>>>>> v4.19.83
 	.iova_to_phys		= arm_smmu_iova_to_phys,
 	.iova_to_phys_hard	= arm_smmu_iova_to_phys_hard,
 	.add_device		= arm_smmu_add_device,
@@ -4187,7 +4249,7 @@ static void arm_smmu_context_bank_reset(struct arm_smmu_device *smmu)
 		 * Allow unmatched Stream IDs to allocate bypass
 		 * TLB entries for reduced latency.
 		 */
-		reg |= ARM_MMU500_ACR_SMTNMB_TLBEN;
+		reg |= ARM_MMU500_ACR_SMTNMB_TLBEN | ARM_MMU500_ACR_S2CRB_TLBEN;
 		writel_relaxed(reg, gr0_base + ARM_SMMU_GR0_sACR);
 	}
 
@@ -4249,8 +4311,8 @@ static void arm_smmu_device_reset(struct arm_smmu_device *smmu)
 	}
 
 	/* Invalidate the TLB, just in case */
-	writel_relaxed(0, gr0_base + ARM_SMMU_GR0_TLBIALLH);
-	writel_relaxed(0, gr0_base + ARM_SMMU_GR0_TLBIALLNSNH);
+	writel_relaxed(QCOM_DUMMY_VAL, gr0_base + ARM_SMMU_GR0_TLBIALLH);
+	writel_relaxed(QCOM_DUMMY_VAL, gr0_base + ARM_SMMU_GR0_TLBIALLNSNH);
 
 	reg = readl_relaxed(ARM_SMMU_GR0_NS(smmu) + ARM_SMMU_GR0_sCR0);
 
@@ -4837,6 +4899,7 @@ static struct arm_smmu_match_data name = {		\
 .arch_ops = ops,					\
 }							\
 
+<<<<<<< HEAD
 struct arm_smmu_arch_ops qsmmuv500_arch_ops;
 
 ARM_SMMU_MATCH_DATA(smmu_generic_v1, ARM_SMMU_V1, GENERIC_SMMU, NULL);
@@ -4847,6 +4910,14 @@ ARM_SMMU_MATCH_DATA(cavium_smmuv2, ARM_SMMU_V2, CAVIUM_SMMUV2, NULL);
 ARM_SMMU_MATCH_DATA(qcom_smmuv2, ARM_SMMU_V2, QCOM_SMMUV2, &qsmmuv2_arch_ops);
 ARM_SMMU_MATCH_DATA(qcom_smmuv500, ARM_SMMU_V2, QCOM_SMMUV500,
 		    &qsmmuv500_arch_ops);
+=======
+ARM_SMMU_MATCH_DATA(smmu_generic_v1, ARM_SMMU_V1, GENERIC_SMMU);
+ARM_SMMU_MATCH_DATA(smmu_generic_v2, ARM_SMMU_V2, GENERIC_SMMU);
+ARM_SMMU_MATCH_DATA(arm_mmu401, ARM_SMMU_V1_64K, GENERIC_SMMU);
+ARM_SMMU_MATCH_DATA(arm_mmu500, ARM_SMMU_V2, ARM_MMU500);
+ARM_SMMU_MATCH_DATA(cavium_smmuv2, ARM_SMMU_V2, CAVIUM_SMMUV2);
+ARM_SMMU_MATCH_DATA(qcom_smmuv2, ARM_SMMU_V2, QCOM_SMMUV2);
+>>>>>>> v4.19.83
 
 static const struct of_device_id arm_smmu_of_match[] = {
 	{ .compatible = "arm,smmu-v1", .data = &smmu_generic_v1 },
@@ -4856,7 +4927,10 @@ static const struct of_device_id arm_smmu_of_match[] = {
 	{ .compatible = "arm,mmu-500", .data = &arm_mmu500 },
 	{ .compatible = "cavium,smmu-v2", .data = &cavium_smmuv2 },
 	{ .compatible = "qcom,smmu-v2", .data = &qcom_smmuv2 },
+<<<<<<< HEAD
 	{ .compatible = "qcom,qsmmu-v500", .data = &qcom_smmuv500 },
+=======
+>>>>>>> v4.19.83
 	{ },
 };
 MODULE_DEVICE_TABLE(of, arm_smmu_of_match);
@@ -5034,7 +5108,7 @@ static int arm_smmu_device_dt_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	smmu->irqs = devm_kzalloc(dev, sizeof(*smmu->irqs) * num_irqs,
+	smmu->irqs = devm_kcalloc(dev, num_irqs, sizeof(*smmu->irqs),
 				  GFP_KERNEL);
 	if (!smmu->irqs) {
 		dev_err(dev, "failed to allocate %d irqs\n", num_irqs);
@@ -5066,6 +5140,7 @@ static int arm_smmu_device_dt_probe(struct platform_device *pdev)
 	if (err)
 		goto out_power_off;
 
+<<<<<<< HEAD
 	err = arm_smmu_handoff_cbs(smmu);
 	if (err)
 		goto out_power_off;
@@ -5080,6 +5155,14 @@ static int arm_smmu_device_dt_probe(struct platform_device *pdev)
 				"found %d context irq(s) but have %d context banks. assuming %d context interrupts.\n",
 				smmu->num_context_irqs, smmu->num_context_banks,
 				smmu->num_context_banks);
+=======
+	if (smmu->version == ARM_SMMU_V2) {
+		if (smmu->num_context_banks > smmu->num_context_irqs) {
+			dev_err(dev,
+			      "found only %d context irq(s) but %d required\n",
+			      smmu->num_context_irqs, smmu->num_context_banks);
+			return -ENODEV;
+>>>>>>> v4.19.83
 		}
 
 		/* Ignore superfluous interrupts */
@@ -5206,6 +5289,7 @@ static struct platform_driver arm_smmu_driver = {
 	.remove	= arm_smmu_device_remove,
 };
 
+<<<<<<< HEAD
 static struct platform_driver qsmmuv500_tbu_driver;
 static int __init arm_smmu_init(void)
 {
@@ -6499,6 +6583,8 @@ static struct platform_driver qsmmuv500_tbu_driver = {
 	.probe	= qsmmuv500_tbu_probe,
 };
 
+=======
+>>>>>>> v4.19.83
 MODULE_DESCRIPTION("IOMMU API for ARM architected SMMU implementations");
 MODULE_AUTHOR("Will Deacon <will.deacon@arm.com>");
 MODULE_LICENSE("GPL v2");

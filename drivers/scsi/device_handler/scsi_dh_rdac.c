@@ -533,7 +533,7 @@ static void send_mode_select(struct work_struct *work)
 	int err = SCSI_DH_OK, retry_cnt = RDAC_RETRY_COUNT;
 	struct rdac_queue_data *tmp, *qdata;
 	LIST_HEAD(list);
-	unsigned char cdb[COMMAND_SIZE(MODE_SELECT_10)];
+	unsigned char cdb[MAX_COMMAND_SIZE];
 	struct scsi_sense_hdr sshdr;
 	unsigned int data_size;
 	u64 req_flags = REQ_FAILFAST_DEV | REQ_FAILFAST_TRANSPORT |
@@ -546,6 +546,8 @@ static void send_mode_select(struct work_struct *work)
 	spin_unlock(&ctlr->ms_lock);
 
  retry:
+	memset(cdb, 0, sizeof(cdb));
+
 	data_size = rdac_failover_get(ctlr, &list, cdb);
 
 	RDAC_LOG(RDAC_LOG_FAILOVER, sdev, "array %s, ctlr %d, "
@@ -729,7 +731,7 @@ static int rdac_bus_attach(struct scsi_device *sdev)
 
 	h = kzalloc(sizeof(*h) , GFP_KERNEL);
 	if (!h)
-		return -ENOMEM;
+		return SCSI_DH_NOMEM;
 	h->lun = UNINITIALIZED_LUN;
 	h->state = RDAC_STATE_ACTIVE;
 
@@ -755,7 +757,7 @@ static int rdac_bus_attach(struct scsi_device *sdev)
 		    lun_state[(int)h->lun_state]);
 
 	sdev->handler_data = h;
-	return 0;
+	return SCSI_DH_OK;
 
 clean_ctlr:
 	spin_lock(&list_lock);
@@ -764,7 +766,7 @@ clean_ctlr:
 
 failed:
 	kfree(h);
-	return -EINVAL;
+	return err;
 }
 
 static void rdac_bus_detach( struct scsi_device *sdev )

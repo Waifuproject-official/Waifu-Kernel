@@ -937,8 +937,9 @@ rcu_torture_cbflood(void *arg)
 	    cbflood_intra_holdoff > 0 &&
 	    cur_ops->call &&
 	    cur_ops->cb_barrier) {
-		rhp = vmalloc(sizeof(*rhp) *
-			      cbflood_n_burst * cbflood_n_per_burst);
+		rhp = vmalloc(array3_size(cbflood_n_burst,
+					  cbflood_n_per_burst,
+					  sizeof(*rhp)));
 		err = !rhp;
 	}
 	if (err) {
@@ -1825,6 +1826,10 @@ rcu_torture_cleanup(void)
 			cur_ops->cb_barrier();
 		return;
 	}
+	if (!cur_ops) {
+		torture_cleanup_end();
+		return;
+	}
 
 	rcu_torture_barrier_cleanup();
 	torture_stop_kthread(rcu_torture_stall, stall_task);
@@ -1963,6 +1968,7 @@ rcu_torture_init(void)
 			pr_cont(" %s", torture_ops[i]->name);
 		pr_cont("\n");
 		firsterr = -EINVAL;
+		cur_ops = NULL;
 		goto unwind;
 	}
 	if (cur_ops->fqs == NULL && fqs_duration != 0) {

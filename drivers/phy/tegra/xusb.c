@@ -98,21 +98,14 @@ tegra_xusb_pad_find_phy_node(struct tegra_xusb_pad *pad, unsigned int index)
 
 	np = of_get_child_by_name(lanes, pad->soc->lanes[index].name);
 	of_node_put(lanes);
+<<<<<<< HEAD
 
 	return np;
 }
+=======
+>>>>>>> v4.19.83
 
-static int
-tegra_xusb_lane_lookup_function(struct tegra_xusb_lane *lane,
-				    const char *function)
-{
-	unsigned int i;
-
-	for (i = 0; i < lane->soc->num_funcs; i++)
-		if (strcmp(function, lane->soc->funcs[i]) == 0)
-			return i;
-
-	return -EINVAL;
+	return np;
 }
 
 int tegra_xusb_lane_parse_dt(struct tegra_xusb_lane *lane,
@@ -126,7 +119,7 @@ int tegra_xusb_lane_parse_dt(struct tegra_xusb_lane *lane,
 	if (err < 0)
 		return err;
 
-	err = tegra_xusb_lane_lookup_function(lane, function);
+	err = match_string(lane->soc->funcs, lane->soc->num_funcs, function);
 	if (err < 0) {
 		dev_err(dev, "invalid function \"%s\" for lane \"%s\"\n",
 			function, np->name);

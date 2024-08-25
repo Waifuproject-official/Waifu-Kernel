@@ -40,11 +40,19 @@ CPUFLAGS-$(CONFIG_XILINX_MICROBLAZE0_USE_PCMP_INSTR) += -mxl-pattern-compare
 ifdef CONFIG_CPU_BIG_ENDIAN
 KBUILD_CFLAGS += -mbig-endian
 KBUILD_AFLAGS += -mbig-endian
+<<<<<<< HEAD
 LD += -EB
 else
 KBUILD_CFLAGS += -mlittle-endian
 KBUILD_AFLAGS += -mlittle-endian
 LD += -EL
+=======
+KBUILD_LDFLAGS += -EB
+else
+KBUILD_CFLAGS += -mlittle-endian
+KBUILD_AFLAGS += -mlittle-endian
+KBUILD_LDFLAGS += -EL
+>>>>>>> v4.19.83
 endif
 
 CPUFLAGS-1 += $(call cc-option,-mcpu=v$(CPU_VER))

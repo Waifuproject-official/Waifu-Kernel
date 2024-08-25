@@ -30,7 +30,7 @@
 #include "sane_ctype.h"
 
 struct jit_buf_desc {
-	struct perf_data_file *output;
+	struct perf_data *output;
 	struct perf_session *session;
 	struct machine *machine;
 	union jr_entry   *entry;
@@ -61,8 +61,8 @@ struct debug_line_info {
 
 struct jit_tool {
 	struct perf_tool tool;
-	struct perf_data_file	output;
-	struct perf_data_file	input;
+	struct perf_data	output;
+	struct perf_data	input;
 	u64 bytes_written;
 };
 
@@ -357,7 +357,7 @@ jit_inject_event(struct jit_buf_desc *jd, union perf_event *event)
 {
 	ssize_t size;
 
-	size = perf_data_file__write(jd->output, event, event->header.size);
+	size = perf_data__write(jd->output, event, event->header.size);
 	if (size < 0)
 		return -1;
 
@@ -394,7 +394,7 @@ static int jit_repipe_code_load(struct jit_buf_desc *jd, union jr_entry *jr)
 	size_t size;
 	u16 idr_size;
 	const char *sym;
-	uint32_t count;
+	uint64_t count;
 	int ret, csize, usize;
 	pid_t pid, tid;
 	struct {
@@ -417,7 +417,7 @@ static int jit_repipe_code_load(struct jit_buf_desc *jd, union jr_entry *jr)
 		return -1;
 
 	filename = event->mmap2.filename;
-	size = snprintf(filename, PATH_MAX, "%s/jitted-%d-%u.so",
+	size = snprintf(filename, PATH_MAX, "%s/jitted-%d-%" PRIu64 ".so",
 			jd->dir,
 			pid,
 			count);
@@ -530,7 +530,7 @@ static int jit_repipe_code_move(struct jit_buf_desc *jd, union jr_entry *jr)
 		return -1;
 
 	filename = event->mmap2.filename;
-	size = snprintf(filename, PATH_MAX, "%s/jitted-%d-%"PRIu64,
+	size = snprintf(filename, PATH_MAX, "%s/jitted-%d-%" PRIu64 ".so",
 	         jd->dir,
 	         pid,
 		 jr->move.code_index);
@@ -752,7 +752,7 @@ jit_detect(char *mmap_name, pid_t pid)
 
 int
 jit_process(struct perf_session *session,
-	    struct perf_data_file *output,
+	    struct perf_data *output,
 	    struct machine *machine,
 	    char *filename,
 	    pid_t pid,

@@ -150,6 +150,7 @@ TRACE_DEFINE_ENUM(CP_TRIMMED);
 		{ CP_SPEC_LOG_NUM,	"log type is 2" },		\
 		{ CP_RECOVER_DIR,	"dir needs recovery" })
 
+<<<<<<< HEAD
 #define show_shutdown_mode(type)					\
 	__print_symbolic(type,						\
 		{ F2FS_GOING_DOWN_FULLSYNC,	"full sync" },		\
@@ -161,6 +162,8 @@ TRACE_DEFINE_ENUM(CP_TRIMMED);
 struct f2fs_sb_info;
 struct f2fs_io_info;
 struct extent_info;
+=======
+>>>>>>> v4.19.83
 struct victim_sel_policy;
 struct f2fs_map_blocks;
 
@@ -502,7 +505,7 @@ DEFINE_EVENT(f2fs__truncate_node, f2fs_truncate_node,
 
 TRACE_EVENT(f2fs_truncate_partial_nodes,
 
-	TP_PROTO(struct inode *inode, nid_t nid[], int depth, int err),
+	TP_PROTO(struct inode *inode, nid_t *nid, int depth, int err),
 
 	TP_ARGS(inode, nid, depth, err),
 

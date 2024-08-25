@@ -145,6 +145,7 @@ struct sfq_sched_data {
 	int		perturb_period;
 	unsigned int	quantum;	/* Allotment per round: MUST BE >= MTU */
 	struct timer_list perturb_timer;
+	struct Qdisc	*sch;
 };
 
 /*
@@ -605,10 +606,10 @@ drop:
 	qdisc_tree_reduce_backlog(sch, dropped, drop_len);
 }
 
-static void sfq_perturbation(unsigned long arg)
+static void sfq_perturbation(struct timer_list *t)
 {
-	struct Qdisc *sch = (struct Qdisc *)arg;
-	struct sfq_sched_data *q = qdisc_priv(sch);
+	struct sfq_sched_data *q = from_timer(q, t, perturb_timer);
+	struct Qdisc *sch = q->sch;
 	spinlock_t *root_lock = qdisc_lock(qdisc_root_sleeping(sch));
 	siphash_key_t nkey;
 
@@ -722,16 +723,21 @@ static void sfq_destroy(struct Qdisc *sch)
 	kfree(q->red_parms);
 }
 
-static int sfq_init(struct Qdisc *sch, struct nlattr *opt)
+static int sfq_init(struct Qdisc *sch, struct nlattr *opt,
+		    struct netlink_ext_ack *extack)
 {
 	struct sfq_sched_data *q = qdisc_priv(sch);
 	int i;
 	int err;
 
-	setup_deferrable_timer(&q->perturb_timer, sfq_perturbation,
-			       (unsigned long)sch);
+	q->sch = sch;
+	timer_setup(&q->perturb_timer, sfq_perturbation, TIMER_DEFERRABLE);
 
+<<<<<<< HEAD
 	err = tcf_block_get(&q->block, &q->filter_list, sch);
+=======
+	err = tcf_block_get(&q->block, &q->filter_list, sch, extack);
+>>>>>>> v4.19.83
 	if (err)
 		return err;
 
@@ -828,8 +834,6 @@ static unsigned long sfq_find(struct Qdisc *sch, u32 classid)
 static unsigned long sfq_bind(struct Qdisc *sch, unsigned long parent,
 			      u32 classid)
 {
-	/* we cannot bypass queue discipline anymore */
-	sch->flags &= ~TCQ_F_CAN_BYPASS;
 	return 0;
 }
 
@@ -837,7 +841,8 @@ static void sfq_unbind(struct Qdisc *q, unsigned long cl)
 {
 }
 
-static struct tcf_block *sfq_tcf_block(struct Qdisc *sch, unsigned long cl)
+static struct tcf_block *sfq_tcf_block(struct Qdisc *sch, unsigned long cl,
+				       struct netlink_ext_ack *extack)
 {
 	struct sfq_sched_data *q = qdisc_priv(sch);
 

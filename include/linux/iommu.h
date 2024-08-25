@@ -213,8 +213,6 @@ extern struct dentry *iommu_debugfs_top;
  * @detach_dev: detach device from an iommu domain
  * @map: map a physically contiguous memory region to an iommu domain
  * @unmap: unmap a physically contiguous memory region from an iommu domain
- * @map_sg: map a scatter-gather list of physically contiguous memory chunks
- *          to an iommu domain
  * @flush_tlb_all: Synchronously flush all hardware TLBs for this domain
  * @tlb_range_add: Add a given iova range to the flush queue for this domain
  * @tlb_sync: Flush all queued ranges from the hardware TLBs and empty flush
@@ -255,8 +253,6 @@ struct iommu_ops {
 		   phys_addr_t paddr, size_t size, int prot);
 	size_t (*unmap)(struct iommu_domain *domain, unsigned long iova,
 		     size_t size);
-	size_t (*map_sg)(struct iommu_domain *domain, unsigned long iova,
-			 struct scatterlist *sg, unsigned int nents, int prot);
 	void (*flush_iotlb_all)(struct iommu_domain *domain);
 	void (*iotlb_range_add)(struct iommu_domain *domain,
 				unsigned long iova, size_t size);
@@ -373,11 +369,15 @@ extern size_t iommu_unmap(struct iommu_domain *domain, unsigned long iova,
 extern size_t iommu_unmap_fast(struct iommu_domain *domain,
 			       unsigned long iova, size_t size);
 extern size_t iommu_map_sg(struct iommu_domain *domain, unsigned long iova,
+<<<<<<< HEAD
 				struct scatterlist *sg, unsigned int nents,
 				int prot);
 extern size_t default_iommu_map_sg(struct iommu_domain *domain, unsigned long iova,
 				struct scatterlist *sg,unsigned int nents,
 				int prot);
+=======
+			   struct scatterlist *sg,unsigned int nents, int prot);
+>>>>>>> v4.19.83
 extern phys_addr_t iommu_iova_to_phys(struct iommu_domain *domain, dma_addr_t iova);
 extern phys_addr_t iommu_iova_to_phys_hard(struct iommu_domain *domain,
 					   dma_addr_t iova);
@@ -457,6 +457,7 @@ static inline void iommu_tlb_sync(struct iommu_domain *domain)
 		domain->ops->iotlb_sync(domain);
 }
 
+<<<<<<< HEAD
 extern void iommu_trigger_fault(struct iommu_domain *domain,
 				unsigned long flags);
 
@@ -464,6 +465,8 @@ extern unsigned long iommu_reg_read(struct iommu_domain *domain,
 				    unsigned long offset);
 extern void iommu_reg_write(struct iommu_domain *domain, unsigned long offset,
 			    unsigned long val);
+=======
+>>>>>>> v4.19.83
 /* PCI device grouping function */
 extern struct iommu_group *pci_device_group(struct device *dev);
 /* Generic device grouping function */
@@ -565,23 +568,23 @@ static inline int iommu_map(struct iommu_domain *domain, unsigned long iova,
 	return -ENODEV;
 }
 
-static inline int iommu_unmap(struct iommu_domain *domain, unsigned long iova,
-			      size_t size)
+static inline size_t iommu_unmap(struct iommu_domain *domain,
+				 unsigned long iova, size_t size)
 {
-	return -ENODEV;
+	return 0;
 }
 
-static inline int iommu_unmap_fast(struct iommu_domain *domain, unsigned long iova,
-				   int gfp_order)
+static inline size_t iommu_unmap_fast(struct iommu_domain *domain,
+				      unsigned long iova, int gfp_order)
 {
-	return -ENODEV;
+	return 0;
 }
 
 static inline size_t iommu_map_sg(struct iommu_domain *domain,
 				  unsigned long iova, struct scatterlist *sg,
 				  unsigned int nents, int prot)
 {
-	return -ENODEV;
+	return 0;
 }
 
 static inline void iommu_flush_tlb_all(struct iommu_domain *domain)
@@ -847,5 +850,12 @@ static inline int iommu_is_available(struct device *dev)
 	return -ENODEV;
 }
 #endif /* CONFIG_IOMMU_API */
+
+#ifdef CONFIG_IOMMU_DEBUGFS
+extern	struct dentry *iommu_debugfs_dir;
+void iommu_debugfs_setup(void);
+#else
+static inline void iommu_debugfs_setup(void) {}
+#endif
 
 #endif /* __LINUX_IOMMU_H */

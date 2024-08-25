@@ -44,6 +44,11 @@
 /* Fields containing pulse width data */
 #define MTK_WIDTH_MASK		  (GENMASK(7, 0))
 
+/* IR threshold */
+#define MTK_IRTHD		 0x14
+#define MTK_DG_CNT_MASK		 (GENMASK(12, 8))
+#define MTK_DG_CNT(x)		 ((x) << 8)
+
 /* Bit to enable interrupt */
 #define MTK_IRINT_EN		  BIT(0)
 
@@ -299,8 +304,6 @@ static int mtk_ir_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct device_node *dn = dev->of_node;
-	const struct of_device_id *of_id =
-		of_match_device(mtk_ir_match, &pdev->dev);
 	struct resource *res;
 	struct mtk_ir *ir;
 	u32 val;
@@ -312,7 +315,7 @@ static int mtk_ir_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	ir->dev = dev;
-	ir->data = of_id->data;
+	ir->data = of_device_get_match_data(dev);
 
 	ir->clk = devm_clk_get(dev, "clk");
 	if (IS_ERR(ir->clk)) {
@@ -410,6 +413,9 @@ static int mtk_ir_probe(struct platform_device *pdev)
 	       ir->data->fields[MTK_HW_PERIOD].mask;
 	mtk_w32_mask(ir, val, ir->data->fields[MTK_HW_PERIOD].mask,
 		     ir->data->fields[MTK_HW_PERIOD].reg);
+
+	/* Set de-glitch counter */
+	mtk_w32_mask(ir, MTK_DG_CNT(1), MTK_DG_CNT_MASK, MTK_IRTHD);
 
 	/* Enable IR and PWM */
 	val = mtk_r32(ir, MTK_CONFIG_HIGH_REG);

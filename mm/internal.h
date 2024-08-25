@@ -38,7 +38,7 @@
 
 void page_writeback_init(void);
 
-int do_swap_page(struct vm_fault *vmf);
+vm_fault_t do_swap_page(struct vm_fault *vmf);
 
 #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
 extern struct vm_area_struct *get_vma(struct mm_struct *mm,
@@ -73,7 +73,7 @@ void unmap_page_range(struct mmu_gather *tlb,
 			     unsigned long addr, unsigned long end,
 			     struct zap_details *details);
 
-extern int __do_page_cache_readahead(struct address_space *mapping,
+extern unsigned int __do_page_cache_readahead(struct address_space *mapping,
 		struct file *filp, pgoff_t offset, unsigned long nr_to_read,
 		unsigned long lookahead_size);
 
@@ -218,6 +218,7 @@ struct compact_control {
 	const int classzone_idx;	/* zone index of a direct compactor */
 	enum migrate_mode mode;		/* Async or sync migration mode */
 	bool ignore_skip_hint;		/* Scan blocks even if marked skip */
+	bool no_set_skip_hint;		/* Don't mark blocks for skipping */
 	bool ignore_block_suitable;	/* Scan blocks considered unsuitable */
 	bool direct_compaction;		/* False from kcompactd or /proc/... */
 	bool whole_zone;		/* Whole zone should/has been scanned */
@@ -409,18 +410,6 @@ static inline struct page *mem_map_next(struct page *iter,
 	return iter + 1;
 }
 
-/*
- * FLATMEM and DISCONTIGMEM configurations use alloc_bootmem_node,
- * so all functions starting at paging_init should be marked __init
- * in those cases. SPARSEMEM, however, allows for memory hotplug,
- * and alloc_bootmem_node is not used.
- */
-#ifdef CONFIG_SPARSEMEM
-#define __paginginit __meminit
-#else
-#define __paginginit __init
-#endif
-
 /* Memory initialisation debug and verification */
 enum mminit_level {
 	MMINIT_WARNING,
@@ -558,6 +547,7 @@ static inline bool is_migrate_highatomic_page(struct page *page)
 }
 
 void setup_zone_pageset(struct zone *zone);
+<<<<<<< HEAD
 
 #ifdef CONFIG_ANDROID_LOW_MEMORY_KILLER
 extern bool lmk_kill_possible(void);
@@ -567,4 +557,7 @@ static inline bool lmk_kill_possible(void)
 	return false;
 }
 #endif
+=======
+extern struct page *alloc_new_node_page(struct page *page, unsigned long node);
+>>>>>>> v4.19.83
 #endif	/* __MM_INTERNAL_H */

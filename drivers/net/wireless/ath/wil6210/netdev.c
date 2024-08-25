@@ -21,10 +21,13 @@
 #include "wil6210.h"
 #include "txrx.h"
 
+<<<<<<< HEAD
 static bool alt_ifname; /* = false; */
 module_param(alt_ifname, bool, 0444);
 MODULE_PARM_DESC(alt_ifname, " use an alternate interface name wigigN instead of wlanN");
 
+=======
+>>>>>>> v4.19.83
 bool wil_has_other_active_ifaces(struct wil6210_priv *wil,
 				 struct net_device *ndev, bool up, bool ok)
 {
@@ -94,6 +97,7 @@ static int wil_stop(struct net_device *ndev)
 	}
 
 	return rc;
+<<<<<<< HEAD
 }
 
 static int wil_do_ioctl(struct net_device *ndev, struct ifreq *ifr, int cmd)
@@ -101,6 +105,8 @@ static int wil_do_ioctl(struct net_device *ndev, struct ifreq *ifr, int cmd)
 	struct wil6210_priv *wil = ndev_to_wil(ndev);
 
 	return wil_ioctl(wil, ifr->ifr_data, cmd);
+=======
+>>>>>>> v4.19.83
 }
 
 static const struct net_device_ops wil_netdev_ops = {
@@ -224,7 +230,10 @@ static void wil_dev_setup(struct net_device *dev)
 
 static void wil_vif_deinit(struct wil6210_vif *vif)
 {
+<<<<<<< HEAD
 	wil_ftm_deinit(vif);
+=======
+>>>>>>> v4.19.83
 	del_timer_sync(&vif->scan_timer);
 	del_timer_sync(&vif->p2p.discovery_timer);
 	cancel_work_sync(&vif->disconnect_worker);
@@ -301,8 +310,11 @@ static void wil_vif_init(struct wil6210_vif *vif)
 
 	INIT_LIST_HEAD(&vif->probe_client_pending);
 
+<<<<<<< HEAD
 	wil_ftm_init(vif);
 
+=======
+>>>>>>> v4.19.83
 	vif->net_queue_stopped = 1;
 }
 
@@ -374,7 +386,10 @@ void *wil_if_alloc(struct device *dev)
 	struct wil6210_priv *wil;
 	struct wil6210_vif *vif;
 	int rc = 0;
+<<<<<<< HEAD
 	const char *ifname = alt_ifname ? "wigig%d" : "wlan%d";
+=======
+>>>>>>> v4.19.83
 
 	wil = wil_cfg80211_init(dev);
 	if (IS_ERR(wil)) {
@@ -390,7 +405,11 @@ void *wil_if_alloc(struct device *dev)
 
 	wil_dbg_misc(wil, "if_alloc\n");
 
+<<<<<<< HEAD
 	vif = wil_vif_alloc(wil, ifname, NET_NAME_UNKNOWN,
+=======
+	vif = wil_vif_alloc(wil, "wlan%d", NET_NAME_UNKNOWN,
+>>>>>>> v4.19.83
 			    NL80211_IFTYPE_STATION);
 	if (IS_ERR(vif)) {
 		dev_err(dev, "wil_vif_alloc failed\n");
@@ -529,7 +548,11 @@ void wil_vif_remove(struct wil6210_priv *wil, u8 mid)
 	}
 
 	mutex_lock(&wil->mutex);
+<<<<<<< HEAD
 	wil6210_disconnect(vif, NULL, WLAN_REASON_DEAUTH_LEAVING);
+=======
+	wil6210_disconnect(vif, NULL, WLAN_REASON_DEAUTH_LEAVING, false);
+>>>>>>> v4.19.83
 	mutex_unlock(&wil->mutex);
 
 	ndev = vif_to_ndev(vif);

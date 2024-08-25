@@ -52,6 +52,17 @@ static bool map_pte(struct page_vma_mapped_walk *pvmw)
 	return true;
 }
 
+<<<<<<< HEAD
+=======
+static inline bool pfn_in_hpage(struct page *hpage, unsigned long pfn)
+{
+	unsigned long hpage_pfn = page_to_pfn(hpage);
+
+	/* THP can be referenced by any subpage */
+	return pfn >= hpage_pfn && pfn - hpage_pfn < hpage_nr_pages(hpage);
+}
+
+>>>>>>> v4.19.83
 /**
  * check_pte - check if @pvmw->page is mapped at the @pvmw->pte
  *
@@ -100,6 +111,7 @@ static bool check_pte(struct page_vma_mapped_walk *pvmw)
 		pfn = pte_pfn(*pvmw->pte);
 	}
 
+<<<<<<< HEAD
 	if (pfn < page_to_pfn(pvmw->page))
 		return false;
 
@@ -108,6 +120,9 @@ static bool check_pte(struct page_vma_mapped_walk *pvmw)
 		return false;
 
 	return true;
+=======
+	return pfn_in_hpage(pvmw->page, pfn);
+>>>>>>> v4.19.83
 }
 
 /**

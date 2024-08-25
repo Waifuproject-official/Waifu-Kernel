@@ -28,6 +28,9 @@
 #include <linux/of.h>
 #include "governor.h"
 
+#define MAX(a,b)	((a > b) ? a : b)
+#define MIN(a,b)	((a < b) ? a : b)
+
 static struct class *devfreq_class;
 
 /*
@@ -69,6 +72,34 @@ static struct devfreq *find_device_devfreq(struct device *dev)
 	return ERR_PTR(-ENODEV);
 }
 
+static unsigned long find_available_min_freq(struct devfreq *devfreq)
+{
+	struct dev_pm_opp *opp;
+	unsigned long min_freq = 0;
+
+	opp = dev_pm_opp_find_freq_ceil(devfreq->dev.parent, &min_freq);
+	if (IS_ERR(opp))
+		min_freq = 0;
+	else
+		dev_pm_opp_put(opp);
+
+	return min_freq;
+}
+
+static unsigned long find_available_max_freq(struct devfreq *devfreq)
+{
+	struct dev_pm_opp *opp;
+	unsigned long max_freq = ULONG_MAX;
+
+	opp = dev_pm_opp_find_freq_floor(devfreq->dev.parent, &max_freq);
+	if (IS_ERR(opp))
+		max_freq = 0;
+	else
+		dev_pm_opp_put(opp);
+
+	return max_freq;
+}
+
 /**
  * devfreq_set_freq_limits() - Set min and max frequency from freq_table
  * @devfreq:	the devfreq instance
@@ -108,11 +139,7 @@ static int devfreq_get_freq_level(struct devfreq *devfreq, unsigned long freq)
 	return -EINVAL;
 }
 
-/**
- * devfreq_set_freq_table() - Initialize freq_table for the frequency
- * @devfreq:	the devfreq instance
- */
-static void devfreq_set_freq_table(struct devfreq *devfreq)
+static int set_freq_table(struct devfreq *devfreq)
 {
 	struct devfreq_dev_profile *profile = devfreq->profile;
 	struct dev_pm_opp *opp;
@@ -122,7 +149,7 @@ static void devfreq_set_freq_table(struct devfreq *devfreq)
 	/* Initialize the freq_table from OPP table */
 	count = dev_pm_opp_get_opp_count(devfreq->dev.parent);
 	if (count <= 0)
-		return;
+		return -EINVAL;
 
 	profile->max_state = count;
 	profile->freq_table = devm_kcalloc(devfreq->dev.parent,
@@ -131,7 +158,7 @@ static void devfreq_set_freq_table(struct devfreq *devfreq)
 					GFP_KERNEL);
 	if (!profile->freq_table) {
 		profile->max_state = 0;
-		return;
+		return -ENOMEM;
 	}
 
 	for (i = 0, freq = 0; i < profile->max_state; i++, freq++) {
@@ -139,11 +166,13 @@ static void devfreq_set_freq_table(struct devfreq *devfreq)
 		if (IS_ERR(opp)) {
 			devm_kfree(devfreq->dev.parent, profile->freq_table);
 			profile->max_state = 0;
-			return;
+			return PTR_ERR(opp);
 		}
 		dev_pm_opp_put(opp);
 		profile->freq_table[i] = freq;
 	}
+
+	return 0;
 }
 
 /**
@@ -250,7 +279,7 @@ static int devfreq_notify_transition(struct devfreq *devfreq,
 int update_devfreq(struct devfreq *devfreq)
 {
 	struct devfreq_freqs freqs;
-	unsigned long freq, cur_freq;
+	unsigned long freq, cur_freq, min_freq, max_freq;
 	int err = 0;
 	u32 flags = 0;
 
@@ -273,19 +302,21 @@ int update_devfreq(struct devfreq *devfreq)
 	}
 
 	/*
-	 * Adjust the frequency with user freq and QoS.
+	 * Adjust the frequency with user freq, QoS and available freq.
 	 *
 	 * List from the highest priority
 	 * max_freq
 	 * min_freq
 	 */
+	max_freq = MIN(devfreq->scaling_max_freq, devfreq->max_freq);
+	min_freq = MAX(devfreq->scaling_min_freq, devfreq->min_freq);
 
-	if (devfreq->min_freq && freq < devfreq->min_freq) {
-		freq = devfreq->min_freq;
+	if (min_freq && freq < min_freq) {
+		freq = min_freq;
 		flags &= ~DEVFREQ_FLAG_LEAST_UPPER_BOUND; /* Use GLB */
 	}
-	if (devfreq->max_freq && freq > devfreq->max_freq) {
-		freq = devfreq->max_freq;
+	if (max_freq && freq > max_freq) {
+		freq = max_freq;
 		flags |= DEVFREQ_FLAG_LEAST_UPPER_BOUND; /* Use LUB */
 	}
 
@@ -308,10 +339,9 @@ int update_devfreq(struct devfreq *devfreq)
 	freqs.new = freq;
 	devfreq_notify_transition(devfreq, &freqs, DEVFREQ_POSTCHANGE);
 
-	if (devfreq->profile->freq_table)
-		if (devfreq_update_status(devfreq, freq))
-			dev_err(&devfreq->dev,
-				"Couldn't update frequency transition information.\n");
+	if (devfreq_update_status(devfreq, freq))
+		dev_err(&devfreq->dev,
+			"Couldn't update frequency transition information.\n");
 
 	devfreq->previous_freq = freq;
 	return err;
@@ -494,6 +524,19 @@ static int devfreq_notifier_call(struct notifier_block *nb, unsigned long type,
 	int ret;
 
 	mutex_lock(&devfreq->lock);
+
+	devfreq->scaling_min_freq = find_available_min_freq(devfreq);
+	if (!devfreq->scaling_min_freq) {
+		mutex_unlock(&devfreq->lock);
+		return -EINVAL;
+	}
+
+	devfreq->scaling_max_freq = find_available_max_freq(devfreq);
+	if (!devfreq->scaling_max_freq) {
+		mutex_unlock(&devfreq->lock);
+		return -EINVAL;
+	}
+
 	ret = update_devfreq(devfreq);
 	mutex_unlock(&devfreq->lock);
 
@@ -585,26 +628,51 @@ struct devfreq *devfreq_add_device(struct device *dev,
 
 	if (!devfreq->profile->max_state && !devfreq->profile->freq_table) {
 		mutex_unlock(&devfreq->lock);
-		devfreq_set_freq_table(devfreq);
+		err = set_freq_table(devfreq);
+		if (err < 0)
+			goto err_out;
 		mutex_lock(&devfreq->lock);
 	}
 	devfreq_set_freq_limits(devfreq);
 
+<<<<<<< HEAD
 	dev_set_name(&devfreq->dev, "%s", dev_name(dev));
+=======
+	devfreq->scaling_min_freq = find_available_min_freq(devfreq);
+	if (!devfreq->scaling_min_freq) {
+		mutex_unlock(&devfreq->lock);
+		err = -EINVAL;
+		goto err_dev;
+	}
+	devfreq->min_freq = devfreq->scaling_min_freq;
+
+	devfreq->scaling_max_freq = find_available_max_freq(devfreq);
+	if (!devfreq->scaling_max_freq) {
+		mutex_unlock(&devfreq->lock);
+		err = -EINVAL;
+		goto err_dev;
+	}
+	devfreq->max_freq = devfreq->scaling_max_freq;
+
+	dev_set_name(&devfreq->dev, "devfreq%d",
+				atomic_inc_return(&devfreq_no));
+>>>>>>> v4.19.83
 	err = device_register(&devfreq->dev);
 	if (err) {
 		mutex_unlock(&devfreq->lock);
-		goto err_dev;
+		put_device(&devfreq->dev);
+		goto err_out;
 	}
 
-	devfreq->trans_table =	devm_kzalloc(&devfreq->dev,
-						sizeof(unsigned int) *
-						devfreq->profile->max_state *
+	devfreq->trans_table =
+		devm_kzalloc(&devfreq->dev,
+			     array3_size(sizeof(unsigned int),
+					 devfreq->profile->max_state,
+					 devfreq->profile->max_state),
+			     GFP_KERNEL);
+	devfreq->time_in_state = devm_kcalloc(&devfreq->dev,
 						devfreq->profile->max_state,
-						GFP_KERNEL);
-	devfreq->time_in_state = devm_kzalloc(&devfreq->dev,
-						sizeof(unsigned long) *
-						devfreq->profile->max_state,
+						sizeof(unsigned long),
 						GFP_KERNEL);
 	devfreq->last_stat_updated = jiffies;
 
@@ -640,6 +708,7 @@ err_init:
 	mutex_unlock(&devfreq_list_lock);
 
 	device_unregister(&devfreq->dev);
+	devfreq = NULL;
 err_dev:
 	if (devfreq)
 		kfree(devfreq);
@@ -1158,6 +1227,14 @@ unlock:
 	return ret;
 }
 
+static ssize_t min_freq_show(struct device *dev, struct device_attribute *attr,
+			     char *buf)
+{
+	struct devfreq *df = to_devfreq(dev);
+
+	return sprintf(buf, "%lu\n", MAX(df->scaling_min_freq, df->min_freq));
+}
+
 static ssize_t max_freq_store(struct device *dev, struct device_attribute *attr,
 			      const char *buf, size_t count)
 {
@@ -1186,17 +1263,15 @@ unlock:
 	mutex_unlock(&df->event_lock);
 	return ret;
 }
-
-#define show_one(name)						\
-static ssize_t name##_show					\
-(struct device *dev, struct device_attribute *attr, char *buf)	\
-{								\
-	return sprintf(buf, "%lu\n", to_devfreq(dev)->name);	\
-}
-show_one(min_freq);
-show_one(max_freq);
-
 static DEVICE_ATTR_RW(min_freq);
+
+static ssize_t max_freq_show(struct device *dev, struct device_attribute *attr,
+			     char *buf)
+{
+	struct devfreq *df = to_devfreq(dev);
+
+	return sprintf(buf, "%lu\n", MIN(df->scaling_max_freq, df->max_freq));
+}
 static DEVICE_ATTR_RW(max_freq);
 
 static ssize_t available_frequencies_show(struct device *d,
@@ -1204,13 +1279,17 @@ static ssize_t available_frequencies_show(struct device *d,
 					  char *buf)
 {
 	struct devfreq *df = to_devfreq(d);
+<<<<<<< HEAD
 	struct device *dev = df->dev.parent;
 	struct dev_pm_opp *opp;
 	unsigned int i = 0, max_state = df->profile->max_state;
 	bool use_opp;
+=======
+>>>>>>> v4.19.83
 	ssize_t count = 0;
-	unsigned long freq = 0;
+	int i;
 
+<<<<<<< HEAD
 	use_opp = dev_pm_opp_get_opp_count(dev) > 0;
 	while (use_opp || (!use_opp && i < max_state)) {
 		if (use_opp) {
@@ -1226,7 +1305,15 @@ static ssize_t available_frequencies_show(struct device *d,
 				   "%lu ", freq);
 		freq++;
 	}
+=======
+	mutex_lock(&df->lock);
 
+	for (i = 0; i < df->profile->max_state; i++)
+		count += scnprintf(&buf[count], (PAGE_SIZE - count - 2),
+				"%lu ", df->profile->freq_table[i]);
+>>>>>>> v4.19.83
+
+	mutex_unlock(&df->lock);
 	/* Truncate the trailing space */
 	if (count)
 		count--;

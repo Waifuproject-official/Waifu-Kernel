@@ -9,4 +9,8 @@ source "drivers/platform/goldfish/Kconfig"
 
 source "drivers/platform/chrome/Kconfig"
 
+<<<<<<< HEAD
 source "drivers/platform/msm/Kconfig"
+=======
+source "drivers/platform/mellanox/Kconfig"
+>>>>>>> v4.19.83

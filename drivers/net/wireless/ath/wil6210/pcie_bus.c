@@ -1,6 +1,10 @@
 /*
  * Copyright (c) 2012-2017 Qualcomm Atheros, Inc.
+<<<<<<< HEAD
  * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
+=======
+ * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+>>>>>>> v4.19.83
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -32,12 +36,8 @@ bool ftm_mode;
 module_param(ftm_mode, bool, 0444);
 MODULE_PARM_DESC(ftm_mode, " Set factory test mode, default - false");
 
-#ifdef CONFIG_PM
-#ifdef CONFIG_PM_SLEEP
 static int wil6210_pm_notify(struct notifier_block *notify_block,
 			     unsigned long mode, void *unused);
-#endif /* CONFIG_PM_SLEEP */
-#endif /* CONFIG_PM */
 
 static
 int wil_set_capabilities(struct wil6210_priv *wil)
@@ -112,7 +112,10 @@ int wil_set_capabilities(struct wil6210_priv *wil)
 		set_bit(hw_capa_no_flash, wil->hw_capa);
 		wil->use_enhanced_dma_hw = true;
 		wil->use_rx_hw_reordering = true;
+<<<<<<< HEAD
 		wil->use_compressed_rx_status = true;
+=======
+>>>>>>> v4.19.83
 		wil_fw_name = ftm_mode ? WIL_FW_NAME_FTM_TALYN :
 			      WIL_FW_NAME_TALYN;
 		if (wil_fw_verify_file_exists(wil, wil_fw_name))
@@ -531,8 +534,11 @@ static int wil_pcie_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		goto bus_disable;
 	}
 
+<<<<<<< HEAD
 #ifdef CONFIG_PM
 #ifdef CONFIG_PM_SLEEP
+=======
+>>>>>>> v4.19.83
 	/* in case of WMI-only FW, perform full reset and FW loading */
 	if (test_bit(WMI_FW_CAPABILITY_WMI_ONLY, wil->fw_capabilities)) {
 		wil_dbg_misc(wil, "Loading WMI only FW\n");
@@ -545,15 +551,19 @@ static int wil_pcie_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		}
 	}
 
+<<<<<<< HEAD
 	wil->pm_notify.notifier_call = wil6210_pm_notify;
+=======
+	if (IS_ENABLED(CONFIG_PM))
+		wil->pm_notify.notifier_call = wil6210_pm_notify;
+
+>>>>>>> v4.19.83
 	rc = register_pm_notifier(&wil->pm_notify);
 	if (rc)
 		/* Do not fail the driver initialization, as suspend can
 		 * be prevented in a later phase if needed
 		 */
 		wil_err(wil, "register_pm_notifier failed: %d\n", rc);
-#endif /* CONFIG_PM_SLEEP */
-#endif /* CONFIG_PM */
 
 	wil6210_debugfs_init(wil);
 	wil6210_sysfs_init(wil);
@@ -587,11 +597,9 @@ static void wil_pcie_remove(struct pci_dev *pdev)
 
 	wil_dbg_misc(wil, "pcie_remove\n");
 
-#ifdef CONFIG_PM
-#ifdef CONFIG_PM_SLEEP
 	unregister_pm_notifier(&wil->pm_notify);
-#endif /* CONFIG_PM_SLEEP */
-#endif /* CONFIG_PM */
+
+	wil_pm_runtime_forbid(wil);
 
 	wil_pm_runtime_forbid(wil);
 
@@ -617,9 +625,6 @@ static const struct pci_device_id wil6210_pcie_ids[] = {
 	{ /* end: all zeroes */	},
 };
 MODULE_DEVICE_TABLE(pci, wil6210_pcie_ids);
-
-#ifdef CONFIG_PM
-#ifdef CONFIG_PM_SLEEP
 
 static int wil6210_suspend(struct device *dev, bool is_runtime)
 {
@@ -662,11 +667,14 @@ static int wil6210_resume(struct device *dev, bool is_runtime)
 	struct pci_dev *pdev = to_pci_dev(dev);
 	struct wil6210_priv *wil = pci_get_drvdata(pdev);
 	bool keep_radio_on, active_ifaces;
+<<<<<<< HEAD
 
 	if (test_bit(wil_status_pci_linkdown, wil->status)) {
 		wil_dbg_pm(wil, "ignore resume during pci linkdown\n");
 		return 0;
 	}
+=======
+>>>>>>> v4.19.83
 
 	wil_dbg_pm(wil, "resume: %s\n", is_runtime ? "runtime" : "system");
 
@@ -739,18 +747,21 @@ static int wil6210_pm_notify(struct notifier_block *notify_block,
 	return rc;
 }
 
-static int wil6210_pm_suspend(struct device *dev)
+static int __maybe_unused wil6210_pm_suspend(struct device *dev)
 {
 	return wil6210_suspend(dev, false);
 }
 
-static int wil6210_pm_resume(struct device *dev)
+static int __maybe_unused wil6210_pm_resume(struct device *dev)
 {
 	return wil6210_resume(dev, false);
 }
-#endif /* CONFIG_PM_SLEEP */
 
+<<<<<<< HEAD
 static int wil6210_pm_runtime_idle(struct device *dev)
+=======
+static int __maybe_unused wil6210_pm_runtime_idle(struct device *dev)
+>>>>>>> v4.19.83
 {
 	struct pci_dev *pdev = to_pci_dev(dev);
 	struct wil6210_priv *wil = pci_get_drvdata(pdev);
@@ -760,12 +771,20 @@ static int wil6210_pm_runtime_idle(struct device *dev)
 	return wil_can_suspend(wil, true);
 }
 
+<<<<<<< HEAD
 static int wil6210_pm_runtime_resume(struct device *dev)
+=======
+static int __maybe_unused wil6210_pm_runtime_resume(struct device *dev)
+>>>>>>> v4.19.83
 {
 	return wil6210_resume(dev, true);
 }
 
+<<<<<<< HEAD
 static int wil6210_pm_runtime_suspend(struct device *dev)
+=======
+static int __maybe_unused wil6210_pm_runtime_suspend(struct device *dev)
+>>>>>>> v4.19.83
 {
 	struct pci_dev *pdev = to_pci_dev(dev);
 	struct wil6210_priv *wil = pci_get_drvdata(pdev);
@@ -777,7 +796,10 @@ static int wil6210_pm_runtime_suspend(struct device *dev)
 
 	return wil6210_suspend(dev, true);
 }
+<<<<<<< HEAD
 #endif /* CONFIG_PM */
+=======
+>>>>>>> v4.19.83
 
 static const struct dev_pm_ops wil6210_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(wil6210_pm_suspend, wil6210_pm_resume)

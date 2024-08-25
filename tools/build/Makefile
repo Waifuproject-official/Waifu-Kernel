@@ -43,7 +43,11 @@ $(OUTPUT)fixdep-in.o: FORCE
 	$(Q)$(MAKE) $(build)=fixdep
 
 $(OUTPUT)fixdep: $(OUTPUT)fixdep-in.o
+<<<<<<< HEAD
 	$(QUIET_LINK)$(HOSTCC) $(HOSTLDFLAGS) -o $@ $<
+=======
+	$(QUIET_LINK)$(HOSTCC) $(KBUILD_HOSTLDFLAGS) -o $@ $<
+>>>>>>> v4.19.83
 
 FORCE:
 

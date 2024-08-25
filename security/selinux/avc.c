@@ -657,7 +657,11 @@ static int avc_latest_notif_update(struct selinux_avc *avc,
 	spin_lock_irqsave(&notif_lock, flag);
 	if (is_insert) {
 		if (seqno < avc->avc_cache.latest_notif) {
+<<<<<<< HEAD
 			printk(KERN_WARNING "SELinux: avc:  seqno %d < latest_notif %d\n",
+=======
+			pr_warn("SELinux: avc:  seqno %d < latest_notif %d\n",
+>>>>>>> v4.19.83
 			       seqno, avc->avc_cache.latest_notif);
 			ret = -EAGAIN;
 		}
@@ -700,6 +704,7 @@ static struct avc_node *avc_insert(struct selinux_avc *avc,
 	struct hlist_head *head;
 
 	if (avc_latest_notif_update(avc, avd->seqno, 1))
+<<<<<<< HEAD
 		return NULL;
 
 	node = avc_alloc_node(avc);
@@ -710,6 +715,38 @@ static struct avc_node *avc_insert(struct selinux_avc *avc,
 	if (avc_xperms_populate(node, xp_node)) {
 		avc_node_kill(avc, node);
 		return NULL;
+=======
+		goto out;
+
+	node = avc_alloc_node(avc);
+	if (node) {
+		struct hlist_head *head;
+		spinlock_t *lock;
+		int rc = 0;
+
+		hvalue = avc_hash(ssid, tsid, tclass);
+		avc_node_populate(node, ssid, tsid, tclass, avd);
+		rc = avc_xperms_populate(node, xp_node);
+		if (rc) {
+			kmem_cache_free(avc_node_cachep, node);
+			return NULL;
+		}
+		head = &avc->avc_cache.slots[hvalue];
+		lock = &avc->avc_cache.slots_lock[hvalue];
+
+		spin_lock_irqsave(lock, flag);
+		hlist_for_each_entry(pos, head, list) {
+			if (pos->ae.ssid == ssid &&
+			    pos->ae.tsid == tsid &&
+			    pos->ae.tclass == tclass) {
+				avc_node_replace(avc, node, pos);
+				goto found;
+			}
+		}
+		hlist_add_head_rcu(&node->list, head);
+found:
+		spin_unlock_irqrestore(lock, flag);
+>>>>>>> v4.19.83
 	}
 
 	hvalue = avc_hash(ssid, tsid, tclass);
@@ -846,6 +883,7 @@ out:
  * @ssid,@tsid,@tclass : identifier of an AVC entry
  * @seqno : sequence number when decision was made
  * @xpd: extended_perms_decision to be added to the node
+ * @flags: the AVC_* flags, e.g. AVC_NONBLOCKING, AVC_EXTENDED_PERMS, or 0.
  *
  * if a valid AVC entry doesn't exist,this function returns -ENOENT.
  * if kmalloc() called internal returns NULL, this function returns -ENOMEM.
@@ -864,6 +902,26 @@ static int avc_update_node(struct selinux_avc *avc,
 	struct hlist_head *head;
 	spinlock_t *lock;
 
+<<<<<<< HEAD
+=======
+	/*
+	 * If we are in a non-blocking code path, e.g. VFS RCU walk,
+	 * then we must not add permissions to a cache entry
+	 * because we cannot safely audit the denial.  Otherwise,
+	 * during the subsequent blocking retry (e.g. VFS ref walk), we
+	 * will find the permissions already granted in the cache entry
+	 * and won't audit anything at all, leading to silent denials in
+	 * permissive mode that only appear when in enforcing mode.
+	 *
+	 * See the corresponding handling in slow_avc_audit(), and the
+	 * logic in selinux_inode_follow_link and selinux_inode_permission
+	 * for the VFS MAY_NOT_BLOCK flag, which is transliterated into
+	 * AVC_NONBLOCKING for avc_has_perm_noaudit().
+	 */
+	if (flags & AVC_NONBLOCKING)
+		return 0;
+
+>>>>>>> v4.19.83
 	node = avc_alloc_node(avc);
 	if (!node) {
 		rc = -ENOMEM;
@@ -1123,7 +1181,7 @@ decision:
  * @tsid: target security identifier
  * @tclass: target security class
  * @requested: requested permissions, interpreted based on @tclass
- * @flags:  AVC_STRICT or 0
+ * @flags:  AVC_STRICT, AVC_NONBLOCKING, or 0
  * @avd: access vector decisions
  *
  * Check the AVC to determine whether the @requested permissions are granted
@@ -1207,7 +1265,12 @@ int avc_has_perm_flags(struct selinux_state *state,
 	struct av_decision avd;
 	int rc, rc2;
 
+<<<<<<< HEAD
 	rc = avc_has_perm_noaudit(state, ssid, tsid, tclass, requested, 0,
+=======
+	rc = avc_has_perm_noaudit(state, ssid, tsid, tclass, requested,
+				  (flags & MAY_NOT_BLOCK) ? AVC_NONBLOCKING : 0,
+>>>>>>> v4.19.83
 				  &avd);
 
 	rc2 = avc_audit(state, ssid, tsid, tclass, requested, &avd, rc,
