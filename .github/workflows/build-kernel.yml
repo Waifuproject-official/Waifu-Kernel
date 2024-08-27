@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: namespace-profile-kernel
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -23,7 +23,7 @@ jobs:
            
       - name: Install Package
         run: |
-         sudo apt-get install -y libdebuginfod-dev bc zip
+         sudo apt-get install -y bc zip
          
       - name: Setup timezone
         uses: szenius/set-timezone@master
