@@ -381,7 +381,7 @@ static int show_vma_header_prefix(struct seq_file *m, unsigned long start,
 
 	out[43] = ' ';
 
-	m->count += num_to_str(&out[44], 20, ino, 0) + 44;
+	m->count += num_to_str(&out[44], 20, ino) + 44;
 	return 0;
 }
 
