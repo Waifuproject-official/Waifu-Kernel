@@ -35,7 +35,10 @@ static void _update_wptr(struct adreno_device *adreno_dev, bool reset_timer)
 {
 	struct adreno_ringbuffer *rb = adreno_dev->cur_rb;
 	unsigned long flags;
+	bool write = false;
+	unsigned int val;
 	int ret = 0;
+	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 
 	spin_lock_irqsave(&rb->preempt_lock, flags);
 
