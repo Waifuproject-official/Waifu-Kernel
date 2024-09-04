@@ -91,6 +91,8 @@ static void adreno_ringbuffer_wptr(struct adreno_device *adreno_dev,
 {
 	unsigned long flags;
 	int ret = 0;
+	bool write = false;
+	unsigned int val;
 
 	spin_lock_irqsave(&rb->preempt_lock, flags);
 	if (adreno_in_preempt_state(adreno_dev, ADRENO_PREEMPT_NONE)) {
