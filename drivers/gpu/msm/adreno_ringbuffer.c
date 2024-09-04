@@ -89,6 +89,7 @@ static void adreno_get_submit_time(struct adreno_device *adreno_dev,
 static void adreno_ringbuffer_wptr(struct adreno_device *adreno_dev,
 		struct adreno_ringbuffer *rb)
 {
+    struct adreno_gpudev *gpudev = ADRENO_GPU_DEVICE(adreno_dev);
 	unsigned long flags;
 	int ret = 0;
 	bool write = false;
