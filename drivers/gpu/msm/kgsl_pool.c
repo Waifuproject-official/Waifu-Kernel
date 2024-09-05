@@ -96,10 +96,10 @@ _kgsl_pool_add_page(struct kgsl_page_pool *pool, struct page *p)
 static void
 _kgsl_pool_add_page_skipzeropages(struct kgsl_page_pool *pool, struct page *p)
 {
-	llist_add((struct llist_node *)&p->lru, &pool->page_list);
-	atomic_inc(&pool->page_count);
-	mod_node_page_state(page_pgdat(p), NR_KERNEL_MISC_RECLAIMABLE,
-				pool->pool_order);
+	llist_add(&p->lru, &pool->page_list);
+	spin_unlock(&pool->page_count);
+	mod_node_page_state(page_pgdat(p), NR_INDIRECTLY_RECLAIMABLE_BYTES,
+				(PAGE_SIZE << pool->pool_order));
 }
 
 /* Returns a page from specified pool */

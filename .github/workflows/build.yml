@@ -13,14 +13,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@main
-        
-      - name: Setup cache
-        uses: useblacksmith/cache@v5
-        with:
-          path: |
-            ${{ github.workspace }}/tc/
-          key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}
-           
          
       - name: Setup timezone
         uses: szenius/set-timezone@master
