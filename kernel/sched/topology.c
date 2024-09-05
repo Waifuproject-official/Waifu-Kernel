@@ -1971,6 +1971,20 @@ build_sched_domains(const struct cpumask *cpu_map, struct sched_domain_attr *att
 		cpu_attach_domain(sd, d.rd, i);
 	}
 
+	/* set the mid capacity cpu (assumes only 3 capacities) */
+	for_each_cpu(i, cpu_map) {
+		int max_cpu = READ_ONCE(d.rd->max_cap_orig_cpu);
+		int min_cpu = READ_ONCE(d.rd->min_cap_orig_cpu);
+
+		if ((arch_scale_cpu_capacity(NULL, i)
+				!=  arch_scale_cpu_capacity(NULL, min_cpu)) &&
+				(arch_scale_cpu_capacity(NULL, i)
+				!=  arch_scale_cpu_capacity(NULL, max_cpu))) {
+			WRITE_ONCE(d.rd->mid_cap_orig_cpu, i);
+			break;
+		}
+	}
+
 	/*
 	 * The max_cpu_capacity reflect the original capacity which does not
 	 * change dynamically. So update the max cap CPU and its capacity
