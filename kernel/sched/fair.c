@@ -5926,13 +5926,10 @@ cpu_is_in_target_set(struct task_struct *p, int cpu)
 	if (uclamp_boosted(p)) {
 #endif
 	first_cpu = rd->mid_cap_orig_cpu != -1 ? rd->mid_cap_orig_cpu : rd->max_cap_orig_cpu;
-	if (schedtune_task_boost(p)) {
-		first_cpu = rd->mid_cap_orig_cpu != -1 ? rd->mid_cap_orig_cpu :
-			    rd->max_cap_orig_cpu;
 
 	} else {
 		first_cpu = rd->min_cap_orig_cpu;
-	}
+		}
 
 	next_usable_cpu = cpumask_next(first_cpu - 1, &p->cpus_allowed);
 	return cpu >= next_usable_cpu || next_usable_cpu >= nr_cpu_ids;
