@@ -303,6 +303,8 @@ static int init_rootdomain(struct root_domain *rd)
 		goto free_cpudl;
 
 	rd->max_cap_orig_cpu = rd->min_cap_orig_cpu = -1;
+	
+	rd->mid_cap_orig_cpu = -1;
 
 	init_max_cpu_capacity(&rd->max_cpu_capacity);
 
