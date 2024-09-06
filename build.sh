@@ -61,11 +61,8 @@ if [ -f "$kernel" ]; then
 	cp $kernel $dtbo AnyKernel3
 	cd AnyKernel3
 	git checkout Waifu &> /dev/null
-	zip -r9 "../$ZIPNAME" * -x .git modules\* patch\* ramdisk\* README.md *placeholder
 	cd ..
 	echo -e "\nCompleted in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) !"
-	ls
-	echo "Zip: $ZIPNAME"
 else
 	echo -e "\nCompilation failed!"
 	exit 1
