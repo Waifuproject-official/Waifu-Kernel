@@ -1,8 +1,7 @@
-name: Build
+name: Release
 
 on:
   push:
-    branches: [ "surya" ]
     
   workflow_dispatch:
 
@@ -14,27 +13,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@main
       
-      - name: Setup timezone
-        uses: szenius/set-timezone@master
-        with:
-          timezoneLinux: "Asia/Bangkok"
-      
       - name: Run build script
         run: |
           source build.sh
-          echo "ZIPNAME=${ZIPNAME}" >> $GITHUB_ENV
-
-      - name: Setup build date
-        run: echo "BUILD_DATE=$(date '+%H:%M %d/%m/%Y')" >> $GITHUB_ENV
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@main
-        with:
-          name: ${{ env.ZIPNAME }}
-          path: AnyKernel3/
-
-      - name: release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ env.ZIPNAME }}
-            
