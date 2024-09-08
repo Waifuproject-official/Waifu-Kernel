@@ -63,7 +63,6 @@ if [ -f "$kernel" ]; then
 	git checkout Waifu &> /dev/null
 	zip -r9 "../$ZIPNAME" * -x .git modules\* patch\* ramdisk\* README.md *placeholder
 	cd ..
-	rm -rf AnyKernel3
 	echo -e "\nCompleted in $((SECONDS / 60)) minute(s) and $((SECONDS % 60)) second(s) !"
 	echo "Zip: $ZIPNAME"
 else

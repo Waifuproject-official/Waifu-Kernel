@@ -8,22 +8,11 @@ on:
 
 jobs:
   build:
-    runs-on: depot-ubuntu-22.04-64
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@main
-        
-      - name: Setup cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ github.workspace }}/tc/
-          key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}
-           
-      - name: Install Package
-        run: |
-         sudo apt-get install -y libdebuginfod-dev bc python2-dev python2 zip
          
       - name: Setup timezone
         uses: szenius/set-timezone@master
@@ -41,5 +30,5 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@main
         with:
-          name: my-artifact
-          path: ${{ env.ZIPNAME }}
+          name: ${{ env.ZIPNAME }}
+          path: AnyKernel3/
