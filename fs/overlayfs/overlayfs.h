@@ -196,6 +196,9 @@ struct dentry *ovl_indexdir(struct super_block *sb);
 struct ovl_entry *ovl_alloc_entry(unsigned int numlower);
 bool ovl_dentry_remote(struct dentry *dentry);
 bool ovl_dentry_weird(struct dentry *dentry);
+#ifdef CONFIG_KSU_SUSFS_SUS_OVERLAYFS
+void ovl_path_lowerdata(struct dentry *dentry, struct path *path);
+#endif
 enum ovl_path_type ovl_path_type(struct dentry *dentry);
 void ovl_path_upper(struct dentry *dentry, struct path *path);
 void ovl_path_lower(struct dentry *dentry, struct path *path);
